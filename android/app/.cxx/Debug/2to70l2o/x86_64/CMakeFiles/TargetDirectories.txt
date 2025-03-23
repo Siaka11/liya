@@ -1,0 +1,2 @@
+D:/Modules/liya/android/app/.cxx/Debug/2to70l2o/x86_64/CMakeFiles/edit_cache.dir
+D:/Modules/liya/android/app/.cxx/Debug/2to70l2o/x86_64/CMakeFiles/rebuild_cache.dir

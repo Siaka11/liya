@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "90366269252",
+    "project_id": "liya-2025",
+    "storage_bucket": "liya-2025.firebasestorage.app",
+    "default_locale": "fr"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:90366269252:android:a8908bc1a5651dc13c6911",
+        "android_client_info": {
+          "package_name": "com.liya.ci"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDxumSJEi3K2-kS7vmegqe9jIhAAm8tsmc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
