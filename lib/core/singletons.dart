@@ -10,6 +10,7 @@ Future<void> initSingletons() async {
   final sharedPreferences = await SharedPreferences.getInstance();
   PackageInfo packageInfo = await PackageInfo.fromPlatform();
 
+  singleton.registerSingleton<SharedPreferences>(sharedPreferences);
   singleton.registerSingleton<AppRouter>(AppRouter(AuthProvider()));
 
 }

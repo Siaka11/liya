@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class CustomButton extends StatelessWidget{
   final String text;
-  final VoidCallback onPressedButton;
+  final VoidCallback? onPressedButton;
   final Color bgColor;
   final double fontSize;
   final double paddingVertical;

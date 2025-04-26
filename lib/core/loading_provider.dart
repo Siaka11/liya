@@ -14,6 +14,7 @@ class LoadingProvider extends StateNotifier<bool> {
   complete() {
     _setLoading(false);
   }
+
 }
 
 final loadingProvider =

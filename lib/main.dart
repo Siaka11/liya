@@ -11,7 +11,12 @@ void main() async{
   WidgetsFlutterBinding.ensureInitialized();
   await EasyLocalization.ensureInitialized();
   await initSingletons();
-  await Firebase.initializeApp();
+
+  try {
+    await Firebase.initializeApp();
+  } catch (e) {
+    print('Firebase init error: $e');
+  }
   runApp(
     //Plugin for Internationalization i18n
       ProviderScope(

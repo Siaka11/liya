@@ -10,6 +10,7 @@ class AuthProvider extends ChangeNotifier{
 
   void login(){
     _isAuthenticated = true;
+    notifyListeners();
   }
 
   Future<void> logout() async {

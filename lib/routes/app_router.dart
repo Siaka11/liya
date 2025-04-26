@@ -1,8 +1,12 @@
 
 import 'package:auto_route/auto_route.dart';
 import 'package:liya/routes/app_router.gr.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+import '../config/app_information.dart';
+import '../core/singletons.dart';
 import '../modules/auth/auth_provider.dart';
+import '../modules/auth/info_user_page.dart';
 
 @AutoRouterConfig()
 class AppRouter extends $AppRouter implements AutoRouteGuard{
@@ -18,18 +22,18 @@ class AppRouter extends $AppRouter implements AutoRouteGuard{
     });
   }
   bool isAuthenticated() {
-    //return singleton<SharedPreferences>().getBool(Config.ISAUTH)??false;
-    return false;
+    return singleton<SharedPreferences>().getBool(Config.ISAUTH)??false;
   }
 
 
   @override
   void onNavigation(NavigationResolver resolver, StackRouter router) {
 
-    if (isAuthenticated()  || resolver.route.name == AuthRoute.name) {
+    if (isAuthenticated()  || resolver.route.name == AuthRoute.name ||
+        resolver.route.name == OtpRoute.name || resolver.route.name == InfoUserRoute.name) {
       resolver.next();
     } else {
-      push(AuthRoute());
+      push(const AuthRoute());
     }
 
   }
@@ -38,5 +42,7 @@ class AppRouter extends $AppRouter implements AutoRouteGuard{
   List<AutoRoute> get routes => [
     AutoRoute(page: HomeRoute.page, initial: true),
     AutoRoute(page: AuthRoute.page),
+    AutoRoute(page: OtpRoute.page),
+    AutoRoute(page: InfoUserRoute.page),
   ];
 }
