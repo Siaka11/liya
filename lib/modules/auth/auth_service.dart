@@ -1,6 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:liya/core/singletons.dart';
 
+import '../../core/local_storage_factory.dart';
 import '../../utils/snackbar.dart';
 
 class AuthService {
@@ -90,6 +92,23 @@ class AuthService {
       // Exemple Firebase :
       // var user = FirebaseAuth.instance.currentUser;
       // await user?.updateProfile(displayName: '$name $lastName');
+    } catch (e) {
+      onError(e.toString());
+    }
+  }
+
+  Future<void> saveUserLocation({
+    required double latitude,
+    required double longitude,
+    required String address,
+    required Function() onSuccess,
+    required Function(String) onError,
+  }) async {
+    try {
+      print('Saving user location: lat=$latitude, lon=$longitude, address=$address');
+      await singleton<LocalStorageFactory>().setUserLocation(latitude: latitude, longitude: longitude, address: address);
+      // Simuler la sauvegarde (remplace par une API réelle ou Firebase)
+      onSuccess();
     } catch (e) {
       onError(e.toString());
     }

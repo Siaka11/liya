@@ -9,33 +9,25 @@ import '../modules/auth/auth_provider.dart';
 import '../modules/auth/info_user_page.dart';
 
 @AutoRouterConfig()
-class AppRouter extends $AppRouter implements AutoRouteGuard{
-  bool authenticated = false;
-  bool alreadyAuthenticated = false;
+class AppRouter extends $AppRouter implements AutoRouteGuard {
   final AuthProvider authProvider;
 
-  AppRouter(this.authProvider){
-    authProvider.addListener(() {
-      if (!authProvider.isAuthenticated) {
-        reevaluateGuards();
-      }
-    });
-  }
-  bool isAuthenticated() {
-    return singleton<SharedPreferences>().getBool(Config.ISAUTH)??false;
-  }
+  AppRouter(this.authProvider);
 
+  bool isAuthenticated() {
+    return singleton<SharedPreferences>().getBool(Config.ISAUTH) ?? false;
+  }
 
   @override
   void onNavigation(NavigationResolver resolver, StackRouter router) {
-
-    if (isAuthenticated()  || resolver.route.name == AuthRoute.name ||
-        resolver.route.name == OtpRoute.name || resolver.route.name == InfoUserRoute.name) {
+    if (isAuthenticated() ||
+        resolver.route.name == AuthRoute.name ||
+        resolver.route.name == OtpRoute.name ||
+        resolver.route.name == InfoUserRoute.name) {
       resolver.next();
     } else {
-      push(const AuthRoute());
+      resolver.redirect(const AuthRoute(), replace: true);
     }
-
   }
 
   @override
@@ -44,5 +36,6 @@ class AppRouter extends $AppRouter implements AutoRouteGuard{
     AutoRoute(page: AuthRoute.page),
     AutoRoute(page: OtpRoute.page),
     AutoRoute(page: InfoUserRoute.page),
+    AutoRoute(page: ShareLocationRoute.page),
   ];
 }

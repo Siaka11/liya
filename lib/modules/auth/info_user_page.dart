@@ -82,7 +82,7 @@ class InfoUserPage extends ConsumerWidget {
                 child: CustomField(
                   controller: infoUserNotifier.lastNameController,
                   keyboardType: TextInputType.text,
-                  prefixText: "Prénom",
+                  placeholder: "Prénom",
                   fontSize: 16,
                   decoration: InputDecoration(
                     errorText: infoUserState.hasError && infoUserState.lastName.isEmpty
@@ -117,9 +117,9 @@ class InfoUserPage extends ConsumerWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 20.0),
                     child: CustomButton(
                       text: "Soumettre",
-                      borderRaduis: 50,
+                      borderRadius: 50,
                       onPressedButton: isLoading ? null : () => infoUserNotifier.submit(context),
-                      bgColor: UIColors.defaultColor,
+                      bgColor: UIColors.white,
                       fontSize: 18,
                       paddingVertical: 16,
                     ),

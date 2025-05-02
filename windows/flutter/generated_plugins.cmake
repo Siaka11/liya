@@ -7,6 +7,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   firebase_auth
   firebase_core
   flutter_udid
+  geolocator_windows
   permission_handler_windows
   share_plus
   url_launcher_windows

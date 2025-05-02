@@ -1,40 +1,45 @@
 import 'package:flutter/material.dart';
 
-class CustomButton extends StatelessWidget{
+import '../theme/theme.dart';
+
+class CustomButton extends StatelessWidget {
   final String text;
+  final double borderRadius; // Corrigé : "Raduis" → "Radius"
   final VoidCallback? onPressedButton;
-  final Color bgColor;
+  final Color? bgColor;
   final double fontSize;
   final double paddingVertical;
-  final double borderRaduis;
-
 
   const CustomButton({
-      super.key,
-      required this.text,
-      required this.onPressedButton,
-      this.bgColor = Colors.black,
-      this.fontSize = 16,
-      this.paddingVertical = 16,
-      required this.borderRaduis,
-});
+    super.key,
+    required this.text,
+    required this.borderRadius,
+    this.onPressedButton,
+    this.bgColor,
+    required this.fontSize,
+    required this.paddingVertical
+  });
 
   @override
-  Widget build(BuildContext context){
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-          onPressed: onPressedButton,
-          style: ElevatedButton.styleFrom(
-            padding: EdgeInsets.symmetric(vertical: paddingVertical),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(borderRaduis)
-            )
-          ),
-          child: Text(
-            text,
-            style: TextStyle(fontSize: fontSize, color: bgColor),
-          )
+  Widget build(BuildContext context) {
+    return ElevatedButton(
+      onPressed: onPressedButton,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: bgColor ?? UIColors.defaultColor,
+        padding: EdgeInsets.symmetric(
+          vertical: paddingVertical,
+          horizontal: 30, // Ajout d'un padding horizontal par défaut
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(borderRadius),
+        ),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: fontSize,
+          color: Colors.white,
+        ),
       ),
     );
   }

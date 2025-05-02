@@ -4,7 +4,10 @@ import 'package:liya/core/singletons.dart';
 import 'package:liya/modules/auth/auth_service.dart';
 import 'package:liya/routes/app_router.dart';
 import 'package:liya/routes/app_router.gr.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/loading_provider.dart';
+import '../../core/local_storage_factory.dart';
+import 'auth_provider.dart';
 
 enum InfoUserStatus { Empty, Processing, Error, Success }
 
@@ -92,7 +95,13 @@ class InfoUserNotifier extends StateNotifier<InfoUserState> {
             status: InfoUserStatus.Success,
           );
           // Naviguer vers la page suivante
-          singleton<AppRouter>().replace(const HomeRoute()); // Ajuste selon ta route
+          var userDetail = {
+            "name": name,
+            "lastName": lastName,
+          };
+          singleton<LocalStorageFactory>().setUserDetails(userDetail);
+          ref.read(authProvider).login();
+          singleton<AppRouter>().replace(const ShareLocationRoute()); // Ajuste selon ta route
           print('User info saved successfully');
         },
         onError: (error) {

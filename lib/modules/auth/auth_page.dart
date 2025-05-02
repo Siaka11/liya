@@ -7,6 +7,8 @@ import 'package:liya/core/ui/components/custom_button.dart';
 import 'package:liya/core/ui/components/custom_field.dart';
 import 'package:liya/modules/auth/login_provider.dart';
 
+import '../../core/ui/theme/theme.dart';
+
 
 @RoutePage()
 class AuthPage extends ConsumerStatefulWidget {
@@ -135,7 +137,6 @@ class _AuthPageState extends ConsumerState<AuthPage> with SingleTickerProviderSt
             ),
           ),
           const SizedBox(height: 20),
-
           Align(
             alignment: Alignment.bottomCenter,
             child: Padding(
@@ -144,9 +145,9 @@ class _AuthPageState extends ConsumerState<AuthPage> with SingleTickerProviderSt
                 width: double.infinity,
                 child: CustomButton(
                   text: "Envoyer",
-                  borderRaduis: 50,
+                  borderRadius: 50,
                   onPressedButton: () => _loginProviderForm.submit(context),
-                  bgColor: Colors.orange,
+                  bgColor: UIColors.white,
                   fontSize: 18,
                   paddingVertical: 18,
                 ),

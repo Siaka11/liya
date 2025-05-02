@@ -146,7 +146,7 @@ class OtpPage extends ConsumerWidget{
                         bgColor: UIColors.orange,
                         fontSize: 10,
                         paddingVertical: 8,
-                        borderRaduis: 16,
+                        borderRadius: 16,
 
                       ),
                       /*child: ElevatedButton(
