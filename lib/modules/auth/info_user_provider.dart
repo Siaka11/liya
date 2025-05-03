@@ -7,6 +7,7 @@ import 'package:liya/routes/app_router.gr.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/loading_provider.dart';
 import '../../core/local_storage_factory.dart';
+import '../home/application/home_provider.dart';
 import 'auth_provider.dart';
 
 enum InfoUserStatus { Empty, Processing, Error, Success }
@@ -45,33 +46,29 @@ class InfoUserState {
 
 class InfoUserNotifier extends StateNotifier<InfoUserState> {
   final Ref ref;
-  final TextEditingController nameController = TextEditingController();
-  final TextEditingController lastNameController = TextEditingController();
 
-  InfoUserNotifier(this.ref) : super(const InfoUserState()) {
-    nameController.addListener(_updateState);
-    lastNameController.addListener(_updateState);
+  InfoUserNotifier(this.ref) : super(const InfoUserState());
+
+  void updateName(String name) {
+    state = state.copyWith(name: name, status: InfoUserStatus.Empty);
   }
 
-  void _updateState() {
-    state = state.copyWith(
-      name: nameController.text.trim(),
-      lastName: lastNameController.text.trim(),
-      status: InfoUserStatus.Empty,
-    );
+  void updateLastName(String lastName) {
+    state = state.copyWith(lastName: lastName, status: InfoUserStatus.Empty);
   }
 
   Future<void> submit(BuildContext context) async {
-    print('Submitting user info: name=${nameController.text}, lastName=${lastNameController.text}');
+    final name = state.name.trim();
+    final lastName = state.lastName.trim();
+
+    print('Submitting user info: name=$name, lastName=$lastName');
+
     state = state.copyWith(
       hasError: false,
       errorText: '',
       status: InfoUserStatus.Processing,
     );
     ref.read(loadingProvider.notifier).start();
-
-    final name = nameController.text.trim();
-    final lastName = lastNameController.text.trim();
 
     if (name.isEmpty || lastName.isEmpty) {
       print('Validation failed: Empty fields');
@@ -94,14 +91,11 @@ class InfoUserNotifier extends StateNotifier<InfoUserState> {
             errorText: '',
             status: InfoUserStatus.Success,
           );
-          // Naviguer vers la page suivante
-          var userDetail = {
-            "name": name,
-            "lastName": lastName,
-          };
+          var userDetail = {"name": name, "lastName": lastName};
           singleton<LocalStorageFactory>().setUserDetails(userDetail);
           ref.read(authProvider).login();
-          singleton<AppRouter>().replace(const ShareLocationRoute()); // Ajuste selon ta route
+          ref.read(homeProvider.notifier).refreshUser();
+          singleton<AppRouter>().replace(const ShareLocationRoute());
           print('User info saved successfully');
         },
         onError: (error) {
@@ -125,16 +119,7 @@ class InfoUserNotifier extends StateNotifier<InfoUserState> {
   }
 
   void reset() {
-    nameController.clear();
-    lastNameController.clear();
     state = const InfoUserState();
-  }
-
-  @override
-  void dispose() {
-    nameController.dispose();
-    lastNameController.dispose();
-    super.dispose();
   }
 }
 

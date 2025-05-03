@@ -14,29 +14,35 @@ enum OtpStatus {
   Empty,
   Processing,
   Error,
-  Success
+  Success,
+  Dirty,
 }
 
 class OtpState {
   final bool hasError;
   final String errorMessage;
   final OtpStatus status;
+  final String pin;
 
   OtpState({
     this.hasError = false,
     this.errorMessage = '',
     this.status = OtpStatus.Empty,
+    this.pin = '',
+
   });
 
   OtpState copyWith({
     bool? hasError,
     String? errorMessage,
     OtpStatus? status,
+    String? pin,
   }){
     return OtpState(
       hasError: hasError ?? this.hasError,
       errorMessage: errorMessage ?? this.errorMessage,
       status: status ?? this.status,
+      pin: pin ?? this.pin,
     );
   }
 }
@@ -44,17 +50,27 @@ class OtpState {
 class OtpNotifier extends StateNotifier<OtpState> {
   late final Ref ref;
   late final String verificationId;
-  final TextEditingController pinController = TextEditingController();
 
   OtpNotifier(this.ref, this.verificationId) : super(OtpState());
 
+  void updatePin(String pin) {
+    state = state.copyWith(
+      pin: pin,
+      hasError: false,
+      errorMessage: '',
+      status: OtpStatus.Dirty,
+    );
+  }
+
   Future<void> verifyOTP(BuildContext context) async {
-    final pin = pinController.text.trim();
+    final pin = state.pin.trim();
     print('Verifying OTP: $pin with verificationId: $verificationId');
+
     state = state.copyWith(
       hasError: false,
       errorMessage: '',
       status: OtpStatus.Processing,
+      pin: '',
     );
     ref.read(loadingProvider.notifier).start();
 
@@ -63,16 +79,19 @@ class OtpNotifier extends StateNotifier<OtpState> {
         hasError: true,
         errorMessage: 'Le code doit contenir 6 chiffres',
         status: OtpStatus.Error,
+        pin: '',
       );
       ref.read(loadingProvider.notifier).complete();
       return;
     }
+
     try {
       await AuthService().verifOtp(
         otp: pin,
         verificationId: verificationId,
         onSuccess: () {
           state = state.copyWith(
+            pin: '',
             hasError: false,
             errorMessage: '',
             status: OtpStatus.Success,
@@ -82,6 +101,7 @@ class OtpNotifier extends StateNotifier<OtpState> {
         },
         onError: (error) {
           state = state.copyWith(
+            pin: '',
             hasError: true,
             errorMessage: error,
             status: OtpStatus.Error,
@@ -90,20 +110,15 @@ class OtpNotifier extends StateNotifier<OtpState> {
       );
     } catch (e) {
       state = state.copyWith(
+        pin: '',
         hasError: true,
         errorMessage: e.toString(),
         status: OtpStatus.Error,
       );
     } finally {
       ref.read(loadingProvider.notifier).complete();
+      state = state.copyWith(status: OtpStatus.Empty, pin: '');
     }
-  }
-
-  @override
-  void dispose() {
-    // TODO: implement dispose
-    super.dispose();
-    pinController.dispose();
   }
 }
 

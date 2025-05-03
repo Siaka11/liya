@@ -13,6 +13,7 @@ import 'package:liya/routes/app_router.dart';
 import 'package:liya/routes/app_router.gr.dart';
 import 'package:logger/logger.dart';
 import '../../core/loading_provider.dart';
+import '../core/local_storage_factory.dart';
 
 
 enum LocationStatus { Empty, Loading, Success, Error }
@@ -137,6 +138,8 @@ class ShareLocationNotifier extends StateNotifier<ShareLocationState> {
           : 'Adresse inconnue';
       if (address.isEmpty) address = 'Adresse inconnue';
       logger.i('Adresse récupérée : $address');
+      singleton<LocalStorageFactory>().setObject('address', address);
+      singleton<LocalStorageFactory>().setObject('coordinates', {'latitude': position.latitude, 'longitude': position.longitude});
 
       state = state.copyWith(
         position: position,

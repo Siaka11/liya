@@ -8,6 +8,7 @@ import 'package:liya/core/ui/components/custom_field.dart';
 import 'package:liya/modules/auth/login_provider.dart';
 
 import '../../core/ui/theme/theme.dart';
+import '../../routes/app_router.gr.dart';
 
 
 @RoutePage()
@@ -21,11 +22,18 @@ class AuthPage extends ConsumerStatefulWidget {
 class _AuthPageState extends ConsumerState<AuthPage> with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _animation;
-
+  late final TextEditingController _phoneController;
+  bool _isSubmitting = false;
 
   @override
   void initState() {
     super.initState();
+
+    _phoneController = TextEditingController();
+    _phoneController.addListener(() {
+      ref.read(loginProvider.notifier).updatePhoneNumber(_phoneController.text);
+    });
+
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 2),
@@ -36,11 +44,49 @@ class _AuthPageState extends ConsumerState<AuthPage> with SingleTickerProviderSt
     );
   }
 
+  @override
+  void dispose() {
+    _animationController.dispose();
+    _phoneController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleSubmit() async {
+    setState(() => _isSubmitting = true);
+    try {
+      final loginForm = ref.read(loginProvider.notifier);
+      final success = await loginForm.submit();
+      if (mounted && success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Code envoyé'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        // Utiliser ref.read pour obtenir l'état le plus récent
+        final updatedLoginState = ref.read(loginProvider);
+        final verificationId = updatedLoginState.verificationId;
+        if (mounted && verificationId != null) {
+          context.router.replace(OtpRoute(verificationId: verificationId));
+        } else if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Erreur : verificationId manquant'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final _loginProviderForm = ref.read(loginProvider.notifier);
-    final _loginProvider = ref.watch(loginProvider);
+    final loginState = ref.watch(loginProvider);
+    final loginForm = ref.read(loginProvider.notifier);
+
     return Scaffold(
       body: Stack(
         children: [
@@ -84,74 +130,62 @@ class _AuthPageState extends ConsumerState<AuthPage> with SingleTickerProviderSt
               ],
             ),
           ),
-          const SizedBox(height: 100),
-          // Contenu UI
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 200.0, horizontal: 20.0),
+            padding: const EdgeInsets.symmetric(vertical: 200, horizontal: 20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
                   "VEUILLEZ SAISIR VOTRE NUMERO S'IL VOUS PLAÎT",
                   style: TextStyle(color: Colors.white, fontSize: 21, fontWeight: FontWeight.bold),
-                  textDirection: TextDirection.ltr,
                 ),
                 const SizedBox(height: 10),
                 const Text(
                   "Ce numéro recevra un code de confirmation",
                   style: TextStyle(color: Colors.white, fontSize: 13),
-                  textDirection: TextDirection.ltr,
                 ),
                 const SizedBox(height: 30),
                 SizedBox(
                   width: double.infinity,
                   height: 55,
-                    child: CustomField(
-                      controller: _loginProviderForm.phoneController,
-                      fontSize: 21,
-                      prefixText: "+225 ",
-                      paddingLeft: 12,
-                      keyboardType: TextInputType.phone,
-                    ),
+                  child: CustomField(
+                    controller: _phoneController,
+                    fontSize: 21,
+                    prefixText: "+225 ",
+                    paddingLeft: 12,
+                    keyboardType: TextInputType.phone,
+                  ),
                 ),
                 const SizedBox(height: 20),
-                Column(
-                  children: [
-                    (_loginProvider.hasError)
-                        ? Container(
-                        decoration: BoxDecoration(
-                          color: Colors.red,
-                          borderRadius: BorderRadius.circular(5),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Text(
-                            _loginProvider.errorText,
-                            style: const TextStyle(color: Colors.white),
-                          ),
-                        )
-                    ): Container(),
-                  ],
-                ),
+                if (loginState.hasError)
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                    padding: const EdgeInsets.all(8),
+                    child: Text(
+                      loginState.errorText,
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                  ),
               ],
             ),
           ),
-          const SizedBox(height: 20),
           Align(
             alignment: Alignment.bottomCenter,
             child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 80.0, horizontal: 20.0),
+              padding: const EdgeInsets.symmetric(vertical: 80, horizontal: 20),
               child: SizedBox(
                 width: double.infinity,
                 child: CustomButton(
-                  text: "Envoyer",
+                  text: _isSubmitting ? "Envoi en cours..." : "Envoyer",
                   borderRadius: 50,
-                  onPressedButton: () => _loginProviderForm.submit(context),
-                  bgColor: UIColors.white,
+                  onPressedButton: _isSubmitting ? null : _handleSubmit,
+                  bgColor: UIColors.orange,
                   fontSize: 18,
                   paddingVertical: 18,
                 ),
-
               ),
             ),
           ),
@@ -159,6 +193,6 @@ class _AuthPageState extends ConsumerState<AuthPage> with SingleTickerProviderSt
       ),
     );
   }
-
 }
+
 

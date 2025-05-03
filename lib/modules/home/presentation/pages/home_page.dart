@@ -13,6 +13,7 @@ class HomePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final homeState = ref.watch(homeProvider);
+    print('HomePage build - User: ${homeState.user.name}');
 
     return Scaffold(
       body: SafeArea(

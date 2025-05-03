@@ -2,6 +2,7 @@ import 'package:auto_route/auto_route.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:liya/core/local_storage_factory.dart';
 import 'package:liya/core/singletons.dart';
 import 'package:liya/modules/auth/auth_service.dart';
 import 'package:liya/routes/app_router.dart';
@@ -9,6 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../config/app_information.dart';
 import '../../core/loading_provider.dart';
 import '../../routes/app_router.gr.dart';
+import '../home/application/home_provider.dart';
 import 'auth_provider.dart';
 
 enum AuthStatus { Empty, Dirty, Processing, Error, Success }
@@ -18,15 +20,17 @@ class AuthModel {
   final String otp;
   final String name;
   final String lastName;
+  final String? verificationId; // Nouveau champ pour stocker le verificationId
   final AuthStatus status;
-  final bool hasError; // Ajouté
-  final String errorText; // Ajouté
+  final bool hasError;
+  final String errorText;
 
   const AuthModel({
     this.phoneNumber = '',
     this.otp = '',
     this.name = '',
     this.lastName = '',
+    this.verificationId,
     this.status = AuthStatus.Empty,
     this.hasError = false,
     this.errorText = '',
@@ -37,6 +41,7 @@ class AuthModel {
     String? otp,
     String? name,
     String? lastName,
+    String? verificationId,
     AuthStatus? status,
     bool? hasError,
     String? errorText,
@@ -46,6 +51,7 @@ class AuthModel {
       otp: otp ?? this.otp,
       name: name ?? this.name,
       lastName: lastName ?? this.lastName,
+      verificationId: verificationId ?? this.verificationId,
       status: status ?? this.status,
       hasError: hasError ?? this.hasError,
       errorText: errorText ?? this.errorText,
@@ -56,99 +62,126 @@ class AuthModel {
 }
 
 class LoginProvider extends StateNotifier<AuthModel> {
-  bool _isLoggedIn = false;
-  bool get isLoggedIn => _isLoggedIn;
-
-  LoginProvider([Ref? ref, AuthModel model = _initial]) : super(model) {
-    phoneController = TextEditingController(text: model.phoneNumber);
-    phoneController.addListener(_updateState);
-    reference = ref!;
-  }
+  LoginProvider() : super(_initial);
 
   static const _initial = AuthModel();
-  late final Ref reference;
-  late final TextEditingController phoneController;
 
-  void _updateState({
-    AuthStatus status = AuthStatus.Dirty,
-    bool clear = false,
-  }) {
+  void updatePhoneNumber(String value) {
     state = state.copyWith(
-      phoneNumber: clear ? '' : phoneController.value.text,
-      status: status,
-      hasError: state.hasError, // Conserver l'état précédent
-      errorText: state.errorText, // Conserver l'état précédent
+      phoneNumber: value,
+      status: AuthStatus.Dirty,
     );
   }
 
-  String get phoneNumber => phoneController.value.text;
+  Future<bool> submit() async {
+    final phoneNumber = state.phoneNumber.trim();
 
-  Future<void> submit(BuildContext context) async {
-    print('Submit called with phone: $phoneNumber');
+    if (phoneNumber.isEmpty) {
+      state = state.copyWith(
+        hasError: true,
+        errorText: 'Veuillez entrer un numéro de téléphone',
+        status: AuthStatus.Error,
+      );
+      return false;
+    }
+
+    if (!RegExp(r'^\d{10}$').hasMatch(phoneNumber)) {
+      state = state.copyWith(
+        hasError: true,
+        errorText: 'Le numéro doit contenir exactement 10 chiffres',
+        status: AuthStatus.Error,
+      );
+      return false;
+    }
+
     state = state.copyWith(
+      status: AuthStatus.Processing,
       hasError: false,
       errorText: '',
-      status: AuthStatus.Processing,
     );
-    reference.read(loadingProvider.notifier).start();
-
-    final cleanedPhone = phoneNumber.trim();
-    if (cleanedPhone.isEmpty || cleanedPhone.length < 10) {
-      print('Validation failed');
-      state = state.copyWith(
-        hasError: true,
-        errorText: 'Veuillez entrer un numéro de téléphone valide.',
-        status: AuthStatus.Error,
-      );
-      reference.read(loadingProvider.notifier).complete();
-      return;
-    }
 
     try {
-
-      if(phoneNumber == '0709976498'){
-        reference.read(authProvider).login();
-        state = state.copyWith(
-          hasError: false,
-          errorText: '',
-          status: AuthStatus.Success,
-        );
-        context.pushRoute(const ShareLocationRoute());
-      } else{
-       final result = await AuthService().verifynumpad(
-         phoneNumber: phoneNumber,
-         context: context,
-         onCodeSent: (String verificationId) {
-           print('Code sent: $verificationId');
-           singleton<AppRouter>().replace(OtpRoute(verificationId: verificationId));
-         },
-       );
-       state = state.copyWith(
-         hasError: false,
-         errorText: '',
-         status: AuthStatus.Success,
-       );
-     }
-    } catch (e) {
-      print('Error occurred: $e');
+      // Simulation de l'envoi d'un OTP (remplace par une vraie requête si nécessaire)
+      //await Future.delayed(const Duration(seconds: 2));
+      const verificationId = '123456'; // Simulé
       state = state.copyWith(
-        hasError: true,
-        errorText: e.toString(),
-        status: AuthStatus.Error,
+        verificationId: verificationId,
+        status: AuthStatus.Success,
       );
-    } finally {
-      reference.read(loadingProvider.notifier).complete();
-      state = state.copyWith(status: AuthStatus.Empty);
+
+      // Afficher une snackbar pour indiquer que le code a été envoyé
+
+      return true;
+    } catch (e) {
+      state = state.copyWith(
+        status: AuthStatus.Error,
+        hasError: true,
+        errorText: 'Une erreur est survenue : $e',
+      );
+      return false;
     }
   }
 
-  @override
-  void dispose() {
-    phoneController.dispose();
-    super.dispose();
+  void clear() {
+    state = _initial;
   }
 }
+/*
+Future<void> submit(BuildContext context, WidgetRef ref) async {
+  final cleanedPhone = state.phoneNumber.trim();
 
-final loginProvider = StateNotifierProvider<LoginProvider, AuthModel>(
-      (ref) => LoginProvider(ref),
+  state = state.copyWith(
+    hasError: false,
+    errorText: '',
+    status: AuthStatus.Processing,
+  );
+  ref.read(loadingProvider.notifier).start();
+
+  if (cleanedPhone.isEmpty || cleanedPhone.length < 10) {
+    state = state.copyWith(
+      hasError: true,
+      errorText: 'Veuillez entrer un numéro de téléphone valide.',
+      status: AuthStatus.Error,
+    );
+    ref.read(loadingProvider.notifier).complete();
+    return;
+  }
+
+  try {
+    if (cleanedPhone == '0709976498') {
+      ref.read(authProvider).login();
+
+      await singleton<LocalStorageFactory>().setUserDetails({
+        "name": "auro2",
+        "lastName": "Junior",
+      });
+
+      ref.read(homeProvider.notifier).refreshUser();
+
+      state = state.copyWith(status: AuthStatus.Success);
+      clear();
+      context.pushRoute(const ShareLocationRoute());
+    } else {
+      await AuthService().verifynumpad(
+        phoneNumber: cleanedPhone,
+        context: context,
+        onCodeSent: (verificationId) {
+          singleton<AppRouter>().replace(OtpRoute(verificationId: verificationId));
+        },
+      );
+      state = state.copyWith(status: AuthStatus.Success);
+    }
+  } catch (e) {
+    state = state.copyWith(
+      hasError: true,
+      errorText: e.toString(),
+      status: AuthStatus.Error,
+    );
+  } finally {
+    ref.read(loadingProvider.notifier).complete();
+    state = state.copyWith(status: AuthStatus.Empty);
+  }
+}*/
+final loginProvider = StateNotifierProvider.autoDispose<LoginProvider, AuthModel>(
+      (ref) => LoginProvider(),
 );

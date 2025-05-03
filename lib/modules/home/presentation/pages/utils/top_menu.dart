@@ -8,6 +8,7 @@ import '../../../../../core/singletons.dart';
 import '../../../../../routes/app_router.dart';
 import '../../../../../routes/app_router.gr.dart';
 import '../../../../auth/auth_provider.dart';
+import '../../../../auth/info_user_provider.dart';
 import '../../../application/home_provider.dart';
 
 void showTopMenu(BuildContext context, WidgetRef ref) {
@@ -85,12 +86,14 @@ void showTopMenu(BuildContext context, WidgetRef ref) {
                         // Option "Déconnexion"
                         Expanded(
                           child: GestureDetector(
-                            onTap: () {
-                              Navigator.of(context).pop(); // Ferme le menu
-                              ref.read(authProvider.notifier).logout();
-                              ref.read(homeProvider.notifier).logout();
-                              ref.invalidate(homeProvider);
+                            onTap: () async {
+                              Navigator.of(context).pop();
+                              await ref.read(homeProvider.notifier).logout();
+                              ref.invalidate(infoUserProvider);
+                              await ref.read(authProvider.notifier).logout(); // Synchronise avec AuthProvider
+                              ref.invalidate(homeProvider); // Force une nouvelle instance
                               singleton<AppRouter>().replace(const AuthRoute());
+
                             },
                             child: const Column(
                               mainAxisSize: MainAxisSize.min,

@@ -45,6 +45,7 @@ class HomeState {
 class HomeNotifier extends StateNotifier<HomeState> {
   final GetHomeOptions getHomeOptions;
 
+
   HomeNotifier(this.getHomeOptions) : super(const HomeState()) {
     _init();
   }
@@ -71,6 +72,11 @@ class HomeNotifier extends StateNotifier<HomeState> {
     }
   }
 
+  Future<void> refreshUser() async {
+    print('Refreshing user data');
+    await _loadUserData();  // ça recharge depuis LocalStorage et update state
+  }
+
   Future<void> fetchOptions() async {
     state = state.copyWith(isLoading: true, error: null);
     try {
@@ -94,6 +100,7 @@ class HomeNotifier extends StateNotifier<HomeState> {
     print('Logging out from HomeNotifier');
     state = state.copyWith(user: const User(name: '', lastName: ''));
     await _loadUserData(); // Recharger les données pour refléter l'état local
+
   }
 }
 

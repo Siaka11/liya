@@ -8,16 +8,44 @@ import '../../core/loading_provider.dart';
 import '../../core/ui/theme/theme.dart';
 
 @RoutePage()
-class InfoUserPage extends ConsumerWidget {
+class InfoUserPage extends ConsumerStatefulWidget {
   const InfoUserPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<InfoUserPage> createState() => _InfoUserPageState();
+}
+
+class _InfoUserPageState extends ConsumerState<InfoUserPage> {
+  late final TextEditingController nameController;
+  late final TextEditingController lastNameController;
+
+  @override
+  void initState() {
+    super.initState();
+    final state = ref.read(infoUserProvider);
+    nameController = TextEditingController(text: state.name);
+    lastNameController = TextEditingController(text: state.lastName);
+
+    nameController.addListener(() {
+      ref.read(infoUserProvider.notifier).updateName(nameController.text.trim());
+    });
+    lastNameController.addListener(() {
+      ref.read(infoUserProvider.notifier).updateLastName(lastNameController.text.trim());
+    });
+  }
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    lastNameController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final infoUserState = ref.watch(infoUserProvider);
     final infoUserNotifier = ref.read(infoUserProvider.notifier);
     final isLoading = ref.watch(loadingProvider);
-
-    print('InfoUser UI: hasError=${infoUserState.hasError}, errorText=${infoUserState.errorText}');
 
     return Scaffold(
       body: Container(
@@ -58,7 +86,7 @@ class InfoUserPage extends ConsumerWidget {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
                 child: CustomField(
-                  controller: infoUserNotifier.nameController,
+                  controller: nameController,
                   keyboardType: TextInputType.text,
                   placeholder: "Nom",
                   fontSize: 16,
@@ -80,7 +108,7 @@ class InfoUserPage extends ConsumerWidget {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
                 child: CustomField(
-                  controller: infoUserNotifier.lastNameController,
+                  controller: lastNameController,
                   keyboardType: TextInputType.text,
                   placeholder: "Prénom",
                   fontSize: 16,
@@ -126,7 +154,6 @@ class InfoUserPage extends ConsumerWidget {
                   ),
                 ),
               ),
-
             ],
           ),
         ),
