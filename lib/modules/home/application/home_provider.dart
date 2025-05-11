@@ -1,12 +1,14 @@
 
 import 'dart:convert';
 
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/local_storage_factory.dart';
 import '../../../core/singletons.dart';
 import '../../../routes/app_router.dart';
+import '../../../routes/app_router.gr.dart';
 import '../data/datasources/home_local_datasource.dart';
 import '../data/repositories/home_repository_impl.dart';
 import 'package:liya/modules/home/domain/entities/home_option.dart';
@@ -86,13 +88,23 @@ class HomeNotifier extends StateNotifier<HomeState> {
       state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
+  // Map pour associer les titres aux routes
+  final _routeMap = {
+    'Je veux commander un plat': (context, option) => AutoRouter.of(context).push(HomeRestaurantRoute(option: option)),
+    //'Je veux commander un plat': (context, option) => singleton<AppRouter>().push(const HomeRestaurantRoute()),
+/*    'Je veux expédier un colis': (context, option) => singleton<AppRouter>().push(const ShipPackageRoute()),
+    'Je veux livrer': (context, option) => singleton<AppRouter>().push(const DeliveryRoute()),
+    'Faire des courses': (context, option) => singleton<AppRouter>().push(const ShoppingRoute()),
+    'Administrateur': (context, option) => singleton<AppRouter>().push(const AdminRoute()),*/
+  };
+
   void onOptionSelected(BuildContext context, HomeOption option) {
-    if (option.title == 'Administrateur') {
-      print('Administrateur');
-      //singleton<AppRouter>().push(const AdminRoute());
+    final navigate = _routeMap[option.title];
+    if (navigate != null) {
+      print('Navigating to ${option.title}');
+      navigate(context, option);
     } else {
-      print('Commande');
-      //singleton<AppRouter>().push(OrderRoute(option: option));
+      print('Unknown module: ${option.title}');
     }
   }
 

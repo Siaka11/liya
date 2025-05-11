@@ -7,6 +7,7 @@ import '../config/app_information.dart';
 import '../core/singletons.dart';
 import '../modules/auth/auth_provider.dart';
 import '../modules/auth/info_user_page.dart';
+import '../modules/home/domain/entities/home_option.dart';
 
 @AutoRouterConfig()
 class AppRouter extends $AppRouter implements AutoRouteGuard {
@@ -37,5 +38,7 @@ class AppRouter extends $AppRouter implements AutoRouteGuard {
     AutoRoute(page: OtpRoute.page),
     AutoRoute(page: InfoUserRoute.page),
     AutoRoute(page: ShareLocationRoute.page),
-  ];
+    AutoRoute(page: HomeRestaurantRoute.page),
+    AutoRoute(page: DishDetailRoute.page),
+ ];
 }
