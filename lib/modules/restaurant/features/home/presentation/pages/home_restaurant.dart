@@ -56,6 +56,7 @@ class HomeRestaurantPage extends ConsumerWidget {
                       borderRadius: BorderRadius.circular(30),
                       borderSide: BorderSide.none,
                     ),
+
                   ),
                 ),
               ),
