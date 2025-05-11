@@ -20,6 +20,7 @@ class _FilterSectionState extends State<FilterSection> {
     FilterItem(label: "Europe", imageUrl: "http://api-restaurant.toptelsig.com/uploads/section/europeen.svg"),
     FilterItem(label: "Côte d'Ivoire", imageUrl: "http://api-restaurant.toptelsig.com/uploads/section/ivoire.svg"),
     FilterItem(label: "Pizza", imageUrl: "http://api-restaurant.toptelsig.com/uploads/section/pizza.svg"),
+    FilterItem(label: "Afrique", imageUrl: "http://api-restaurant.toptelsig.com/uploads/section/europeen.svg"),
     FilterItem(label: "Hamburger", imageUrl: "http://api-restaurant.toptelsig.com/uploads/section/europeen.svg"),
   ];
 
