@@ -1,6 +1,7 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:liya/modules/restaurant/features/home/presentation/pages/restaurant_detail_page.dart';
 import 'package:liya/modules/restaurant/features/home/presentation/widget/filter_section.dart';
 import 'package:liya/modules/restaurant/features/home/presentation/widget/home_restaurant_header.dart';
 import 'package:liya/modules/restaurant/features/home/presentation/widget/navigation_footer.dart';
@@ -190,12 +191,36 @@ class HomeRestaurantPage extends ConsumerWidget {
                                 children: [
                                   RestaurantCard(
                                     restaurant: restaurantState.restaurants![i],
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => RestaurantDetailPage(
+                                            id: restaurantState.restaurants![i].id,
+                                            name: restaurantState.restaurants![i].name,
+                                            description: restaurantState.restaurants![i].description ?? '',
+                                          ),
+                                        ),
+                                      );
+                                    },
                                   ),
                                   if (i + 1 < restaurantState.restaurants!.length)
                                     Padding(
                                       padding: const EdgeInsets.only(left: 8),
                                       child: RestaurantCard(
                                         restaurant: restaurantState.restaurants![i + 1],
+                                        onTap: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) => RestaurantDetailPage(
+                                                id: restaurantState.restaurants![i + 1].id, // Correction : i + 1
+                                                name: restaurantState.restaurants![i + 1].name, // Correction : i + 1
+                                                description: restaurantState.restaurants![i + 1].description ?? '', // Correction : i + 1
+                                              ),
+                                            ),
+                                          );
+                                        },
                                       ),
                                     ),
                                 ],

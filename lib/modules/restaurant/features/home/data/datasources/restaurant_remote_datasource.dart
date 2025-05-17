@@ -3,6 +3,9 @@ import 'package:http/http.dart' as http;
 import '../../domain/entities/restaurant.dart';
 import 'dart:convert';
 
+import '../models/dish_model.dart';
+
+
 class RestaurantRemoteDatasource {
   final http.Client client;
 
@@ -18,4 +21,5 @@ class RestaurantRemoteDatasource {
       throw Exception('Échec de la récupération des restaurants');
     }
   }
+
 }
