@@ -6,10 +6,10 @@ import '../entities/cart_item.dart';
 
 class AddToCart {
   final CartRepository cartRepository;
+
   AddToCart(this.cartRepository);
 
-  Future<Either<Failure, void>> call(CartItem cartItem) async {
-    return await cartRepository.addTocart(cartItem);
+  Future<Either<Failure, void>> call(String userId, CartItem cartItem) async {
+    return await cartRepository.addToCart(userId, cartItem);
   }
-
 }

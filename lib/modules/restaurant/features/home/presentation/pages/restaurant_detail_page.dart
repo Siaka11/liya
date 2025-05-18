@@ -4,8 +4,19 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:liya/core/ui/theme/theme.dart';
 
+import '../../../card/data/datasources/cart_remote_data_source.dart';
+import '../../../card/domain/entities/cart_item.dart';
+import '../../../card/domain/repositories/cart_repository.dart';
+import '../../../card/domain/usecases/add_to_cart.dart';
 import '../../application/dish_provider.dart';
+import '../../application/selected_quantity_provider.dart';
 import '../widget/dish_card.dart';
+import 'dish_detail_page.dart';
+
+final addToCartProvider = Provider<AddToCart>((ref) {
+  return AddToCart(
+      CartRepositoryImpl(remoteDataSource: CartRemoteDataSourceImpl()));
+});
 
 @RoutePage(name: 'RestaurantDetailRoute')
 class RestaurantDetailPage extends ConsumerWidget {
@@ -24,25 +35,59 @@ class RestaurantDetailPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final dishController = ref.read(dishControllerProvider(id).notifier);
     final dishState = ref.watch(dishControllerProvider(id));
+    final addToCart = ref.watch(addToCartProvider);
+    final selectedQuantity = ref.watch(selectedQuantityProvider);
+    final cartRepository =
+        CartRepositoryImpl(remoteDataSource: CartRemoteDataSourceImpl());
 
-    // Charger les plats au premier rendu
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    // Créer un StateProvider pour forcer le rafraîchissement
+    final refreshKey = StateProvider((ref) => 0);
+    final refreshCount = ref.watch(refreshKey);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (dishState.dishes == null && !dishState.isLoading) {
         dishController.loadDishes(id);
       }
     });
 
+    Future<int> getCartItemQuantity(String dishName) async {
+      final userId = 'testUserId';
+      print('DEBUG: Recherche du plat dans le panier: "$dishName"');
+      final result = await cartRepository.getCartItems(userId);
+      return result.fold(
+        (failure) {
+          print(
+              'DEBUG: Erreur lors de la récupération du panier: ${failure.message}');
+          return 0;
+        },
+        (cartItems) {
+          print(
+              'DEBUG: Nombre d\'articles dans le panier: ${cartItems.length}');
+          for (var item in cartItems) {
+            print(
+                'DEBUG: Article dans le panier - Nom: "${item.name}", Quantité: ${item.quantity}');
+            // Comparaison exacte des noms
+            if (item.name.trim() == dishName.trim()) {
+              print(
+                  'DEBUG: ✓ Correspondance trouvée pour "$dishName" avec quantité: ${item.quantity}');
+              return item.quantity;
+            }
+          }
+          print('DEBUG: Aucun article trouvé pour le plat: "$dishName"');
+          return 0;
+        },
+      );
+    }
+
     return Scaffold(
       backgroundColor: UIColors.defaultColor,
       body: Stack(
         children: [
-          // Arrière-plan avec l'image du restaurant
           Container(
-            height: 300, // Réduire la hauteur car le texte n'est plus dessus
+            height: 300,
             decoration: BoxDecoration(
               image: DecorationImage(
-                image: AssetImage(
-                    'assets/basi.jpg'), // Utilisation de l'image statique
+                image: AssetImage('assets/basi.jpg'),
                 fit: BoxFit.cover,
                 colorFilter: ColorFilter.mode(
                   Colors.black.withOpacity(0.3),
@@ -51,15 +96,11 @@ class RestaurantDetailPage extends ConsumerWidget {
               ),
             ),
           ),
-          // Contenu principal
           SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Espace pour l'image d'arrière-plan
-                SizedBox(
-                    height: 300), // Espace pour l'image et le bouton de retour
-                // Section blanche arrondie avec toutes les informations
+                SizedBox(height: 300),
                 Container(
                   decoration: const BoxDecoration(
                     color: Colors.white,
@@ -71,7 +112,6 @@ class RestaurantDetailPage extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Nom du restaurant
                         Text(
                           name,
                           style: TextStyle(
@@ -80,7 +120,6 @@ class RestaurantDetailPage extends ConsumerWidget {
                           ),
                         ),
                         SizedBox(height: 8),
-                        // Temps de livraison
                         Row(
                           children: [
                             Icon(Icons.local_shipping,
@@ -94,14 +133,12 @@ class RestaurantDetailPage extends ConsumerWidget {
                           ],
                         ),
                         SizedBox(height: 4),
-                        // Description
                         Text(
                           description,
                           style:
                               TextStyle(fontSize: 14, color: Colors.grey[700]),
                         ),
                         SizedBox(height: 8),
-                        // Liste des plats
                         Padding(
                           padding: EdgeInsets.only(bottom: 4),
                           child: Text(
@@ -110,6 +147,40 @@ class RestaurantDetailPage extends ConsumerWidget {
                                 fontSize: 20, fontWeight: FontWeight.bold),
                           ),
                         ),
+                        // Affichage de la quantité sélectionnée
+                        if (dishState.dishes != null)
+                          ...dishState.dishes!.map((dish) {
+                            final selectedQty = ref
+                                .read(selectedQuantityProvider.notifier)
+                                .getQuantity(dish.id ?? '');
+                            return selectedQty > 0
+                                ? Padding(
+                                    padding: const EdgeInsets.only(bottom: 8),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          '${dish.name} - Quantité sélectionnée : $selectedQty',
+                                          style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold),
+                                        ),
+                                        IconButton(
+                                          icon: Icon(Icons.close,
+                                              color: Colors.red),
+                                          onPressed: () {
+                                            ref
+                                                .read(selectedQuantityProvider
+                                                    .notifier)
+                                                .setQuantity(dish.id ?? '', 0);
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  )
+                                : SizedBox.shrink();
+                          }).toList(),
                         dishState.isLoading
                             ? Center(child: CircularProgressIndicator())
                             : dishState.error != null
@@ -120,22 +191,97 @@ class RestaurantDetailPage extends ConsumerWidget {
                                         child: Text(
                                             "Aucun plat disponible pour ce restaurant"))
                                     : ListView.builder(
+                                        key: ValueKey(refreshCount),
                                         shrinkWrap: true,
                                         padding: EdgeInsets.zero,
                                         physics: NeverScrollableScrollPhysics(),
                                         itemCount: dishState.dishes!.length,
                                         itemBuilder: (context, index) {
                                           final dish = dishState.dishes![index];
-                                          return DishCard(
-                                            name: dish.name,
-                                            price: dish.price,
-                                            // originalPrice: '6000 CFA', // Exemple
-                                            //discount: '-35%', // Exemple
-                                            imageUrl: dish.imageUrl,
-                                            description: dish.description ?? '',
-                                            onAddToCart: () {
+                                          print(
+                                              'DEBUG: Construction DishCard pour le plat: "${dish.name}"');
+                                          print(
+                                              'DEBUG: Données du plat - ID: ${dish.id}, Nom: ${dish.name}, Prix: ${dish.price}');
+
+                                          return FutureBuilder<int>(
+                                            key: ValueKey(
+                                                '${dish.name}_$refreshCount'),
+                                            future: getCartItemQuantity(dish
+                                                .name), // Utiliser le nom au lieu de l'ID
+                                            builder: (context, snapshot) {
+                                              if (snapshot.connectionState ==
+                                                  ConnectionState.waiting) {
+                                                return DishCard(
+                                                  name: dish.name,
+                                                  price: dish.price,
+                                                  imageUrl: dish.imageUrl,
+                                                  description:
+                                                      dish.description ?? '',
+                                                  quantity: 0,
+                                                  onTap: () async {
+                                                    await Navigator.push(
+                                                      context,
+                                                      MaterialPageRoute(
+                                                        builder: (context) =>
+                                                            DishDetailPage(
+                                                          id: dish.id ?? '',
+                                                          restaurantId: id,
+                                                          name: dish.name,
+                                                          price: dish.price,
+                                                          imageUrl:
+                                                              dish.imageUrl,
+                                                          rating: '0.0',
+                                                          description:
+                                                              dish.description ??
+                                                                  '',
+                                                        ),
+                                                      ),
+                                                    );
+                                                    // Forcer le rafraîchissement après le retour
+                                                    ref
+                                                        .read(
+                                                            refreshKey.notifier)
+                                                        .state++;
+                                                  },
+                                                );
+                                              }
+
+                                              final quantity =
+                                                  snapshot.data ?? 0;
                                               print(
-                                                  "Ajouté au panier : ${dish.name} (Restaurant: $id)");
+                                                  'DEBUG: Quantité finale pour "${dish.name}": $quantity');
+
+                                              return DishCard(
+                                                name: dish.name,
+                                                price: dish.price,
+                                                imageUrl: dish.imageUrl,
+                                                description:
+                                                    dish.description ?? '',
+                                                quantity: quantity,
+                                                onTap: () async {
+                                                  await Navigator.push(
+                                                    context,
+                                                    MaterialPageRoute(
+                                                      builder: (context) =>
+                                                          DishDetailPage(
+                                                        id: dish.id ?? '',
+                                                        restaurantId: id,
+                                                        name: dish.name,
+                                                        price: dish.price,
+                                                        imageUrl: dish.imageUrl,
+                                                        rating: '0.0',
+                                                        description:
+                                                            dish.description ??
+                                                                '',
+                                                      ),
+                                                    ),
+                                                  );
+                                                  // Forcer le rafraîchissement après le retour
+                                                  ref
+                                                      .read(refreshKey.notifier)
+                                                      .state++;
+                                                },
+                                              );
                                             },
                                           );
                                         },
@@ -147,7 +293,6 @@ class RestaurantDetailPage extends ConsumerWidget {
               ],
             ),
           ),
-          // Bouton de retour
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.all(8.0),
