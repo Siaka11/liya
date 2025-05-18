@@ -258,6 +258,44 @@ class RestaurantDetailPage extends ConsumerWidget {
                                                 description:
                                                     dish.description ?? '',
                                                 quantity: quantity,
+                                                onDelete: quantity > 0
+                                                    ? () async {
+                                                        try {
+                                                          final userId =
+                                                              'testUserId'; // À remplacer par l'ID réel de l'utilisateur
+                                                          await cartRepository
+                                                              .removeFromCart(
+                                                                  userId,
+                                                                  dish.name);
+                                                          // Forcer le rafraîchissement après la suppression
+                                                          ref
+                                                              .read(refreshKey
+                                                                  .notifier)
+                                                              .state++;
+                                                          ScaffoldMessenger.of(
+                                                                  context)
+                                                              .showSnackBar(
+                                                            SnackBar(
+                                                              content: Text(
+                                                                  'Article supprimé du panier'),
+                                                              backgroundColor:
+                                                                  Colors.green,
+                                                            ),
+                                                          );
+                                                        } catch (e) {
+                                                          ScaffoldMessenger.of(
+                                                                  context)
+                                                              .showSnackBar(
+                                                            SnackBar(
+                                                              content: Text(
+                                                                  'Erreur lors de la suppression: ${e.toString()}'),
+                                                              backgroundColor:
+                                                                  Colors.red,
+                                                            ),
+                                                          );
+                                                        }
+                                                      }
+                                                    : null,
                                                 onTap: () async {
                                                   await Navigator.push(
                                                     context,

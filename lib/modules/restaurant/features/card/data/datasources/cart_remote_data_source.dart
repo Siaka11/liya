@@ -6,6 +6,7 @@ abstract class CartRemoteDataSource {
   Future<void> addToCart(String userId, CartItemModel cartItem);
   Future<List<CartItemModel>> getCartItems(String userId);
   Future<void> removeFromCart(String userId, String itemName);
+  Stream<List<CartItemModel>> watchCartItems(String userId);
 }
 
 class CartRemoteDataSourceImpl implements CartRemoteDataSource {
@@ -64,5 +65,30 @@ class CartRemoteDataSourceImpl implements CartRemoteDataSource {
 
     await cartRef.delete();
     print('DEBUG: Article supprimé avec succès');
+  }
+
+  @override
+  Stream<List<CartItemModel>> watchCartItems(String userId) {
+    return _firestore
+        .collection('carts')
+        .doc(userId)
+        .collection('items')
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+        return CartItemModel(
+          id: doc.id,
+          name: data['name'] ?? '',
+          price: data['price'] ?? '',
+          imageUrl: data['imageUrl'] ?? '',
+          restaurantId: data['restaurantId'] ?? '',
+          description: data['description'],
+          rating: data['rating'] ?? '',
+          quantity: data['quantity'] ?? 0,
+          user: data['user'] ?? '',
+        );
+      }).toList();
+    });
   }
 }

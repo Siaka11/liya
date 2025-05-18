@@ -1,4 +1,3 @@
-
 import 'package:auto_route/auto_route.dart';
 import 'package:liya/routes/app_router.gr.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -33,14 +32,16 @@ class AppRouter extends $AppRouter implements AutoRouteGuard {
 
   @override
   List<AutoRoute> get routes => [
-    AutoRoute(page: HomeRoute.page, initial: true),
-    AutoRoute(page: AuthRoute.page),
-    AutoRoute(page: OtpRoute.page),
-    AutoRoute(page: InfoUserRoute.page),
-    AutoRoute(page: ShareLocationRoute.page),
-    AutoRoute(page: HomeRestaurantRoute.page),
-    AutoRoute(page: DishDetailRoute.page),
-    AutoRoute(page: DishDetailRoute.page),
-  AutoRoute(page: RestaurantDetailRoute.page),
- ];
+        AutoRoute(page: HomeRoute.page, initial: true),
+        AutoRoute(page: AuthRoute.page),
+        AutoRoute(page: OtpRoute.page),
+        AutoRoute(page: InfoUserRoute.page),
+        AutoRoute(page: ShareLocationRoute.page),
+        AutoRoute(page: HomeRestaurantRoute.page),
+        AutoRoute(page: DishDetailRoute.page),
+        AutoRoute(page: DishDetailRoute.page),
+        AutoRoute(page: RestaurantDetailRoute.page),
+        AutoRoute(page: CartRoute.page),
+        AutoRoute(page: CheckoutRoute.page),
+      ];
 }
