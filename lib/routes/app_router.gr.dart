@@ -8,47 +8,50 @@
 // coverage:ignore-file
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:auto_route/auto_route.dart' as _i10;
-import 'package:flutter/material.dart' as _i11;
+import 'package:auto_route/auto_route.dart' as _i12;
+import 'package:flutter/material.dart' as _i13;
 import 'package:liya/modules/auth/auth_page.dart' as _i1;
-import 'package:liya/modules/auth/info_user_page.dart' as _i6;
-import 'package:liya/modules/auth/otp_page.dart' as _i7;
-import 'package:liya/modules/home/domain/entities/home_option.dart' as _i12;
-import 'package:liya/modules/home/presentation/pages/home_page.dart' as _i4;
+import 'package:liya/modules/auth/info_user_page.dart' as _i7;
+import 'package:liya/modules/auth/otp_page.dart' as _i8;
+import 'package:liya/modules/home/domain/entities/home_option.dart' as _i14;
+import 'package:liya/modules/home/presentation/pages/home_page.dart' as _i5;
 import 'package:liya/modules/restaurant/features/card/presentation/pages/cart_page.dart'
     as _i2;
-import 'package:liya/modules/restaurant/features/home/presentation/pages/dish_detail_page.dart'
-    as _i3;
-import 'package:liya/modules/restaurant/features/home/presentation/pages/home_restaurant.dart'
-    as _i5;
-import 'package:liya/modules/restaurant/features/home/presentation/pages/restaurant_detail_page.dart'
-    as _i8;
-import 'package:liya/modules/share_location_page.dart' as _i9;
 import 'package:liya/modules/restaurant/features/checkout/presentation/pages/checkout_page.dart'
-    as _i13;
+    as _i3;
+import 'package:liya/modules/restaurant/features/home/presentation/pages/dish_detail_page.dart'
+    as _i4;
+import 'package:liya/modules/restaurant/features/home/presentation/pages/home_restaurant.dart'
+    as _i6;
+import 'package:liya/modules/restaurant/features/home/presentation/pages/restaurant_detail_page.dart'
+    as _i10;
+import 'package:liya/modules/restaurant/features/profile/presentation/pages/profile_page.dart'
+    as _i9;
+import 'package:liya/modules/share_location_page.dart' as _i11;
 
-abstract class $AppRouter extends _i10.RootStackRouter {
+abstract class $AppRouter extends _i12.RootStackRouter {
   $AppRouter({super.navigatorKey});
 
   @override
-  final Map<String, _i10.PageFactory> pagesMap = {
+  final Map<String, _i12.PageFactory> pagesMap = {
     AuthRoute.name: (routeData) {
-      return _i10.AutoRoutePage<dynamic>(
+      return _i12.AutoRoutePage<dynamic>(
         routeData: routeData,
         child: const _i1.AuthPage(),
       );
     },
     CartRoute.name: (routeData) {
-      return _i10.AutoRoutePage<dynamic>(
+      return _i12.AutoRoutePage<dynamic>(
         routeData: routeData,
         child: const _i2.CartPage(),
       );
     },
     CheckoutRoute.name: (routeData) {
       final args = routeData.argsAs<CheckoutRouteArgs>();
-      return _i10.AutoRoutePage<dynamic>(
+      return _i12.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: _i13.CheckoutPage(
+        child: _i3.CheckoutPage(
+          key: args.key,
           restaurantName: args.restaurantName,
           cartItems: args.cartItems,
         ),
@@ -56,9 +59,9 @@ abstract class $AppRouter extends _i10.RootStackRouter {
     },
     DishDetailRoute.name: (routeData) {
       final args = routeData.argsAs<DishDetailRouteArgs>();
-      return _i10.AutoRoutePage<dynamic>(
+      return _i12.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: _i3.DishDetailPage(
+        child: _i4.DishDetailPage(
           id: args.id,
           restaurantId: args.restaurantId,
           name: args.name,
@@ -70,42 +73,48 @@ abstract class $AppRouter extends _i10.RootStackRouter {
       );
     },
     HomeRoute.name: (routeData) {
-      return _i10.AutoRoutePage<dynamic>(
+      return _i12.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: const _i4.HomePage(),
+        child: const _i5.HomePage(),
       );
     },
     HomeRestaurantRoute.name: (routeData) {
       final args = routeData.argsAs<HomeRestaurantRouteArgs>();
-      return _i10.AutoRoutePage<dynamic>(
+      return _i12.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: _i5.HomeRestaurantPage(
+        child: _i6.HomeRestaurantPage(
           key: args.key,
           option: args.option,
         ),
       );
     },
     InfoUserRoute.name: (routeData) {
-      return _i10.AutoRoutePage<dynamic>(
+      return _i12.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: const _i6.InfoUserPage(),
+        child: const _i7.InfoUserPage(),
       );
     },
     OtpRoute.name: (routeData) {
       final args = routeData.argsAs<OtpRouteArgs>();
-      return _i10.AutoRoutePage<dynamic>(
+      return _i12.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: _i7.OtpPage(
+        child: _i8.OtpPage(
           args.verificationId,
           key: args.key,
         ),
       );
     },
+    ProfileRoute.name: (routeData) {
+      return _i12.AutoRoutePage<dynamic>(
+        routeData: routeData,
+        child: const _i9.ProfilePage(),
+      );
+    },
     RestaurantDetailRoute.name: (routeData) {
       final args = routeData.argsAs<RestaurantDetailRouteArgs>();
-      return _i10.AutoRoutePage<dynamic>(
+      return _i12.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: _i8.RestaurantDetailPage(
+        child: _i10.RestaurantDetailPage(
           key: args.key,
           id: args.id,
           name: args.name,
@@ -114,9 +123,9 @@ abstract class $AppRouter extends _i10.RootStackRouter {
       );
     },
     ShareLocationRoute.name: (routeData) {
-      return _i10.AutoRoutePage<dynamic>(
+      return _i12.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: const _i9.ShareLocationPage(),
+        child: const _i11.ShareLocationPage(),
       );
     },
   };
@@ -124,8 +133,8 @@ abstract class $AppRouter extends _i10.RootStackRouter {
 
 /// generated route for
 /// [_i1.AuthPage]
-class AuthRoute extends _i10.PageRouteInfo<void> {
-  const AuthRoute({List<_i10.PageRouteInfo>? children})
+class AuthRoute extends _i12.PageRouteInfo<void> {
+  const AuthRoute({List<_i12.PageRouteInfo>? children})
       : super(
           AuthRoute.name,
           initialChildren: children,
@@ -133,13 +142,13 @@ class AuthRoute extends _i10.PageRouteInfo<void> {
 
   static const String name = 'AuthRoute';
 
-  static const _i10.PageInfo<void> page = _i10.PageInfo<void>(name);
+  static const _i12.PageInfo<void> page = _i12.PageInfo<void>(name);
 }
 
 /// generated route for
 /// [_i2.CartPage]
-class CartRoute extends _i10.PageRouteInfo<void> {
-  const CartRoute({List<_i10.PageRouteInfo>? children})
+class CartRoute extends _i12.PageRouteInfo<void> {
+  const CartRoute({List<_i12.PageRouteInfo>? children})
       : super(
           CartRoute.name,
           initialChildren: children,
@@ -147,12 +156,55 @@ class CartRoute extends _i10.PageRouteInfo<void> {
 
   static const String name = 'CartRoute';
 
-  static const _i10.PageInfo<void> page = _i10.PageInfo<void>(name);
+  static const _i12.PageInfo<void> page = _i12.PageInfo<void>(name);
 }
 
 /// generated route for
-/// [_i3.DishDetailPage]
-class DishDetailRoute extends _i10.PageRouteInfo<DishDetailRouteArgs> {
+/// [_i3.CheckoutPage]
+class CheckoutRoute extends _i12.PageRouteInfo<CheckoutRouteArgs> {
+  CheckoutRoute({
+    _i13.Key? key,
+    required String restaurantName,
+    required List<Map<String, dynamic>> cartItems,
+    List<_i12.PageRouteInfo>? children,
+  }) : super(
+          CheckoutRoute.name,
+          args: CheckoutRouteArgs(
+            key: key,
+            restaurantName: restaurantName,
+            cartItems: cartItems,
+          ),
+          initialChildren: children,
+        );
+
+  static const String name = 'CheckoutRoute';
+
+  static const _i12.PageInfo<CheckoutRouteArgs> page =
+      _i12.PageInfo<CheckoutRouteArgs>(name);
+}
+
+class CheckoutRouteArgs {
+  const CheckoutRouteArgs({
+    this.key,
+    required this.restaurantName,
+    required this.cartItems,
+  });
+
+  final _i13.Key? key;
+
+  final String restaurantName;
+
+  final List<Map<String, dynamic>> cartItems;
+
+  @override
+  String toString() {
+    return 'CheckoutRouteArgs{key: $key, restaurantName: $restaurantName, cartItems: $cartItems}';
+  }
+}
+
+/// generated route for
+/// [_i4.DishDetailPage]
+class DishDetailRoute extends _i12.PageRouteInfo<DishDetailRouteArgs> {
   DishDetailRoute({
     required String id,
     required String restaurantId,
@@ -161,7 +213,7 @@ class DishDetailRoute extends _i10.PageRouteInfo<DishDetailRouteArgs> {
     required String imageUrl,
     required String rating,
     required String description,
-    List<_i10.PageRouteInfo>? children,
+    List<_i12.PageRouteInfo>? children,
   }) : super(
           DishDetailRoute.name,
           args: DishDetailRouteArgs(
@@ -178,8 +230,8 @@ class DishDetailRoute extends _i10.PageRouteInfo<DishDetailRouteArgs> {
 
   static const String name = 'DishDetailRoute';
 
-  static const _i10.PageInfo<DishDetailRouteArgs> page =
-      _i10.PageInfo<DishDetailRouteArgs>(name);
+  static const _i12.PageInfo<DishDetailRouteArgs> page =
+      _i12.PageInfo<DishDetailRouteArgs>(name);
 }
 
 class DishDetailRouteArgs {
@@ -214,9 +266,9 @@ class DishDetailRouteArgs {
 }
 
 /// generated route for
-/// [_i4.HomePage]
-class HomeRoute extends _i10.PageRouteInfo<void> {
-  const HomeRoute({List<_i10.PageRouteInfo>? children})
+/// [_i5.HomePage]
+class HomeRoute extends _i12.PageRouteInfo<void> {
+  const HomeRoute({List<_i12.PageRouteInfo>? children})
       : super(
           HomeRoute.name,
           initialChildren: children,
@@ -224,16 +276,16 @@ class HomeRoute extends _i10.PageRouteInfo<void> {
 
   static const String name = 'HomeRoute';
 
-  static const _i10.PageInfo<void> page = _i10.PageInfo<void>(name);
+  static const _i12.PageInfo<void> page = _i12.PageInfo<void>(name);
 }
 
 /// generated route for
-/// [_i5.HomeRestaurantPage]
-class HomeRestaurantRoute extends _i10.PageRouteInfo<HomeRestaurantRouteArgs> {
+/// [_i6.HomeRestaurantPage]
+class HomeRestaurantRoute extends _i12.PageRouteInfo<HomeRestaurantRouteArgs> {
   HomeRestaurantRoute({
-    _i11.Key? key,
-    required _i12.HomeOption option,
-    List<_i10.PageRouteInfo>? children,
+    _i13.Key? key,
+    required _i14.HomeOption option,
+    List<_i12.PageRouteInfo>? children,
   }) : super(
           HomeRestaurantRoute.name,
           args: HomeRestaurantRouteArgs(
@@ -245,8 +297,8 @@ class HomeRestaurantRoute extends _i10.PageRouteInfo<HomeRestaurantRouteArgs> {
 
   static const String name = 'HomeRestaurantRoute';
 
-  static const _i10.PageInfo<HomeRestaurantRouteArgs> page =
-      _i10.PageInfo<HomeRestaurantRouteArgs>(name);
+  static const _i12.PageInfo<HomeRestaurantRouteArgs> page =
+      _i12.PageInfo<HomeRestaurantRouteArgs>(name);
 }
 
 class HomeRestaurantRouteArgs {
@@ -255,9 +307,9 @@ class HomeRestaurantRouteArgs {
     required this.option,
   });
 
-  final _i11.Key? key;
+  final _i13.Key? key;
 
-  final _i12.HomeOption option;
+  final _i14.HomeOption option;
 
   @override
   String toString() {
@@ -266,9 +318,9 @@ class HomeRestaurantRouteArgs {
 }
 
 /// generated route for
-/// [_i6.InfoUserPage]
-class InfoUserRoute extends _i10.PageRouteInfo<void> {
-  const InfoUserRoute({List<_i10.PageRouteInfo>? children})
+/// [_i7.InfoUserPage]
+class InfoUserRoute extends _i12.PageRouteInfo<void> {
+  const InfoUserRoute({List<_i12.PageRouteInfo>? children})
       : super(
           InfoUserRoute.name,
           initialChildren: children,
@@ -276,16 +328,16 @@ class InfoUserRoute extends _i10.PageRouteInfo<void> {
 
   static const String name = 'InfoUserRoute';
 
-  static const _i10.PageInfo<void> page = _i10.PageInfo<void>(name);
+  static const _i12.PageInfo<void> page = _i12.PageInfo<void>(name);
 }
 
 /// generated route for
-/// [_i7.OtpPage]
-class OtpRoute extends _i10.PageRouteInfo<OtpRouteArgs> {
+/// [_i8.OtpPage]
+class OtpRoute extends _i12.PageRouteInfo<OtpRouteArgs> {
   OtpRoute({
     required String verificationId,
-    _i11.Key? key,
-    List<_i10.PageRouteInfo>? children,
+    _i13.Key? key,
+    List<_i12.PageRouteInfo>? children,
   }) : super(
           OtpRoute.name,
           args: OtpRouteArgs(
@@ -297,8 +349,8 @@ class OtpRoute extends _i10.PageRouteInfo<OtpRouteArgs> {
 
   static const String name = 'OtpRoute';
 
-  static const _i10.PageInfo<OtpRouteArgs> page =
-      _i10.PageInfo<OtpRouteArgs>(name);
+  static const _i12.PageInfo<OtpRouteArgs> page =
+      _i12.PageInfo<OtpRouteArgs>(name);
 }
 
 class OtpRouteArgs {
@@ -309,7 +361,7 @@ class OtpRouteArgs {
 
   final String verificationId;
 
-  final _i11.Key? key;
+  final _i13.Key? key;
 
   @override
   String toString() {
@@ -318,15 +370,29 @@ class OtpRouteArgs {
 }
 
 /// generated route for
-/// [_i8.RestaurantDetailPage]
+/// [_i9.ProfilePage]
+class ProfileRoute extends _i12.PageRouteInfo<void> {
+  const ProfileRoute({List<_i12.PageRouteInfo>? children})
+      : super(
+          ProfileRoute.name,
+          initialChildren: children,
+        );
+
+  static const String name = 'ProfileRoute';
+
+  static const _i12.PageInfo<void> page = _i12.PageInfo<void>(name);
+}
+
+/// generated route for
+/// [_i10.RestaurantDetailPage]
 class RestaurantDetailRoute
-    extends _i10.PageRouteInfo<RestaurantDetailRouteArgs> {
+    extends _i12.PageRouteInfo<RestaurantDetailRouteArgs> {
   RestaurantDetailRoute({
-    _i11.Key? key,
+    _i13.Key? key,
     required String id,
     required String name,
     required String description,
-    List<_i10.PageRouteInfo>? children,
+    List<_i12.PageRouteInfo>? children,
   }) : super(
           RestaurantDetailRoute.name,
           args: RestaurantDetailRouteArgs(
@@ -340,8 +406,8 @@ class RestaurantDetailRoute
 
   static const String name = 'RestaurantDetailRoute';
 
-  static const _i10.PageInfo<RestaurantDetailRouteArgs> page =
-      _i10.PageInfo<RestaurantDetailRouteArgs>(name);
+  static const _i12.PageInfo<RestaurantDetailRouteArgs> page =
+      _i12.PageInfo<RestaurantDetailRouteArgs>(name);
 }
 
 class RestaurantDetailRouteArgs {
@@ -352,7 +418,7 @@ class RestaurantDetailRouteArgs {
     required this.description,
   });
 
-  final _i11.Key? key;
+  final _i13.Key? key;
 
   final String id;
 
@@ -367,9 +433,9 @@ class RestaurantDetailRouteArgs {
 }
 
 /// generated route for
-/// [_i9.ShareLocationPage]
-class ShareLocationRoute extends _i10.PageRouteInfo<void> {
-  const ShareLocationRoute({List<_i10.PageRouteInfo>? children})
+/// [_i11.ShareLocationPage]
+class ShareLocationRoute extends _i12.PageRouteInfo<void> {
+  const ShareLocationRoute({List<_i12.PageRouteInfo>? children})
       : super(
           ShareLocationRoute.name,
           initialChildren: children,
@@ -377,42 +443,5 @@ class ShareLocationRoute extends _i10.PageRouteInfo<void> {
 
   static const String name = 'ShareLocationRoute';
 
-  static const _i10.PageInfo<void> page = _i10.PageInfo<void>(name);
-}
-
-/// generated route for
-/// [CheckoutPage]
-class CheckoutRoute extends _i10.PageRouteInfo<CheckoutRouteArgs> {
-  CheckoutRoute({
-    required String restaurantName,
-    required List<Map<String, dynamic>> cartItems,
-    List<_i10.PageRouteInfo>? children,
-  }) : super(
-          CheckoutRoute.name,
-          args: CheckoutRouteArgs(
-            restaurantName: restaurantName,
-            cartItems: cartItems,
-          ),
-          initialChildren: children,
-        );
-
-  static const String name = 'CheckoutRoute';
-
-  static const _i10.PageInfo<CheckoutRouteArgs> page =
-      _i10.PageInfo<CheckoutRouteArgs>(name);
-}
-
-class CheckoutRouteArgs {
-  const CheckoutRouteArgs({
-    required this.restaurantName,
-    required this.cartItems,
-  });
-
-  final String restaurantName;
-  final List<Map<String, dynamic>> cartItems;
-
-  @override
-  String toString() {
-    return 'CheckoutRouteArgs{restaurantName: $restaurantName, cartItems: $cartItems}';
-  }
+  static const _i12.PageInfo<void> page = _i12.PageInfo<void>(name);
 }

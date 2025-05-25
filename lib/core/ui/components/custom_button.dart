@@ -9,6 +9,7 @@ class CustomButton extends StatelessWidget {
   final Color? bgColor;
   final double fontSize;
   final double paddingVertical;
+  final double width;
 
   const CustomButton({
     super.key,
@@ -17,7 +18,8 @@ class CustomButton extends StatelessWidget {
     this.onPressedButton,
     this.bgColor,
     required this.fontSize,
-    required this.paddingVertical
+    required this.paddingVertical,
+    this.width = double.infinity,
   });
 
   @override
@@ -28,7 +30,7 @@ class CustomButton extends StatelessWidget {
         backgroundColor: bgColor ?? UIColors.defaultColor,
         padding: EdgeInsets.symmetric(
           vertical: paddingVertical,
-          horizontal: 30, // Ajout d'un padding horizontal par défaut
+          horizontal: width, // Ajout d'un padding horizontal par défaut
         ),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(borderRadius),
@@ -38,7 +40,7 @@ class CustomButton extends StatelessWidget {
         text,
         style: TextStyle(
           fontSize: fontSize,
-          color: Colors.white,
+          color: Colors.orange,
         ),
       ),
     );

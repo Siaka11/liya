@@ -1,4 +1,5 @@
 import 'package:auto_route/auto_route.dart';
+import 'package:liya/modules/restaurant/features/profile/presentation/pages/profile_page.dart';
 import 'package:liya/routes/app_router.gr.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -43,5 +44,6 @@ class AppRouter extends $AppRouter implements AutoRouteGuard {
         AutoRoute(page: RestaurantDetailRoute.page),
         AutoRoute(page: CartRoute.page),
         AutoRoute(page: CheckoutRoute.page),
+        AutoRoute(page: ProfileRoute.page),
       ];
 }

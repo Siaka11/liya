@@ -168,6 +168,7 @@ class _OtpPageState extends ConsumerState<OtpPage> {
                       fontSize: 10,
                       paddingVertical: 8,
                       borderRadius: 16,
+                      width: 50
                     ),
                   ),
                 ),

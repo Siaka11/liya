@@ -284,9 +284,10 @@ class _ShareLocationPageState extends ConsumerState<ShareLocationPage> {
                         onPressedButton: isLoading || locationState.position == null
                             ? null
                             : () => locationNotifier.confirm(context),
-                        bgColor: UIColors.orange,
+                        bgColor: UIColors.defaultColor,
                         fontSize: 16,
                         paddingVertical: 15,
+                        width: 50,
                       ),
                     ],
                   ),

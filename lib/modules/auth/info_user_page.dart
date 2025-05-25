@@ -150,6 +150,7 @@ class _InfoUserPageState extends ConsumerState<InfoUserPage> {
                       bgColor: UIColors.white,
                       fontSize: 18,
                       paddingVertical: 16,
+                      width: 120,
                     ),
                   ),
                 ),
