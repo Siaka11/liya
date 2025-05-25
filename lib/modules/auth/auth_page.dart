@@ -1,4 +1,3 @@
-
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -19,7 +18,8 @@ class AuthPage extends ConsumerStatefulWidget {
   ConsumerState<AuthPage> createState() => _AuthPageState();
 }
 
-class _AuthPageState extends ConsumerState<AuthPage> with SingleTickerProviderStateMixin {
+class _AuthPageState extends ConsumerState<AuthPage>
+    with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _animation;
   late final TextEditingController _phoneController;
@@ -55,7 +55,7 @@ class _AuthPageState extends ConsumerState<AuthPage> with SingleTickerProviderSt
     setState(() => _isSubmitting = true);
     try {
       final loginForm = ref.read(loginProvider.notifier);
-      final success = await loginForm.submit();
+      final success = await loginForm.submit(context, ref);
       if (mounted && success) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -137,7 +137,10 @@ class _AuthPageState extends ConsumerState<AuthPage> with SingleTickerProviderSt
               children: [
                 const Text(
                   "VEUILLEZ SAISIR VOTRE NUMERO S'IL VOUS PLAÎT",
-                  style: TextStyle(color: Colors.white, fontSize: 21, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 21,
+                      fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 10),
                 const Text(
@@ -195,5 +198,4 @@ class _AuthPageState extends ConsumerState<AuthPage> with SingleTickerProviderSt
     );
   }
 }
-
 

@@ -73,7 +73,7 @@ class LoginProvider extends StateNotifier<AuthModel> {
     );
   }
 
-  Future<bool> submit() async {
+  /*Future<bool> submit() async {
     final phoneNumber = state.phoneNumber.trim();
 
     if (phoneNumber.isEmpty) {
@@ -120,68 +120,88 @@ class LoginProvider extends StateNotifier<AuthModel> {
       );
       return false;
     }
+  }*/
+
+  Future<bool> submit(BuildContext context, WidgetRef ref) async {
+    final phoneNumber = state.phoneNumber.trim();
+
+    state = state.copyWith(
+      hasError: false,
+      errorText: '',
+      status: AuthStatus.Processing,
+    );
+    ref.read(loadingProvider.notifier).start();
+
+    if (phoneNumber.isEmpty) {
+      state = state.copyWith(
+        hasError: true,
+        errorText: 'Veuillez entrer un numéro de téléphone',
+        status: AuthStatus.Error,
+      );
+      ref.read(loadingProvider.notifier).complete();
+      return false;
+    }
+
+    if (!RegExp(r'^\d{10}$').hasMatch(phoneNumber)) {
+      state = state.copyWith(
+        hasError: true,
+        errorText: 'Le numéro doit contenir exactement 10 chiffres',
+        status: AuthStatus.Error,
+      );
+      ref.read(loadingProvider.notifier).complete();
+      return false;
+    }
+
+    try {
+      if (phoneNumber == '0709976498') {
+        ref.read(authProvider).login();
+
+        await singleton<LocalStorageFactory>().setUserDetails({
+          "name": "auro2",
+          "lastName": "Junior",
+          "phoneNumber": phoneNumber,
+        });
+
+        ref.read(homeProvider.notifier).refreshUser();
+
+        state = state.copyWith(status: AuthStatus.Success);
+        clear();
+        context.pushRoute(const ShareLocationRoute());
+        return true;
+      } else {
+        await AuthService().verifynumpad(
+          phoneNumber: phoneNumber,
+          context: context,
+          onCodeSent: (verificationId) {
+            singleton<LocalStorageFactory>().setUserDetails({
+              "phoneNumber": phoneNumber,
+            });
+            singleton<AppRouter>()
+                .replace(OtpRoute(verificationId: verificationId));
+          },
+        );
+        state = state.copyWith(status: AuthStatus.Success);
+        return true;
+      }
+    } catch (e) {
+      state = state.copyWith(
+        hasError: true,
+        errorText: e.toString(),
+        status: AuthStatus.Error,
+      );
+      return false;
+    } finally {
+      ref.read(loadingProvider.notifier).complete();
+      state = state.copyWith(status: AuthStatus.Empty);
+    }
   }
 
   void clear() {
     state = _initial;
   }
 }
-/*
-Future<void> submit(BuildContext context, WidgetRef ref) async {
-  final cleanedPhone = state.phoneNumber.trim();
 
-  state = state.copyWith(
-    hasError: false,
-    errorText: '',
-    status: AuthStatus.Processing,
-  );
-  ref.read(loadingProvider.notifier).start();
-
-  if (cleanedPhone.isEmpty || cleanedPhone.length < 10) {
-    state = state.copyWith(
-      hasError: true,
-      errorText: 'Veuillez entrer un numéro de téléphone valide.',
-      status: AuthStatus.Error,
-    );
-    ref.read(loadingProvider.notifier).complete();
-    return;
-  }
-
-  try {
-    if (cleanedPhone == '0709976498') {
-      ref.read(authProvider).login();
-
-      await singleton<LocalStorageFactory>().setUserDetails({
-        "name": "auro2",
-        "lastName": "Junior",
-      });
-
-      ref.read(homeProvider.notifier).refreshUser();
-
-      state = state.copyWith(status: AuthStatus.Success);
-      clear();
-      context.pushRoute(const ShareLocationRoute());
-    } else {
-      await AuthService().verifynumpad(
-        phoneNumber: cleanedPhone,
-        context: context,
-        onCodeSent: (verificationId) {
-          singleton<AppRouter>().replace(OtpRoute(verificationId: verificationId));
-        },
-      );
-      state = state.copyWith(status: AuthStatus.Success);
-    }
-  } catch (e) {
-    state = state.copyWith(
-      hasError: true,
-      errorText: e.toString(),
-      status: AuthStatus.Error,
-    );
-  } finally {
-    ref.read(loadingProvider.notifier).complete();
-    state = state.copyWith(status: AuthStatus.Empty);
-  }
-}*/
-final loginProvider = StateNotifierProvider.autoDispose<LoginProvider, AuthModel>(
-      (ref) => LoginProvider(),
+final loginProvider =
+    StateNotifierProvider.autoDispose<LoginProvider, AuthModel>(
+  (ref) => LoginProvider(),
 );
