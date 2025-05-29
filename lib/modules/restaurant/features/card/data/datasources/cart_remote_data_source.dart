@@ -7,6 +7,7 @@ abstract class CartRemoteDataSource {
   Future<List<CartItemModel>> getCartItems(String userId);
   Future<void> removeFromCart(String userId, String itemName);
   Stream<List<CartItemModel>> watchCartItems(String userId);
+  Future<void> clearCart(String userId);
 }
 
 class CartRemoteDataSourceImpl implements CartRemoteDataSource {
@@ -90,5 +91,17 @@ class CartRemoteDataSourceImpl implements CartRemoteDataSource {
         );
       }).toList();
     });
+  }
+
+  @override
+  Future<void> clearCart(String userId) async {
+    final cartRef =
+        _firestore.collection('carts').doc(userId).collection('items');
+    final batch = _firestore.batch();
+    final items = await cartRef.get();
+    for (final doc in items.docs) {
+      batch.delete(doc.reference);
+    }
+    await batch.commit();
   }
 }

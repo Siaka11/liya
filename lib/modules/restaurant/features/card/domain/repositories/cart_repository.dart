@@ -8,6 +8,7 @@ abstract class CartRepository {
   Future<Either<Failure, void>> addToCart(String userId, CartItem cartItem);
   Future<Either<Failure, List<CartItem>>> getCartItems(String userId);
   Future<Either<Failure, void>> removeFromCart(String userId, String itemName);
+  Future<void> clearCart(String userId);
 }
 
 class CartRepositoryImpl implements CartRepository {
@@ -56,5 +57,10 @@ class CartRepositoryImpl implements CartRepository {
     } catch (e) {
       return Left(ServerFailure(message: e.toString()));
     }
+  }
+
+  @override
+  Future<void> clearCart(String userId) async {
+    // Implementation needed
   }
 }
