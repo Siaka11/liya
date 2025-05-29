@@ -1,8 +1,12 @@
+import 'dart:convert';
+
 import 'package:auto_route/annotations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:liya/modules/restaurant/features/home/presentation/pages/restaurant_detail_page.dart';
 
+import '../../../../../../core/local_storage_factory.dart';
+import '../../../../../../core/singletons.dart';
 import '../../../card/data/datasources/cart_remote_data_source.dart';
 import '../../../card/data/models/cart_item_model.dart';
 import '../../../card/domain/entities/cart_item.dart';
@@ -43,7 +47,13 @@ class _DishDetailPageState extends ConsumerState<DishDetailPage> {
   }
 
   Future<void> loadCurrentQuantity() async {
-    final userId = 'testUserId';
+    final userDetailsJson = singleton<LocalStorageFactory>().getUserDetails();
+    final userDetails = userDetailsJson is String
+        ? jsonDecode(userDetailsJson)
+        : userDetailsJson;
+
+    final phoneNumber = userDetails['phoneNumber'] ?? '';
+    final userId = phoneNumber;
     final cartRepository =
         CartRepositoryImpl(remoteDataSource: CartRemoteDataSourceImpl());
 
@@ -114,7 +124,13 @@ class _DishDetailPageState extends ConsumerState<DishDetailPage> {
   }
 
   Future<void> removeFromCart() async {
-    final userId = 'testUserId';
+    final userDetailsJson = singleton<LocalStorageFactory>().getUserDetails();
+    final userDetails = userDetailsJson is String
+        ? jsonDecode(userDetailsJson)
+        : userDetailsJson;
+
+    final phoneNumber = userDetails['phoneNumber'] ?? '';
+    final userId = phoneNumber;
     final cartRepository =
         CartRepositoryImpl(remoteDataSource: CartRemoteDataSourceImpl());
 
@@ -134,7 +150,12 @@ class _DishDetailPageState extends ConsumerState<DishDetailPage> {
   }
 
   Future<void> updateCartQuantity() async {
-    final userId = 'testUserId';
+    final userDetailsJson = singleton<LocalStorageFactory>().getUserDetails();
+    final userDetails = userDetailsJson is String
+        ? jsonDecode(userDetailsJson)
+        : userDetailsJson;
+    final phoneNumber = userDetails['phoneNumber'] ?? '';
+    final userId = phoneNumber;
     final cartItem = CartItem(
       id: widget.name,
       name: widget.name,

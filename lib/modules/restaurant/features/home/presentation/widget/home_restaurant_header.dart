@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,6 +9,9 @@ import 'package:liya/modules/restaurant/features/card/domain/entities/cart_item.
 import 'package:liya/modules/restaurant/features/card/domain/repositories/cart_repository.dart';
 import 'package:liya/routes/app_router.gr.dart';
 
+import '../../../../../../core/local_storage_factory.dart';
+import '../../../../../../core/singletons.dart';
+
 // Provider pour le repository du panier
 final cartRepositoryProvider = Provider<CartRepository>((ref) {
   return CartRepositoryImpl(remoteDataSource: CartRemoteDataSourceImpl());
@@ -15,7 +20,13 @@ final cartRepositoryProvider = Provider<CartRepository>((ref) {
 // Stream provider pour observer les changements du panier en temps réel
 final cartItemsStreamProvider = StreamProvider<List<CartItem>>((ref) {
   final cartRemoteDataSource = CartRemoteDataSourceImpl();
-  return cartRemoteDataSource.watchCartItems('testUserId');
+  final userDetailsJson =
+  singleton<LocalStorageFactory>().getUserDetails();
+  final userDetails = userDetailsJson is String
+      ? jsonDecode(userDetailsJson)
+      : userDetailsJson;
+  final phoneNumber = userDetails['phoneNumber'] ?? '';
+  return cartRemoteDataSource.watchCartItems(phoneNumber);
 });
 
 class HomeRestaurantHeader extends ConsumerWidget {

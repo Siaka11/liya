@@ -1,9 +1,13 @@
+import 'dart:convert';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:liya/core/ui/theme/theme.dart';
 
+import '../../../../../../core/local_storage_factory.dart';
+import '../../../../../../core/singletons.dart';
 import '../../../card/data/datasources/cart_remote_data_source.dart';
 import '../../../card/domain/entities/cart_item.dart';
 import '../../../card/domain/repositories/cart_repository.dart';
@@ -43,6 +47,11 @@ class RestaurantDetailPage extends ConsumerWidget {
     // Créer un StateProvider pour forcer le rafraîchissement
     final refreshKey = StateProvider((ref) => 0);
     final refreshCount = ref.watch(refreshKey);
+    final userDetailsJson = singleton<LocalStorageFactory>().getUserDetails();
+    final userDetails = userDetailsJson is String
+        ? jsonDecode(userDetailsJson)
+        : userDetailsJson;
+    final phoneNumber = userDetails['phoneNumber'] ?? '';
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (dishState.dishes == null && !dishState.isLoading) {
@@ -51,7 +60,7 @@ class RestaurantDetailPage extends ConsumerWidget {
     });
 
     Future<int> getCartItemQuantity(String dishName) async {
-      final userId = 'testUserId';
+      final userId = phoneNumber;
       print('DEBUG: Recherche du plat dans le panier: "$dishName"');
       final result = await cartRepository.getCartItems(userId);
       return result.fold(
@@ -262,7 +271,7 @@ class RestaurantDetailPage extends ConsumerWidget {
                                                     ? () async {
                                                         try {
                                                           final userId =
-                                                              'testUserId'; // À remplacer par l'ID réel de l'utilisateur
+                                                              phoneNumber; // À remplacer par l'ID réel de l'utilisateur
                                                           await cartRepository
                                                               .removeFromCart(
                                                                   userId,
