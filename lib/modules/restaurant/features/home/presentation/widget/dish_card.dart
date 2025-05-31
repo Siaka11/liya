@@ -23,6 +23,7 @@ class DishCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
+      color: Colors.grey[50],
       elevation: 0,
       margin: EdgeInsets.only(bottom: 4, top: 2),
       child: Column(
@@ -58,7 +59,7 @@ class DishCard extends StatelessWidget {
                               child: Text(
                                 name,
                                 style: TextStyle(
-                                    fontSize: 14, fontWeight: FontWeight.bold),
+                                    fontSize: 12, fontWeight: FontWeight.bold),
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -148,11 +149,11 @@ class DishCard extends StatelessWidget {
               ),
             ),
           ),
-          Divider(
+          /*Divider(
             height: 1,
             thickness: 1,
-            color: Colors.grey[300],
-          ),
+            color: Colors.grey[200],
+          ),*/
         ],
       ),
     );

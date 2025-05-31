@@ -56,8 +56,8 @@ class NavigationFooter extends ConsumerWidget {
           label: 'Accueil',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.shopping_cart),
-          label: 'Panier',
+          icon: Icon(Icons.favorite_outlined),
+          label: "J'aime",
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.search),

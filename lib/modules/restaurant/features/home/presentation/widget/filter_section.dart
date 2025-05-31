@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import '../../../category/presentation/pages/dishes_by_category_page.dart';
 
 class FilterItem {
   final String label;
@@ -17,11 +18,26 @@ class _FilterSectionState extends State<FilterSection> {
   int? _selectedIndex;
 
   final List<FilterItem> filters = [
-    FilterItem(label: "Europe", imageUrl: "http://api-restaurant.toptelsig.com/uploads/section/europeen.svg"),
-    FilterItem(label: "Côte d'Ivoire", imageUrl: "http://api-restaurant.toptelsig.com/uploads/section/ivoire.svg"),
-    FilterItem(label: "Pizza", imageUrl: "http://api-restaurant.toptelsig.com/uploads/section/pizza.svg"),
-    FilterItem(label: "Afrique", imageUrl: "http://api-restaurant.toptelsig.com/uploads/section/europeen.svg"),
-    FilterItem(label: "Hamburger", imageUrl: "http://api-restaurant.toptelsig.com/uploads/section/europeen.svg"),
+    FilterItem(
+        label: "Europe",
+        imageUrl:
+            "http://api-restaurant.toptelsig.com/uploads/section/europeen.svg"),
+    FilterItem(
+        label: "Ivoirien",
+        imageUrl:
+            "http://api-restaurant.toptelsig.com/uploads/section/ivoire.svg"),
+    FilterItem(
+        label: "Pizza",
+        imageUrl:
+            "http://api-restaurant.toptelsig.com/uploads/section/pizza.svg"),
+    FilterItem(
+        label: "Afrique",
+        imageUrl:
+            "http://api-restaurant.toptelsig.com/uploads/section/europeen.svg"),
+    FilterItem(
+        label: "Hamburger",
+        imageUrl:
+            "http://api-restaurant.toptelsig.com/uploads/section/europeen.svg"),
   ];
 
   @override
@@ -39,8 +55,12 @@ class _FilterSectionState extends State<FilterSection> {
                 setState(() {
                   _selectedIndex = index;
                 });
-                // Logique pour filtrer les plats selon la région (à implémenter)
-                print("Filtre sélectionné : ${filters[index].label}");
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => DishesByCategoryPage(
+                        categoryName: filters[index].label),
+                  ),
+                );
               },
               child: Container(
                 padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
