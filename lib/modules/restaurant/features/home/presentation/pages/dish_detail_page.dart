@@ -4,6 +4,9 @@ import 'package:auto_route/annotations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:liya/modules/restaurant/features/home/presentation/pages/restaurant_detail_page.dart';
+import 'package:liya/modules/restaurant/features/like/application/like_provider.dart';
+import 'package:liya/modules/restaurant/features/like/domain/entities/liked_dish.dart';
+import 'package:liya/modules/restaurant/features/like/presentation/widgets/like_button.dart';
 
 import '../../../../../../core/local_storage_factory.dart';
 import '../../../../../../core/singletons.dart';
@@ -11,6 +14,7 @@ import '../../../card/data/datasources/cart_remote_data_source.dart';
 import '../../../card/data/models/cart_item_model.dart';
 import '../../../card/domain/entities/cart_item.dart';
 import '../../../card/domain/repositories/cart_repository.dart';
+import '../../../card/domain/usecases/add_to_cart.dart';
 
 @RoutePage(name: 'DishDetailRoute')
 class DishDetailPage extends ConsumerStatefulWidget {
@@ -52,7 +56,7 @@ class _DishDetailPageState extends ConsumerState<DishDetailPage> {
         ? jsonDecode(userDetailsJson)
         : userDetailsJson;
 
-    final phoneNumber = userDetails['phoneNumber'] ?? '';
+    final phoneNumber = (userDetails['phoneNumber'] ?? '').toString();
     final userId = phoneNumber;
     final cartRepository =
         CartRepositoryImpl(remoteDataSource: CartRemoteDataSourceImpl());
@@ -107,77 +111,12 @@ class _DishDetailPageState extends ConsumerState<DishDetailPage> {
     });
   }
 
-  void decrementQuantity() async {
+  void decrementQuantity() {
     if (quantity > 0) {
       setState(() {
         quantity--;
       });
-
-      // Si la quantité atteint 0, supprimer l'article du panier
-      if (quantity == 0) {
-        await removeFromCart();
-      } else {
-        // Sinon, mettre à jour la quantité dans Firestore
-        await updateCartQuantity();
-      }
     }
-  }
-
-  Future<void> removeFromCart() async {
-    final userDetailsJson = singleton<LocalStorageFactory>().getUserDetails();
-    final userDetails = userDetailsJson is String
-        ? jsonDecode(userDetailsJson)
-        : userDetailsJson;
-
-    final phoneNumber = userDetails['phoneNumber'] ?? '';
-    final userId = phoneNumber;
-    final cartRepository =
-        CartRepositoryImpl(remoteDataSource: CartRemoteDataSourceImpl());
-
-    print('DEBUG: Suppression du plat ${widget.name} du panier');
-    // Implémenter la suppression dans CartRemoteDataSource
-    try {
-      await cartRepository.removeFromCart(userId, widget.name);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${widget.name} retiré du panier')),
-      );
-    } catch (e) {
-      print('DEBUG: Erreur lors de la suppression: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur lors de la suppression du plat')),
-      );
-    }
-  }
-
-  Future<void> updateCartQuantity() async {
-    final userDetailsJson = singleton<LocalStorageFactory>().getUserDetails();
-    final userDetails = userDetailsJson is String
-        ? jsonDecode(userDetailsJson)
-        : userDetailsJson;
-    final phoneNumber = userDetails['phoneNumber'] ?? '';
-    final userId = phoneNumber;
-    final cartItem = CartItem(
-      id: widget.name,
-      name: widget.name,
-      price: widget.price,
-      imageUrl: widget.imageUrl,
-      restaurantId: widget.restaurantId,
-      description: widget.description,
-      rating: widget.rating,
-      quantity: quantity,
-      user: userId,
-    );
-
-    final addToCart = ref.read(addToCartProvider);
-    final result = await addToCart(userId, cartItem);
-
-    result.fold(
-      (failure) => ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text('Erreur lors de la mise à jour: ${failure.message}')),
-      ),
-      (_) => print('DEBUG: Quantité mise à jour: $quantity'),
-    );
   }
 
   @override
@@ -225,8 +164,28 @@ class _DishDetailPageState extends ConsumerState<DishDetailPage> {
                           Positioned(
                             top: 60,
                             right: 16,
-                            child: Icon(Icons.favorite_border,
-                                color: Colors.orange, size: 24),
+                            child: Consumer(
+                              builder: (context, ref, child) {
+                                final userDetailsJson =
+                                    singleton<LocalStorageFactory>()
+                                        .getUserDetails();
+                                final userDetails = userDetailsJson is String
+                                    ? jsonDecode(userDetailsJson)
+                                    : userDetailsJson;
+                                final phoneNumber =
+                                    (userDetails['phoneNumber'] ?? '')
+                                        .toString();
+
+                                return LikeButton(
+                                  dishId: widget.id,
+                                  userId: phoneNumber,
+                                  name: widget.name,
+                                  price: widget.price,
+                                  imageUrl: widget.imageUrl,
+                                  description: widget.description,
+                                );
+                              },
+                            ),
                           ),
                         ],
                       ),
@@ -282,66 +241,116 @@ class _DishDetailPageState extends ConsumerState<DishDetailPage> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Row(
-                            children: [
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[200],
-                                  borderRadius: BorderRadius.circular(24),
+                          Expanded(
+                            child: Row(
+                              children: [
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[200],
+                                    borderRadius: BorderRadius.circular(24),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      IconButton(
+                                        icon: Icon(Icons.remove),
+                                        onPressed: decrementQuantity,
+                                      ),
+                                      Text(
+                                        '$quantity',
+                                        style: TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                      IconButton(
+                                        icon: Icon(Icons.add),
+                                        onPressed: incrementQuantity,
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                                child: Row(
-                                  children: [
-                                    IconButton(
-                                      icon: Icon(Icons.remove,
-                                          color: Colors.black),
-                                      onPressed: decrementQuantity,
-                                    ),
-                                    Text(
-                                      quantity.toString().padLeft(2, '0'),
-                                      style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold),
-                                    ),
-                                    IconButton(
-                                      icon:
-                                          Icon(Icons.add, color: Colors.black),
-                                      onPressed: incrementQuantity,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 16),
-                            decoration: BoxDecoration(
-                              color: Colors.orange,
-                              borderRadius: BorderRadius.circular(24),
+                                SizedBox(width: 16),
+                                /*Expanded(
+                                  child: Text(
+                                    '${totalPrice.toStringAsFixed(0)} CFA',
+                                    style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),*/
+                              ],
                             ),
-                            child: GestureDetector(
-                              onTap: () async {
-                                if (quantity > 0) {
-                                  await updateCartQuantity();
+                          ),
+                          SizedBox(width: 16),
+                          ElevatedButton(
+                            onPressed: quantity > 0
+                                ? () async {
+                              final userDetailsJson =
+                              singleton<LocalStorageFactory>().getUserDetails();
+                              final userDetails =
+                              userDetailsJson is String ? jsonDecode(userDetailsJson) : userDetailsJson;
+                              final phoneNumber = (userDetails['phoneNumber'] ?? '').toString();
+
+                              final result = await addToCart(
+                                phoneNumber,
+                                CartItemModel(
+                                  id: widget.id,
+                                  name: widget.name,
+                                  price: widget.price,
+                                  imageUrl: widget.imageUrl,
+                                  restaurantId: widget.restaurantId,
+                                  description: widget.description,
+                                  rating: widget.rating,
+                                  quantity: quantity,
+                                  user: phoneNumber,
+                                ),
+                              );
+
+                              result.fold(
+                                    (failure) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text("Erreur : ${failure?.message ?? 'Inconnue'}"),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                },
+                                    (success) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Plat ajouté au panier avec succès'),
+                                      backgroundColor: Colors.green,
+                                    ),
+                                  );
                                   Navigator.pop(context);
-                                }
-                              },
-                              child: Text(
-                                quantity > 0
-                                    ? "panier : $quantity pour ${totalPrice.toStringAsFixed(3)} CFA"
-                                    : "Ajouter au panier",
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                                },
+                              );
+                            }
+                                : null,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.orange,
+                              foregroundColor: Colors.white,
+                              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(24),
+                              ),
+                            ),
+                            child: Text(
+                              quantity > 0
+                                  ? "Panier : $quantity pour ${totalPrice} CFA"
+                                  : "Ajouter au panier",
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
                           ),
+
                         ],
                       ),
                     ),
-                    SizedBox(height: 16),
                   ],
                 ),
         );

@@ -1,23 +1,25 @@
 import 'package:flutter/material.dart';
-
 import '../pages/dish_detail_page.dart';
+import 'package:liya/modules/restaurant/features/like/presentation/widgets/like_button.dart';
 
 class PopularDishCard extends StatelessWidget {
+  final String id;
   final String name;
   final String price;
   final String imageUrl;
   final String restaurantId;
   final String description;
-//  final String rating;
+  final String userId;
   final VoidCallback onAddToCart;
 
   const PopularDishCard({
+    required this.id,
     required this.name,
     required this.price,
     required this.imageUrl,
     required this.restaurantId,
     required this.description,
-    //required this.rating,
+    required this.userId,
     required this.onAddToCart,
   });
 
@@ -26,23 +28,21 @@ class PopularDishCard extends StatelessWidget {
     return GestureDetector(
       onTap: () {
         Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => DishDetailPage(
-                name: name,
-                price: price,
-                imageUrl: imageUrl,
-                restaurantId: restaurantId,
-                description: description,
-                rating: '',
-                id: '',
-                //rating: rating,
-              ),
+          context,
+          MaterialPageRoute(
+            builder: (context) => DishDetailPage(
+              id: id,
+              restaurantId: restaurantId,
+              name: name,
+              price: price,
+              imageUrl: imageUrl,
+              rating: '0.0',
+              description: description,
             ),
-
+          ),
         );
       },
-      child:  Card(
+      child: Card(
         elevation: 1,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         color: Colors.grey,
@@ -77,7 +77,7 @@ class PopularDishCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    price+' F',
+                    price + ' F',
                     style: TextStyle(
                       fontSize: 12,
                       color: Colors.white,
@@ -86,17 +86,17 @@ class PopularDishCard extends StatelessWidget {
                   ),
                 ),
               ),
-              // Bouton "Like" (icône de cœur) en haut à droite
+              // Bouton Like en haut à droite
               Positioned(
                 top: 8,
                 right: 4,
-                child: Container(
-                  padding: EdgeInsets.all(6.0),
-                  decoration: BoxDecoration(
-                    color: Colors.orange.withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Icon(Icons.favorite_border, color: Colors.grey, size: 24),
+                child: LikeButton(
+                  dishId: id,
+                  userId: userId,
+                  name: name,
+                  price: price,
+                  imageUrl: imageUrl,
+                  description: description,
                 ),
               ),
               // Cadre contenant le nom et le bouton "Ajouter au panier"
@@ -111,26 +111,28 @@ class PopularDishCard extends StatelessWidget {
                     children: [
                       // Nom en bas à gauche
                       Expanded(
-                          child: Container(
-                            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-                            decoration: BoxDecoration(
-                              color: Colors.grey.withOpacity(0.8),
-                              borderRadius: BorderRadius.circular(16),
+                        child: Container(
+                          padding:
+                              EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.withOpacity(0.8),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Text(
+                            name,
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
                             ),
-                            child: Text(
-                              name,
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          )
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
                       ),
                       // Bouton "Ajouter au panier" en bas à droite
                       Container(
-                        padding: EdgeInsets.symmetric(horizontal: 4, vertical: 10),
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 4, vertical: 10),
                         decoration: BoxDecoration(
                           color: Colors.red,
                           borderRadius: BorderRadius.circular(16),
@@ -154,8 +156,7 @@ class PopularDishCard extends StatelessWidget {
             ],
           ),
         ),
-      )
+      ),
     );
-
   }
 }

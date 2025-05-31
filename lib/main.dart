@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:liya/core/singletons.dart';
+import 'package:liya/core/providers.dart';
 
 import 'app.dart';
 
-
-void main() async{
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await EasyLocalization.ensureInitialized();
   await initSingletons();
@@ -18,16 +18,13 @@ void main() async{
     print('Firebase init error: $e');
   }
   runApp(
-    //Plugin for Internationalization i18n
+      //Plugin for Internationalization i18n
       ProviderScope(
-          child:EasyLocalization(
-            useOnlyLangCode: true,
-            supportedLocales: const [Locale('en'), Locale('fr')],
-            path: 'assets/lang',
-            fallbackLocale: const Locale('en', 'EN'),
-            child:  App(),
-          )
-      )
-  );
+          child: EasyLocalization(
+    useOnlyLangCode: true,
+    supportedLocales: const [Locale('en'), Locale('fr')],
+    path: 'assets/lang',
+    fallbackLocale: const Locale('en', 'EN'),
+    child: App(),
+  )));
 }
-
