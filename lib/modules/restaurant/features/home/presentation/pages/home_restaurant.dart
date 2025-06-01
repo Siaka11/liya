@@ -142,6 +142,10 @@ class HomeRestaurantPage extends ConsumerWidget {
                                                         popularDishState
                                                             .popularDishes![i]
                                                             .description,
+                                                    sodas:
+                                                    popularDishState
+                                                        .popularDishes![i]
+                                                        .sodas,
                                                     userId: phoneNumber,
                                                     onAddToCart: () {
                                                       print(
@@ -184,6 +188,11 @@ class HomeRestaurantPage extends ConsumerWidget {
                                                                 .popularDishes![
                                                                     i + 1]
                                                                 .description,
+                                                        sodas:
+                                                        popularDishState
+                                                            .popularDishes![
+                                                        i + 1]
+                                                            .sodas,
                                                         userId: phoneNumber,
                                                         onAddToCart: () {
                                                           print(

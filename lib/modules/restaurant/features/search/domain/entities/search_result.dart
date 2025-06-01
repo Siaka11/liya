@@ -4,6 +4,7 @@ class SearchResult {
   final String imageUrl;
   final double price;
   final String description;
+  final bool sodas;
 
   SearchResult({
     required this.id,
@@ -11,5 +12,6 @@ class SearchResult {
     required this.imageUrl,
     required this.price,
     required this.description,
+    required this.sodas,
   });
 }

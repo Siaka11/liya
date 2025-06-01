@@ -24,6 +24,7 @@ class CartRepositoryImpl implements CartRepository {
         rating: cartItem.rating,
         quantity: cartItem.quantity,
         user: cartItem.user,
+        sodas: cartItem.sodas,
       );
       await remoteDataSource.addToCart(userId, cartItemModel);
       return Right(null);

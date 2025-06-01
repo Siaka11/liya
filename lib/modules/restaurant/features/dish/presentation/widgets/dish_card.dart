@@ -9,6 +9,7 @@ class DishCard extends StatelessWidget {
   final String description;
   final double rating;
   final String userId;
+  final bool sodas;
 
   const DishCard({
     Key? key,
@@ -19,6 +20,7 @@ class DishCard extends StatelessWidget {
     required this.description,
     required this.rating,
     required this.userId,
+    required this.sodas,
   }) : super(key: key);
 
   @override
@@ -60,6 +62,7 @@ class DishCard extends StatelessWidget {
                   price: price,
                   imageUrl: imageUrl,
                   description: description,
+                  sodas: sodas,
                 ),
               ),
             ],

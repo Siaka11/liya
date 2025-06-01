@@ -98,6 +98,7 @@ class LikedDishesPage extends ConsumerWidget {
                       imageUrl: dish.imageUrl,
                       rating: dish.rating.toString(),
                       description: dish.description,
+                      sodas: dish.sodas
                     ),
                   );
                 },
@@ -109,6 +110,7 @@ class LikedDishesPage extends ConsumerWidget {
                   description: dish.description,
                   rating: dish.rating,
                   userId: phoneNumber,
+                  sodas: dish.sodas,
                 ),
               );
             },

@@ -7,6 +7,7 @@ import 'package:liya/modules/restaurant/features/home/presentation/pages/restaur
 import 'package:liya/modules/restaurant/features/like/application/like_provider.dart';
 import 'package:liya/modules/restaurant/features/like/domain/entities/liked_dish.dart';
 import 'package:liya/modules/restaurant/features/like/presentation/widgets/like_button.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../../../../../core/local_storage_factory.dart';
 import '../../../../../../core/singletons.dart';
@@ -25,6 +26,7 @@ class DishDetailPage extends ConsumerStatefulWidget {
   final String price;
   final String imageUrl;
   final String rating;
+  final bool sodas;
 
   const DishDetailPage({
     required this.id,
@@ -34,6 +36,7 @@ class DishDetailPage extends ConsumerStatefulWidget {
     required this.imageUrl,
     required this.rating,
     required this.description,
+    required this.sodas,
   });
 
   @override
@@ -87,6 +90,7 @@ class _DishDetailPageState extends ConsumerState<DishDetailPage> {
               rating: '',
               quantity: 0,
               user: '',
+              sodas: true,
             ),
           );
           print('DEBUG: Quantité trouvée dans Firestore: ${item.quantity}');
@@ -183,6 +187,7 @@ class _DishDetailPageState extends ConsumerState<DishDetailPage> {
                                   price: widget.price,
                                   imageUrl: widget.imageUrl,
                                   description: widget.description,
+                                  sodas: widget.sodas,
                                 );
                               },
                             ),
@@ -230,6 +235,56 @@ class _DishDetailPageState extends ConsumerState<DishDetailPage> {
                                 style: TextStyle(
                                     fontSize: 16, color: Colors.grey[700]),
                               ),
+                              // SECTION BOISSONS AUTOMATIQUE
+                              if (widget.sodas == true) ...[
+                                const SizedBox(height: 24),
+                                const Text(
+                                  'Souhaitez-vous une boisson ?',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                Consumer(
+                                  builder: (context, ref, _) {
+                                    final sodasAsync = ref.watch(sodasProvider);
+                                    return sodasAsync.when(
+                                      loading: () => const Padding(
+                                        padding:
+                                            EdgeInsets.symmetric(vertical: 16),
+                                        child: Center(
+                                            child: CircularProgressIndicator()),
+                                      ),
+                                      error: (e, _) => const Text(
+                                          'Erreur de chargement des boissons'),
+                                      data: (sodas) => Column(
+                                        children: sodas
+                                            .map((soda) => Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceBetween,
+                                                  children: [
+                                                    Text(soda.name),
+                                                    ...soda.sizes.entries
+                                                        .map((entry) => Padding(
+                                                              padding:
+                                                                  const EdgeInsets
+                                                                      .symmetric(
+                                                                      horizontal:
+                                                                          4),
+                                                              child: Text(
+                                                                '+${entry.value}',
+                                                                style: const TextStyle(
+                                                                    color: Colors
+                                                                        .green),
+                                                              ),
+                                                            )),
+                                                    // Ici tu peux ajouter tes boutons de quantité
+                                                  ],
+                                                ))
+                                            .toList(),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ],
                             ],
                           ),
                         ),
@@ -286,52 +341,63 @@ class _DishDetailPageState extends ConsumerState<DishDetailPage> {
                           ElevatedButton(
                             onPressed: quantity > 0
                                 ? () async {
-                              final userDetailsJson =
-                              singleton<LocalStorageFactory>().getUserDetails();
-                              final userDetails =
-                              userDetailsJson is String ? jsonDecode(userDetailsJson) : userDetailsJson;
-                              final phoneNumber = (userDetails['phoneNumber'] ?? '').toString();
+                                    final userDetailsJson =
+                                        singleton<LocalStorageFactory>()
+                                            .getUserDetails();
+                                    final userDetails =
+                                        userDetailsJson is String
+                                            ? jsonDecode(userDetailsJson)
+                                            : userDetailsJson;
+                                    final phoneNumber =
+                                        (userDetails['phoneNumber'] ?? '')
+                                            .toString();
 
-                              final result = await addToCart(
-                                phoneNumber,
-                                CartItemModel(
-                                  id: widget.id,
-                                  name: widget.name,
-                                  price: widget.price,
-                                  imageUrl: widget.imageUrl,
-                                  restaurantId: widget.restaurantId,
-                                  description: widget.description,
-                                  rating: widget.rating,
-                                  quantity: quantity,
-                                  user: phoneNumber,
-                                ),
-                              );
+                                    final result = await addToCart(
+                                      phoneNumber,
+                                      CartItemModel(
+                                        id: widget.id,
+                                        name: widget.name,
+                                        price: widget.price,
+                                        imageUrl: widget.imageUrl,
+                                        restaurantId: widget.restaurantId,
+                                        description: widget.description,
+                                        rating: widget.rating,
+                                        quantity: quantity,
+                                        user: phoneNumber,
+                                        sodas: widget.sodas,
+                                      ),
+                                    );
 
-                              result.fold(
-                                    (failure) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text("Erreur : ${failure?.message ?? 'Inconnue'}"),
-                                      backgroundColor: Colors.red,
-                                    ),
-                                  );
-                                },
-                                    (success) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text('Plat ajouté au panier avec succès'),
-                                      backgroundColor: Colors.green,
-                                    ),
-                                  );
-                                  Navigator.pop(context);
-                                },
-                              );
-                            }
+                                    result.fold(
+                                      (failure) {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                                "Erreur : ${failure?.message ?? 'Inconnue'}"),
+                                            backgroundColor: Colors.red,
+                                          ),
+                                        );
+                                      },
+                                      (success) {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                                'Plat ajouté au panier avec succès'),
+                                            backgroundColor: Colors.green,
+                                          ),
+                                        );
+                                        Navigator.pop(context);
+                                      },
+                                    );
+                                  }
                                 : null,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.orange,
                               foregroundColor: Colors.white,
-                              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 24, vertical: 12),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(24),
                               ),
@@ -347,7 +413,6 @@ class _DishDetailPageState extends ConsumerState<DishDetailPage> {
                               ),
                             ),
                           ),
-
                         ],
                       ),
                     ),
@@ -358,3 +423,38 @@ class _DishDetailPageState extends ConsumerState<DishDetailPage> {
     );
   }
 }
+
+// Modèle pour un soda
+class SodaSupplement {
+  final String name;
+  final bool active;
+  final Map<String, String> sizes;
+
+  SodaSupplement({
+    required this.name,
+    required this.active,
+    required this.sizes,
+  });
+
+  factory SodaSupplement.fromJson(Map<String, dynamic> json) {
+    return SodaSupplement(
+      name: json['name'] ?? '',
+      active: json['active'] ?? false,
+      sizes: Map<String, String>.from(json['sizes'] ?? {}),
+    );
+  }
+}
+
+// Provider pour récupérer les sodas actifs
+final sodasProvider = FutureProvider<List<SodaSupplement>>((ref) async {
+  final doc = await FirebaseFirestore.instance
+      .collection('supplements')
+      .doc('global_sodas')
+      .get();
+
+  final sodasList = (doc.data()?['sodas'] as List<dynamic>? ?? []);
+  return sodasList
+      .map((e) => SodaSupplement.fromJson(Map<String, dynamic>.from(e)))
+      .where((soda) => soda.active)
+      .toList();
+});

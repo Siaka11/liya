@@ -88,6 +88,7 @@ class CartRemoteDataSourceImpl implements CartRemoteDataSource {
           rating: data['rating'] ?? '',
           quantity: data['quantity'] ?? 0,
           user: data['user'] ?? '',
+          sodas: data['sodas'] ?? '',
         );
       }).toList();
     });

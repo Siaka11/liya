@@ -11,17 +11,19 @@ class CartItemModel extends CartItem {
     required String rating,
     required int quantity,
     required String user,
+    required bool sodas,
   }) : super(
-    id: id,
-    name: name,
-    price: price,
-    imageUrl: imageUrl,
-    restaurantId: restaurantId,
-    description: description,
-    rating: rating,
-    quantity: quantity,
-    user: user,
-  );
+          id: id,
+          name: name,
+          price: price,
+          imageUrl: imageUrl,
+          restaurantId: restaurantId,
+          description: description,
+          rating: rating,
+          quantity: quantity,
+          user: user,
+          sodas: sodas,
+        );
 
   Map<String, dynamic> toFirestore() {
     return {
@@ -34,6 +36,7 @@ class CartItemModel extends CartItem {
       "rating": rating,
       "quantity": quantity,
       "user": user,
+      "sodas": sodas,
     };
   }
 
@@ -48,6 +51,10 @@ class CartItemModel extends CartItem {
       rating: data["rating"] ?? '0.0',
       quantity: data["quantity"] ?? 1,
       user: data["user"] ?? '',
+      sodas: data["sodas"] == true ||
+          data["sodas"] == 1 ||
+          data["sodas"] == '1' ||
+          data["sodas"] == 'true',
     );
   }
 
@@ -62,6 +69,10 @@ class CartItemModel extends CartItem {
       rating: json["rating"],
       quantity: json["quantity"],
       user: json["user"],
+      sodas: json["sodas"] == true ||
+          json["sodas"] == 1 ||
+          json["sodas"] == '1' ||
+          json["sodas"] == 'true',
     );
   }
 }

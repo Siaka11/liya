@@ -8,6 +8,7 @@ class CartItem{
   final String description;
   final String rating;
   final int quantity;
+  final bool sodas;
 
     CartItem({
       required this.id,
@@ -19,6 +20,7 @@ class CartItem{
       required this.description,
       required this.rating,
       required this.quantity,
+      required this.sodas,
     });
 
 }

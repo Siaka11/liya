@@ -143,6 +143,7 @@ class CartPage extends ConsumerWidget {
                                 imageUrl: item.imageUrl,
                                 rating: '0.0',
                                 description: item.description ?? '',
+                                sodas: item.sodas
                               ),
                             );
                             // Rafraîchir la page après le retour

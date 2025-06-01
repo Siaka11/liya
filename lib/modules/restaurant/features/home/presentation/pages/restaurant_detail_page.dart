@@ -243,6 +243,7 @@ class RestaurantDetailPage extends ConsumerWidget {
                                                           description:
                                                               dish.description ??
                                                                   '',
+                                                              sodas: dish.sodas,
                                                         ),
                                                       ),
                                                     );
@@ -320,6 +321,7 @@ class RestaurantDetailPage extends ConsumerWidget {
                                                         description:
                                                             dish.description ??
                                                                 '',
+                                                            sodas: dish.sodas,
                                                       ),
                                                     ),
                                                   );

@@ -8,6 +8,7 @@ class DishModel extends Dish {
     required String price,
     required String imageUrl,
     required String categoryId,
+    required bool sodas,
   }) : super(
           id: id,
           name: name,
@@ -15,6 +16,7 @@ class DishModel extends Dish {
           price: price,
           imageUrl: imageUrl,
           categoryId: categoryId,
+          sodas: sodas,
         );
 
   factory DishModel.fromJson(Map<String, dynamic> json) {
@@ -25,6 +27,7 @@ class DishModel extends Dish {
       price: (json['price'] ?? 0).toString(),
       imageUrl: json['image_url'] ?? '',
       categoryId: json['categoryId'].toString(),
+      sodas: json['sodas'],
     );
   }
 

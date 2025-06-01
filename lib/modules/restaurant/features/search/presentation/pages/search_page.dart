@@ -58,7 +58,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Fries'),
+        title: const Text('Recherche'),
         leading: BackButton(),
         actions: [
           IconButton(

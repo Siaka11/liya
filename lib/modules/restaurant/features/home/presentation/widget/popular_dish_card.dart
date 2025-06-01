@@ -10,6 +10,7 @@ class PopularDishCard extends StatelessWidget {
   final String restaurantId;
   final String description;
   final String userId;
+  final bool sodas;
   final VoidCallback onAddToCart;
 
   const PopularDishCard({
@@ -21,6 +22,7 @@ class PopularDishCard extends StatelessWidget {
     required this.description,
     required this.userId,
     required this.onAddToCart,
+    required this.sodas,
   });
 
   @override
@@ -38,6 +40,7 @@ class PopularDishCard extends StatelessWidget {
               imageUrl: imageUrl,
               rating: '0.0',
               description: description,
+              sodas: sodas,
             ),
           ),
         );
@@ -97,6 +100,7 @@ class PopularDishCard extends StatelessWidget {
                   price: price,
                   imageUrl: imageUrl,
                   description: description,
+                  sodas: sodas,
                 ),
               ),
               // Cadre contenant le nom et le bouton "Ajouter au panier"
