@@ -4,6 +4,8 @@ import 'package:liya/modules/restaurant/features/like/data/datasources/like_remo
 import 'package:liya/modules/restaurant/features/like/data/repositories/like_repository_impl.dart';
 import 'package:liya/modules/restaurant/features/like/domain/repositories/like_repository.dart';
 import 'package:liya/modules/restaurant/features/like/domain/usecases/like_dish.dart';
+import 'package:liya/core/storage/local_storage_factory.dart';
+import 'dart:convert';
 
 final likeRepositoryProvider = Provider<LikeRepository>((ref) {
   final firestore = FirebaseFirestore.instance;
@@ -13,4 +15,14 @@ final likeRepositoryProvider = Provider<LikeRepository>((ref) {
 
 final likeDishProvider = Provider<LikeDish>((ref) {
   return LikeDish(ref.watch(likeRepositoryProvider));
+});
+
+final localStorageFactoryProvider = Provider<LocalStorageFactory>((ref) {
+  return LocalStorageFactory();
+});
+
+final userIdProvider = FutureProvider<String>((ref) async {
+  final localStorage = ref.watch(localStorageFactoryProvider);
+  final userDetails = await localStorage.getUserDetails();
+  return userDetails['phoneNumber'] ?? '';
 });

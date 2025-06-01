@@ -8,6 +8,8 @@ import 'package:liya/modules/restaurant/features/home/presentation/widget/popula
 import 'package:liya/modules/restaurant/features/like/application/like_provider.dart';
 import 'package:liya/modules/restaurant/features/like/domain/entities/liked_dish.dart';
 import 'package:liya/routes/app_router.gr.dart';
+import 'package:liya/core/providers.dart';
+import 'package:liya/modules/restaurant/features/dish/presentation/widgets/dish_card.dart';
 
 @RoutePage(name: 'LikedDishesRoute')
 class LikedDishesPage extends ConsumerWidget {
@@ -21,13 +23,20 @@ class LikedDishesPage extends ConsumerWidget {
         : userDetailsJson;
     final phoneNumber = userDetails['phoneNumber'] ?? '';
 
+    if (phoneNumber.isEmpty) {
+      return const Scaffold(
+        body: Center(
+          child: Text('Veuillez vous connecter pour voir vos favoris'),
+        ),
+      );
+    }
+
     final likedDishesAsync = ref.watch(getLikedDishesProvider(phoneNumber));
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Mes plats favoris'),
-        backgroundColor: Colors.orange,
-        foregroundColor: Colors.white,
+        centerTitle: true,
       ),
       body: likedDishesAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -36,52 +45,70 @@ class LikedDishesPage extends ConsumerWidget {
         ),
         data: (likedDishes) {
           if (likedDishes.isEmpty) {
-            return const Center(
-              child: Text('Vous n\'avez pas encore liké de plats'),
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.favorite_border,
+                    size: 64,
+                    color: Colors.grey[400],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Aucun plat favori',
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Likez vos plats préférés pour les retrouver ici',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[500],
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
             );
           }
 
-          return ListView.builder(
+          return GridView.builder(
             padding: const EdgeInsets.all(16),
-            itemCount: (likedDishes.length + 1) ~/ 2,
-            itemBuilder: (context, i) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: PopularDishCard(
-                        id: likedDishes[i * 2].id,
-                        name: likedDishes[i * 2].name,
-                        price: likedDishes[i * 2].price.toString(),
-                        imageUrl: likedDishes[i * 2].imageUrl,
-                        restaurantId: likedDishes[i * 2].restaurantId,
-                        description: likedDishes[i * 2].description,
-                        userId: phoneNumber,
-                        onAddToCart: () {
-                          // Add to cart logic
-                        },
-                      ),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              childAspectRatio: 0.75,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+            ),
+            itemCount: likedDishes.length,
+            itemBuilder: (context, index) {
+              final dish = likedDishes[index];
+              return GestureDetector(
+                onTap: () {
+                  context.router.push(
+                    DishDetailRoute(
+                      id: dish.id,
+                      restaurantId: dish.restaurantId,
+                      name: dish.name,
+                      price: dish.price.toString(),
+                      imageUrl: dish.imageUrl,
+                      rating: dish.rating.toString(),
+                      description: dish.description,
                     ),
-                    if (i * 2 + 1 < likedDishes.length)
-                      Padding(
-                        padding: const EdgeInsets.only(left: 16),
-                        child: Expanded(
-                          child: PopularDishCard(
-                            id: likedDishes[i * 2 + 1].id,
-                            name: likedDishes[i * 2 + 1].name,
-                            price: likedDishes[i * 2 + 1].price.toString(),
-                            imageUrl: likedDishes[i * 2 + 1].imageUrl,
-                            restaurantId: likedDishes[i * 2 + 1].restaurantId,
-                            description: likedDishes[i * 2 + 1].description,
-                            userId: phoneNumber,
-                            onAddToCart: () {
-                              // Add to cart logic
-                            },
-                          ),
-                        ),
-                      ),
-                  ],
+                  );
+                },
+                child: DishCard(
+                  id: dish.id,
+                  name: dish.name,
+                  price: dish.price.toString(),
+                  imageUrl: dish.imageUrl,
+                  description: dish.description,
+                  rating: dish.rating,
+                  userId: phoneNumber,
                 ),
               );
             },

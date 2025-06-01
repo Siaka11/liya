@@ -37,7 +37,7 @@ class NavigationFooter extends ConsumerWidget {
             context.router.push(const HomeRoute());
             break;
           case 1: // Favoris
-            // TODO: Implémenter la navigation vers les favoris
+            context.router.push(const LikedDishesRoute());
             break;
           case 2: // Recherche
             context.router.push(const SearchRoute());
