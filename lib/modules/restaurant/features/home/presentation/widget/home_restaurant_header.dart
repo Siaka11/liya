@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:liya/core/ui/theme/theme.dart';
 import 'package:liya/modules/restaurant/features/card/data/datasources/cart_remote_data_source.dart';
 import 'package:liya/modules/restaurant/features/card/domain/entities/cart_item.dart';
 import 'package:liya/modules/restaurant/features/card/domain/repositories/cart_repository.dart';

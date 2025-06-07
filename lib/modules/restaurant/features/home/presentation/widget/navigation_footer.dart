@@ -57,7 +57,7 @@ class NavigationFooter extends ConsumerWidget {
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.favorite_outlined),
-          label: "J'aime",
+          label: "Favoris",
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.search),

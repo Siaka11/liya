@@ -11,6 +11,9 @@ import 'package:liya/routes/app_router.gr.dart';
 import 'package:liya/core/providers.dart';
 import 'package:liya/modules/restaurant/features/dish/presentation/widgets/dish_card.dart';
 
+import '../../../../../../core/ui/theme/theme.dart';
+import '../../../home/presentation/widget/navigation_footer.dart';
+
 @RoutePage(name: 'LikedDishesRoute')
 class LikedDishesPage extends ConsumerWidget {
   const LikedDishesPage({Key? key}) : super(key: key);
@@ -35,8 +38,8 @@ class LikedDishesPage extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Mes plats favoris'),
-        centerTitle: true,
+        title: const Text("Mes plats favoris", style: TextStyle(color: UIColors.orange)),
+        leading: SizedBox(),
       ),
       body: likedDishesAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -117,6 +120,7 @@ class LikedDishesPage extends ConsumerWidget {
           );
         },
       ),
+      bottomNavigationBar: NavigationFooter(),
     );
   }
 }

@@ -58,11 +58,13 @@ class _SearchPageState extends ConsumerState<SearchPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Recherche'),
-        leading: BackButton(),
+        title: const Text('Recherche', style: TextStyle(color: Colors.deepOrange)),
+        leading: BackButton(
+          color: Colors.deepOrange,
+        ),
         actions: [
           IconButton(
-            icon: Icon(Icons.close),
+            icon: Icon(Icons.close, color: Colors.deepOrange),
             onPressed: () {
               _controller.clear();
               ref.read(searchProvider.notifier).search('');
@@ -78,23 +80,36 @@ class _SearchPageState extends ConsumerState<SearchPage> {
               controller: _controller,
               onSubmitted: (_) => _onSearch(),
               decoration: InputDecoration(
-                hintText: 'Rechercher...',
-                border: OutlineInputBorder(),
+                hintText: 'Garba...',
                 prefixIcon: IconButton(
                   icon: Icon(Icons.search, color: Colors.deepOrange),
                   onPressed: _onSearch,
                 ),
                 suffixIcon: _controller.text.isNotEmpty
                     ? IconButton(
-                        icon: Icon(Icons.clear),
-                        onPressed: () {
-                          _controller.clear();
-                          ref.read(searchProvider.notifier).search('');
-                        },
-                      )
+                  icon: Icon(Icons.clear, color: Colors.deepOrange),
+                  onPressed: () {
+                    _controller.clear();
+                    ref.read(searchProvider.notifier).search('');
+                  },
+                )
                     : null,
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(20), // Bord arrondi
+                  borderSide: BorderSide(color: Colors.deepOrange), // Couleur bord
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(20),
+                  borderSide: BorderSide(color: Colors.deepOrange, width: 2), // Accentuation si focus
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(20),
+                  borderSide: BorderSide(color: Colors.deepOrange),
+                ),
+                contentPadding: EdgeInsets.symmetric(vertical: 12, horizontal: 20),
               ),
             ),
+
           ),
           if (_searchHistory.isNotEmpty)
             Container(

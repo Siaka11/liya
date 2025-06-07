@@ -34,9 +34,10 @@ class CartPage extends ConsumerWidget {
     return Scaffold(
       backgroundColor: UIColors.defaultColor,
       appBar: AppBar(
-        title: Text('Mon Panier', style: TextStyle(color: Colors.white)),
-        backgroundColor: UIColors.orange,
-        elevation: 0,
+        title: const Text('Mon panier', style: TextStyle(color: Colors.orange)),
+        leading: BackButton(
+          color: UIColors.orange,
+        ),
       ),
       body: FutureBuilder(
         key: ValueKey(refreshCount),
@@ -136,15 +137,14 @@ class CartPage extends ConsumerWidget {
                             // Navigation vers la page de détails du plat
                             await context.router.push(
                               DishDetailRoute(
-                                id: item.id ?? '',
-                                restaurantId: item.restaurantId ?? '',
-                                name: item.name,
-                                price: item.price,
-                                imageUrl: item.imageUrl,
-                                rating: '0.0',
-                                description: item.description ?? '',
-                                sodas: item.sodas
-                              ),
+                                  id: item.id ?? '',
+                                  restaurantId: item.restaurantId ?? '',
+                                  name: item.name,
+                                  price: item.price,
+                                  imageUrl: item.imageUrl,
+                                  rating: '0.0',
+                                  description: item.description ?? '',
+                                  sodas: item.sodas),
                             );
                             // Rafraîchir la page après le retour
                             ref.read(refreshKey.notifier).state++;
