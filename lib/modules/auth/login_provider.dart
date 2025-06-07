@@ -155,7 +155,6 @@ class LoginProvider extends StateNotifier<AuthModel> {
     try {
       if (phoneNumber == '0709976498') {
         ref.read(authProvider).login();
-
         await singleton<LocalStorageFactory>().setUserDetails({
           "name": "Sidoine",
           "lastName": "Konan",
