@@ -27,7 +27,10 @@ class DishModel extends Dish {
       price: (json['price'] ?? 0).toString(),
       imageUrl: json['image_url'] ?? '',
       categoryId: json['categoryId'].toString(),
-      sodas: json['sodas'],
+      sodas: json["sodas"] == true ||
+          json["sodas"] == 1 ||
+          json["sodas"] == '1' ||
+          json["sodas"] == 'true',
     );
   }
 

@@ -11,6 +11,7 @@ class Restaurant {
   final String? email;
   final String? latitude;
   final String? longitude;
+  final String coverImage;
 /*  final Map<String, dynamic>? openingHours;
   final String? coverImage;
   final bool isActive;
@@ -27,6 +28,7 @@ class Restaurant {
     this.email,
     this.latitude,
     this.longitude,
+    required this.coverImage
 /*    this.openingHours,
     this.coverImage,
     this.isActive = true,
@@ -45,6 +47,7 @@ class Restaurant {
       email: json['email'],
       latitude: json['latitude'],
       longitude: json['longitude'],
+      coverImage: json['cover_image'],
 /*      openingHours: json['opening_hours'] != null ? Map<String, dynamic>.from(json['opening_hours']) : null,
       coverImage: json['cover_image'],
       isActive: json['is_active'] ?? true,

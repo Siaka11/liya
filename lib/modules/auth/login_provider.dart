@@ -157,8 +157,8 @@ class LoginProvider extends StateNotifier<AuthModel> {
         ref.read(authProvider).login();
 
         await singleton<LocalStorageFactory>().setUserDetails({
-          "name": "auro2",
-          "lastName": "Junior",
+          "name": "Sidoine",
+          "lastName": "Konan",
           "phoneNumber": phoneNumber,
         });
 

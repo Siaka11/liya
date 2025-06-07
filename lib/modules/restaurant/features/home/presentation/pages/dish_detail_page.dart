@@ -46,6 +46,7 @@ class DishDetailPage extends ConsumerStatefulWidget {
 class _DishDetailPageState extends ConsumerState<DishDetailPage> {
   int quantity = 0;
   bool isLoading = true;
+  Map<String, int> sodaQuantities = {};
 
   @override
   void initState() {
@@ -239,7 +240,7 @@ class _DishDetailPageState extends ConsumerState<DishDetailPage> {
                               if (widget.sodas == true) ...[
                                 const SizedBox(height: 24),
                                 const Text(
-                                  'Souhaitez-vous une boisson ?',
+                                  'Souhaitez vous une boisson ?',
                                   style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
                                 Consumer(
@@ -255,31 +256,103 @@ class _DishDetailPageState extends ConsumerState<DishDetailPage> {
                                       error: (e, _) => const Text(
                                           'Erreur de chargement des boissons'),
                                       data: (sodas) => Column(
-                                        children: sodas
-                                            .map((soda) => Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment
-                                                          .spaceBetween,
-                                                  children: [
-                                                    Text(soda.name),
-                                                    ...soda.sizes.entries
-                                                        .map((entry) => Padding(
-                                                              padding:
-                                                                  const EdgeInsets
-                                                                      .symmetric(
-                                                                      horizontal:
-                                                                          4),
-                                                              child: Text(
-                                                                '+${entry.value}',
-                                                                style: const TextStyle(
-                                                                    color: Colors
-                                                                        .green),
-                                                              ),
-                                                            )),
-                                                    // Ici tu peux ajouter tes boutons de quantité
-                                                  ],
-                                                ))
-                                            .toList(),
+                                        children: sodas.map((soda) {
+                                          final firstSize =
+                                              soda.sizes.entries.first;
+                                          final qty =
+                                              sodaQuantities[soda.name] ?? 0;
+                                          return Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                                vertical: 6),
+                                            child: Row(
+                                              children: [
+                                                // Nom du soda
+                                                Expanded(
+                                                  child: Text(
+                                                    soda.name,
+                                                    style: const TextStyle(
+                                                        fontSize: 15),
+                                                  ),
+                                                ),
+                                                // Prix
+                                                Text(
+                                                  '+${firstSize.value}',
+                                                  style: const TextStyle(
+                                                    color: Colors.green,
+                                                    fontSize: 15,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 12),
+                                                // Contrôles de quantité
+                                                Container(
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.grey[200],
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            18),
+                                                  ),
+                                                  child: Row(
+                                                    children: [
+                                                      IconButton(
+                                                        icon: const Icon(
+                                                            Icons.remove,
+                                                            size: 16),
+                                                        splashRadius: 18,
+                                                        padding:
+                                                            EdgeInsets.zero,
+                                                        constraints:
+                                                            const BoxConstraints(),
+                                                        onPressed: qty > 0
+                                                            ? () {
+                                                                setState(() {
+                                                                  sodaQuantities[
+                                                                          soda.name] =
+                                                                      qty - 1;
+                                                                });
+                                                              }
+                                                            : null,
+                                                      ),
+                                                      Container(
+                                                        width: 24,
+                                                        alignment:
+                                                            Alignment.center,
+                                                        child: Text(
+                                                          qty
+                                                              .toString()
+                                                              .padLeft(2, '0'),
+                                                          style:
+                                                              const TextStyle(
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                            fontSize: 14,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                      IconButton(
+                                                        icon: const Icon(
+                                                            Icons.add,
+                                                            size: 16),
+                                                        splashRadius: 18,
+                                                        padding:
+                                                            EdgeInsets.zero,
+                                                        constraints:
+                                                            const BoxConstraints(),
+                                                        onPressed: () {
+                                                          setState(() {
+                                                            sodaQuantities[
+                                                                    soda.name] =
+                                                                qty + 1;
+                                                          });
+                                                        },
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          );
+                                        }).toList(),
                                       ),
                                     );
                                   },
