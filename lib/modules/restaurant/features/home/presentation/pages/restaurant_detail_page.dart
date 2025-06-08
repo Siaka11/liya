@@ -9,7 +9,6 @@ import 'package:liya/core/ui/theme/theme.dart';
 import '../../../../../../core/local_storage_factory.dart';
 import '../../../../../../core/singletons.dart';
 import '../../../card/data/datasources/cart_remote_data_source.dart';
-import '../../../card/domain/entities/cart_item.dart';
 import '../../../card/domain/repositories/cart_repository.dart';
 import '../../../card/domain/usecases/add_to_cart.dart';
 import '../../application/dish_provider.dart';
@@ -27,20 +26,20 @@ class RestaurantDetailPage extends ConsumerWidget {
   final String id;
   final String name;
   final String description;
+  final String coverImage;
 
   const RestaurantDetailPage({
     super.key,
     required this.id,
     required this.name,
     required this.description,
+    required this.coverImage,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final dishController = ref.read(dishControllerProvider(id).notifier);
     final dishState = ref.watch(dishControllerProvider(id));
-    final addToCart = ref.watch(addToCartProvider);
-    final selectedQuantity = ref.watch(selectedQuantityProvider);
     final cartRepository =
         CartRepositoryImpl(remoteDataSource: CartRemoteDataSourceImpl());
 
@@ -96,7 +95,7 @@ class RestaurantDetailPage extends ConsumerWidget {
             height: 300,
             decoration: BoxDecoration(
               image: DecorationImage(
-                image: AssetImage('assets/basi.jpg'),
+                image: NetworkImage(coverImage),
                 fit: BoxFit.cover,
                 colorFilter: ColorFilter.mode(
                   Colors.black.withOpacity(0.3),

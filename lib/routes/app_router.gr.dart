@@ -172,6 +172,7 @@ abstract class $AppRouter extends _i18.RootStackRouter {
           id: args.id,
           name: args.name,
           description: args.description,
+          coverImage: args.coverImage,
         ),
       );
     },
@@ -574,6 +575,7 @@ class RestaurantDetailRoute
     required String id,
     required String name,
     required String description,
+    required String coverImage,
     List<_i18.PageRouteInfo>? children,
   }) : super(
           RestaurantDetailRoute.name,
@@ -582,6 +584,7 @@ class RestaurantDetailRoute
             id: id,
             name: name,
             description: description,
+            coverImage: coverImage,
           ),
           initialChildren: children,
         );
@@ -598,6 +601,7 @@ class RestaurantDetailRouteArgs {
     required this.id,
     required this.name,
     required this.description,
+    required this.coverImage,
   });
 
   final _i19.Key? key;
@@ -608,9 +612,11 @@ class RestaurantDetailRouteArgs {
 
   final String description;
 
+  final String coverImage;
+
   @override
   String toString() {
-    return 'RestaurantDetailRouteArgs{key: $key, id: $id, name: $name, description: $description}';
+    return 'RestaurantDetailRouteArgs{key: $key, id: $id, name: $name, description: $description, coverImage: $coverImage}';
   }
 }
 

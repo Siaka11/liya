@@ -229,7 +229,7 @@ class HomeRestaurantPage extends ConsumerWidget {
                         ),
                         TextButton(
                           onPressed: () {
-                            context.router.push(AllRestaurantsRoute());
+                            context.router.push(const AllRestaurantsRoute());
                           },
                           child: Text("Voir tout"),
                           style: TextButton.styleFrom(
@@ -278,6 +278,7 @@ class HomeRestaurantPage extends ConsumerWidget {
                                             child: Row(
                                               children: [
                                                 RestaurantCard(
+                                                  width: 300.0,
                                                   restaurant: restaurantState
                                                       .restaurants![i],
                                                   onTap: () {
@@ -286,6 +287,8 @@ class HomeRestaurantPage extends ConsumerWidget {
                                                       MaterialPageRoute(
                                                         builder: (context) =>
                                                             RestaurantDetailPage(
+                                                              coverImage: restaurantState.restaurants![i]
+                                                              .coverImage,
                                                           id: restaurantState
                                                               .restaurants![i]
                                                               .id,
@@ -310,6 +313,7 @@ class HomeRestaurantPage extends ConsumerWidget {
                                                         const EdgeInsets.only(
                                                             left: 8),
                                                     child: RestaurantCard(
+                                                      width: 300.0,
                                                       restaurant:
                                                           restaurantState
                                                                   .restaurants![
@@ -320,6 +324,8 @@ class HomeRestaurantPage extends ConsumerWidget {
                                                           MaterialPageRoute(
                                                             builder: (context) =>
                                                                 RestaurantDetailPage(
+                                                                  coverImage: restaurantState.restaurants![i]
+                                                                      .coverImage,
                                                               id: restaurantState
                                                                   .restaurants![
                                                                       i + 1]
