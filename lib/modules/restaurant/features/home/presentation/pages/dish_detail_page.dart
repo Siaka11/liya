@@ -220,14 +220,14 @@ class _DishDetailPageState extends ConsumerState<DishDetailPage> {
                                       style: TextStyle(
                                           fontSize: 20,
                                           fontWeight: FontWeight.bold)),
-                                  Icon(Icons.star,
+                                 /* Icon(Icons.star,
                                       size: 20, color: Colors.amber),
                                   SizedBox(width: 4),
                                   Text(
                                     widget.rating,
                                     style: TextStyle(
                                         fontSize: 16, color: Colors.black),
-                                  ),
+                                  ),*/
                                 ],
                               ),
                               SizedBox(height: 16),

@@ -10,6 +10,8 @@ import 'package:liya/modules/restaurant/features/like/domain/entities/liked_dish
 import 'package:liya/routes/app_router.gr.dart';
 import 'package:liya/core/providers.dart';
 import 'package:liya/modules/restaurant/features/dish/presentation/widgets/dish_card.dart';
+import 'package:liya/modules/restaurant/features/home/presentation/widget/dish_card_simple.dart';
+import 'package:liya/modules/restaurant/features/home/domain/entities/dish.dart';
 
 import '../../../../../../core/ui/theme/theme.dart';
 import '../../../home/presentation/widget/navigation_footer.dart';
