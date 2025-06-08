@@ -15,6 +15,18 @@ abstract class _$AppRouter extends RootStackRouter {
 
   @override
   final Map<String, PageFactory> pagesMap = {
+    AllDishesRoute.name: (routeData) {
+      return AutoRoutePage<dynamic>(
+        routeData: routeData,
+        child: const AllDishesPage(),
+      );
+    },
+    AllRestaurantsRoute.name: (routeData) {
+      return AutoRoutePage<dynamic>(
+        routeData: routeData,
+        child: const AllRestaurantsPage(),
+      );
+    },
     AuthRoute.name: (routeData) {
       return AutoRoutePage<dynamic>(
         routeData: routeData,
@@ -143,6 +155,34 @@ abstract class _$AppRouter extends RootStackRouter {
       );
     },
   };
+}
+
+/// generated route for
+/// [AllDishesPage]
+class AllDishesRoute extends PageRouteInfo<void> {
+  const AllDishesRoute({List<PageRouteInfo>? children})
+      : super(
+          AllDishesRoute.name,
+          initialChildren: children,
+        );
+
+  static const String name = 'AllDishesRoute';
+
+  static const PageInfo<void> page = PageInfo<void>(name);
+}
+
+/// generated route for
+/// [AllRestaurantsPage]
+class AllRestaurantsRoute extends PageRouteInfo<void> {
+  const AllRestaurantsRoute({List<PageRouteInfo>? children})
+      : super(
+          AllRestaurantsRoute.name,
+          initialChildren: children,
+        );
+
+  static const String name = 'AllRestaurantsRoute';
+
+  static const PageInfo<void> page = PageInfo<void>(name);
 }
 
 /// generated route for

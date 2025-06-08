@@ -6,6 +6,7 @@ import 'package:liya/core/singletons.dart';
 import 'dart:convert';
 import '../../../../../../routes/app_router.gr.dart';
 import '../../../order/presentation/pages/order_list_page.dart';
+import 'package:liya/modules/home/domain/entities/home_option.dart';
 
 // Provider pour gérer l'index sélectionné
 final selectedIndexProvider = StateProvider<int>((ref) => 0);
@@ -16,8 +17,7 @@ class NavigationFooter extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedIndex = ref.watch(selectedIndexProvider);
-    final userDetailsJson =
-    singleton<LocalStorageFactory>().getUserDetails();
+    final userDetailsJson = singleton<LocalStorageFactory>().getUserDetails();
     final userDetails = userDetailsJson is String
         ? jsonDecode(userDetailsJson)
         : userDetailsJson;
@@ -34,7 +34,12 @@ class NavigationFooter extends ConsumerWidget {
         ref.read(selectedIndexProvider.notifier).state = index;
         switch (index) {
           case 0: // Accueil
-            context.router.push(const HomeRoute());
+            // Crée une instance HomeOption avec des valeurs par défaut
+            const homeOption = HomeOption(
+              title: 'Je veux commander un plat',
+              icon: 'fastfood',
+            );
+            context.router.push(HomeRestaurantRoute(option: homeOption));
             break;
           case 1: // Favoris
             context.router.push(const LikedDishesRoute());

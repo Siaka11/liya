@@ -9,6 +9,7 @@ import 'package:liya/modules/restaurant/features/home/presentation/widget/naviga
 import 'package:liya/core/local_storage_factory.dart';
 import 'package:liya/core/singletons.dart';
 
+import '../../../../../../core/routes/app_router.dart';
 import '../../../../../home/domain/entities/home_option.dart';
 import '../../application/pupular_dish_controller_provider.dart';
 import '../../application/restaurant_controller_provider.dart';
@@ -88,7 +89,9 @@ class HomeRestaurantPage extends ConsumerWidget {
                               fontSize: 20, fontWeight: FontWeight.bold),
                         ),
                         TextButton(
-                          onPressed: () {},
+                          onPressed: () {
+                            context.router.push(AllDishesRoute());
+                          },
                           child: Text("Voir tout"),
                           style: TextButton.styleFrom(
                             foregroundColor: Colors.grey,
@@ -225,7 +228,9 @@ class HomeRestaurantPage extends ConsumerWidget {
                               fontSize: 20, fontWeight: FontWeight.bold),
                         ),
                         TextButton(
-                          onPressed: () {},
+                          onPressed: () {
+                            context.router.push(AllRestaurantsRoute());
+                          },
                           child: Text("Voir tout"),
                           style: TextButton.styleFrom(
                             foregroundColor: Colors.grey,

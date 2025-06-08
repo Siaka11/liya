@@ -10,8 +10,15 @@ class RestaurantRepositoryImpl implements RestaurantRepository {
 
   @override
   Future<List<Restaurant>> getRestaurants() {
-    return  datasource.getRestaurants();
+    return datasource.getRestaurants();
   }
 
-
+  Future<List<Restaurant>> getAllRestaurantsFromMySQL() async {
+    try {
+      return await datasource.getRestaurants();
+    } catch (e) {
+      throw Exception(
+          'Erreur lors de la récupération de tous les restaurants : $e');
+    }
+  }
 }

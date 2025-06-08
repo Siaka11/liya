@@ -50,5 +50,7 @@ class AppRouter extends $AppRouter implements AutoRouteGuard {
         AutoRoute(page: OrderListRoute.page),
         AutoRoute(page: OrderDetailRoute.page),
         AutoRoute(page: LikedDishesRoute.page),
+        AutoRoute(page: AllRestaurantsRoute.page),
+        AutoRoute(page: AllDishesRoute.page),
       ];
 }
