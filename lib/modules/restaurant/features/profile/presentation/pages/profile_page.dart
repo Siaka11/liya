@@ -9,6 +9,7 @@ import '../../../../../../core/singletons.dart';
 import '../../../../../auth/auth_provider.dart';
 import '../../../../../auth/info_user_provider.dart';
 import '../../../../../home/application/home_provider.dart';
+import '../../../home/presentation/widget/navigation_footer.dart';
 import '../providers/profile_provider.dart';
 
 @RoutePage(name: 'ProfileRoute')
@@ -30,10 +31,10 @@ class ProfilePage extends ConsumerWidget {
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
         backgroundColor: Colors.white,
-        elevation: 0,
+        leading: SizedBox(),
         title: Text(
           'Profil',
-          style: TextStyle(color: Colors.black),
+          style: TextStyle(color: Colors.deepOrange),
         ),
         actions: [
           TextButton(
@@ -297,6 +298,7 @@ class ProfilePage extends ConsumerWidget {
           ],
         ),
       ),
+      bottomNavigationBar: NavigationFooter(),
     );
   }
 }
