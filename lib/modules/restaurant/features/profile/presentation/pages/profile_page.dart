@@ -3,7 +3,6 @@ import 'dart:math';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:liya/core/ui/theme/theme.dart';
 import '../../../../../../core/local_storage_factory.dart';
 import '../../../../../../core/singletons.dart';
 import '../providers/profile_provider.dart';
@@ -38,7 +37,7 @@ class ProfilePage extends ConsumerWidget {
               // TODO: Implement help functionality
             },
             child: Text(
-              'Aide',
+              ' Call center',
               style: TextStyle(color: Colors.blue),
             ),
           ),
@@ -97,12 +96,12 @@ class ProfilePage extends ConsumerWidget {
                         ],
                       ),
                     ),
-                    IconButton(
+                    /*IconButton(
                       icon: Icon(Icons.add_circle_outline),
                       onPressed: () {
                         // TODO: Implement profile edit
                       },
-                    ),
+                    ),*/
                   ],
                 ),
               ),
@@ -134,7 +133,7 @@ class ProfilePage extends ConsumerWidget {
               ),
 
               // Sell Section
-              Padding(
+/*              Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: Text(
                   'Vendre',
@@ -143,8 +142,8 @@ class ProfilePage extends ConsumerWidget {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-              ),
-              ListTile(
+              ),*/
+/*              ListTile(
                 leading: Icon(Icons.store_outlined),
                 title: Text('Mes annonces'),
                 trailing: Icon(Icons.chevron_right),
@@ -167,7 +166,7 @@ class ProfilePage extends ConsumerWidget {
                 onTap: () {
                   // TODO: Navigate to payments
                 },
-              ),
+              ),*/
 
               // Account Section
               Padding(
@@ -183,7 +182,7 @@ class ProfilePage extends ConsumerWidget {
               ListTile(
                 leading: Icon(Icons.contact_support_outlined),
                 title: Text('Contact'),
-                subtitle: Text(profile.phoneNumber ?? 'Ajouter un numéro'),
+                subtitle: Text(profile.phone?? 'Ajouter un numéro'),
                 trailing: Icon(Icons.chevron_right),
                 onTap: () {
                   // TODO: Navigate to contact
@@ -192,7 +191,7 @@ class ProfilePage extends ConsumerWidget {
               ListTile(
                 leading: Icon(Icons.location_on_outlined),
                 title: Text('Adresses'),
-                subtitle: Text('${profile.addresses.length} adresses'),
+                subtitle: Text('${profile.address.length} adress'),
                 trailing: Icon(Icons.chevron_right),
                 onTap: () {
                   // TODO: Navigate to addresses

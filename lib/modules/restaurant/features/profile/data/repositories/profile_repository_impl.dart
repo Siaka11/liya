@@ -5,15 +5,15 @@ import '../../domain/repositories/profile_repository.dart';
 import '../datasources/profile_remote_data_source.dart';
 
 class ProfileRepositoryImpl implements ProfileRepository {
-  final ProfileRemoteDataSource remoteDataSource;
+  final ProfileRemoteDataSourceMySQL remoteDataSource;
 
   ProfileRepositoryImpl({required this.remoteDataSource});
 
   @override
   Future<dartz.Either<Failure, UserProfile>> getUserProfile(
-      String userId) async {
+      String phoneNumber) async {
     try {
-      final profile = await remoteDataSource.getUserProfile(userId);
+      final profile = await remoteDataSource.getUserProfileByPhone(phoneNumber);
       return dartz.Right(profile);
     } catch (e) {
       return dartz.Left(ServerFailure(message: e.toString()));
@@ -23,55 +23,30 @@ class ProfileRepositoryImpl implements ProfileRepository {
   @override
   Future<dartz.Either<Failure, void>> updateUserProfile(
       UserProfile profile) async {
-    try {
-      await remoteDataSource.updateUserProfile(profile);
-      return const dartz.Right(null);
-    } catch (e) {
-      return dartz.Left(ServerFailure(message: e.toString()));
-    }
+    return const dartz.Right(null);
   }
 
   @override
   Future<dartz.Either<Failure, List<Order>>> getUserOrders(
       String userId) async {
-    try {
-      final orders = await remoteDataSource.getUserOrders(userId);
-      return dartz.Right(orders);
-    } catch (e) {
-      return dartz.Left(ServerFailure(message: e.toString()));
-    }
+    return dartz.Right([]);
   }
 
   @override
   Future<dartz.Either<Failure, void>> addAddress(
       String userId, String address) async {
-    try {
-      await remoteDataSource.addAddress(userId, address);
-      return const dartz.Right(null);
-    } catch (e) {
-      return dartz.Left(ServerFailure(message: e.toString()));
-    }
+    return const dartz.Right(null);
   }
 
   @override
   Future<dartz.Either<Failure, void>> addPaymentMethod(
       String userId, String paymentMethod) async {
-    try {
-      await remoteDataSource.addPaymentMethod(userId, paymentMethod);
-      return const dartz.Right(null);
-    } catch (e) {
-      return dartz.Left(ServerFailure(message: e.toString()));
-    }
+    return const dartz.Right(null);
   }
 
   @override
   Future<dartz.Either<Failure, void>> updatePhoneNumber(
       String userId, String phoneNumber) async {
-    try {
-      await remoteDataSource.updatePhoneNumber(userId, phoneNumber);
-      return const dartz.Right(null);
-    } catch (e) {
-      return dartz.Left(ServerFailure(message: e.toString()));
-    }
+    return const dartz.Right(null);
   }
 }

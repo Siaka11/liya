@@ -3,7 +3,8 @@ class UserProfile {
   final String name;
   final String email;
   final String? phoneNumber;
-  final List<String> addresses;
+  final phone;
+  final address;
   final List<String> paymentMethods;
   final List<Order> orders;
 
@@ -12,9 +13,10 @@ class UserProfile {
     required this.name,
     required this.email,
     this.phoneNumber,
-    required this.addresses,
     required this.paymentMethods,
     required this.orders,
+    required this.phone,
+    required this.address,
   });
 }
 

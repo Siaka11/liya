@@ -1,4 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart' hide Order;
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import '../models/user_profile_model.dart';
 import '../../domain/entities/user_profile.dart';
 
@@ -6,9 +8,28 @@ abstract class ProfileRemoteDataSource {
   Future<UserProfileModel> getUserProfile(String userId);
   Future<void> updateUserProfile(UserProfile profile);
   Future<List<Order>> getUserOrders(String userId);
-  Future<void> addAddress(String userId, String address);
+  //Future<void> addAddress(String userId, String address);
   Future<void> addPaymentMethod(String userId, String paymentMethod);
   Future<void> updatePhoneNumber(String userId, String phoneNumber);
+}
+
+// Nouvelle implémentation pour MySQL via HTTP
+class ProfileRemoteDataSourceMySQL {
+  final http.Client client;
+  ProfileRemoteDataSourceMySQL(this.client);
+
+  Future<UserProfileModel> getUserProfileByPhone(String phoneNumber) async {
+    final response = await client.get(
+      Uri.parse('http://api-restaurant.toptelsig.com/user/$phoneNumber'),
+      headers: {'Content-Type': 'application/json'},
+    );
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      return UserProfileModel.fromJson(data);
+    } else {
+      throw Exception('Erreur lors de la récupération du profil');
+    }
+  }
 }
 
 class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {

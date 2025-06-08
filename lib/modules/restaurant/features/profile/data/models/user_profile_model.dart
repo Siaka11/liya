@@ -7,17 +7,19 @@ class UserProfileModel extends UserProfile {
     required String name,
     required String email,
     String? phoneNumber,
-    required List<String> addresses,
+    required String address,
     required List<String> paymentMethods,
     required List<Order> orders,
+    required phone,
   }) : super(
           id: id,
           name: name,
           email: email,
           phoneNumber: phoneNumber,
-          addresses: addresses,
+          address: address,
           paymentMethods: paymentMethods,
           orders: orders,
+          phone: phone,
         );
 
   factory UserProfileModel.fromFirestore(Map<String, dynamic> data, String id) {
@@ -44,9 +46,24 @@ class UserProfileModel extends UserProfile {
       name: data['name'] ?? '',
       email: data['email'] ?? '',
       phoneNumber: data['phoneNumber'],
-      addresses: List<String>.from(data['addresses'] ?? []),
+      address: data['address'] ?? '',
       paymentMethods: List<String>.from(data['paymentMethods'] ?? []),
       orders: orders,
+      phone: data['phone'] ?? '',
+
+    );
+  }
+
+  factory UserProfileModel.fromJson(Map<String, dynamic> json) {
+    return UserProfileModel(
+      id: json['id']?.toString() ?? '',
+      name: json['name'] ?? '',
+      email: json['email'] ?? '',
+      phoneNumber: json['phoneNumber'],
+      address: json['address'] ?? '',
+      paymentMethods: List<String>.from(json['paymentMethods'] ?? []),
+      orders: [],
+      phone: json['phone'] ?? '',
     );
   }
 
@@ -55,8 +72,9 @@ class UserProfileModel extends UserProfile {
       'name': name,
       'email': email,
       'phoneNumber': phoneNumber,
-      'addresses': addresses,
+      'address': address,
       'paymentMethods': paymentMethods,
+      'phone': phone,
       'orders': orders
           .map((order) => {
                 'id': order.id,
