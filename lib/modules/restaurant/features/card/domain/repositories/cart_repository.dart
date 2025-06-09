@@ -7,7 +7,7 @@ import '../../data/models/cart_item_model.dart';
 abstract class CartRepository {
   Future<Either<Failure, void>> addToCart(String userId, CartItem cartItem);
   Future<Either<Failure, List<CartItem>>> getCartItems(String userId);
-  Future<Either<Failure, void>> removeFromCart(String userId, String itemName);
+  Future<Either<Failure, void>> removeFromCart(String userId, String itemId);
   Future<void> clearCart(String userId);
 }
 
@@ -51,9 +51,9 @@ class CartRepositoryImpl implements CartRepository {
 
   @override
   Future<Either<Failure, void>> removeFromCart(
-      String userId, String itemName) async {
+      String userId, String itemId) async {
     try {
-      await remoteDataSource.removeFromCart(userId, itemName);
+      await remoteDataSource.removeFromCart(userId, itemId);
       return Right(null);
     } catch (e) {
       return Left(ServerFailure(message: e.toString()));

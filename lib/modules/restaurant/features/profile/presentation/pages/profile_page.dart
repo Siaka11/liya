@@ -11,6 +11,7 @@ import '../../../../../auth/info_user_provider.dart';
 import '../../../../../home/application/home_provider.dart';
 import '../../../home/presentation/widget/navigation_footer.dart';
 import '../providers/profile_provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 @RoutePage(name: 'ProfileRoute')
 class ProfilePage extends ConsumerWidget {
@@ -38,8 +39,15 @@ class ProfilePage extends ConsumerWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () {
-              // TODO: Implement help functionality
+            onPressed: () async {
+              final Uri phoneUri = Uri(scheme: 'tel', path: '0709976498');
+              if (await canLaunchUrl(phoneUri)) {
+                await launchUrl(phoneUri);
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Impossible d\'ouvrir le téléphone.')),
+                );
+              }
             },
             child: Text(
               ' Call center',

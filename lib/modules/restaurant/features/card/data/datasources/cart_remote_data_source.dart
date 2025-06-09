@@ -5,7 +5,7 @@ import '../models/cart_item_model.dart';
 abstract class CartRemoteDataSource {
   Future<void> addToCart(String userId, CartItemModel cartItem);
   Future<List<CartItemModel>> getCartItems(String userId);
-  Future<void> removeFromCart(String userId, String itemName);
+  Future<void> removeFromCart(String userId, String itemId);
   Stream<List<CartItemModel>> watchCartItems(String userId);
   Future<void> clearCart(String userId);
 }
@@ -56,13 +56,13 @@ class CartRemoteDataSourceImpl implements CartRemoteDataSource {
   }
 
   @override
-  Future<void> removeFromCart(String userId, String itemName) async {
-    print('DEBUG: Suppression de l\'article $itemName du panier de $userId');
+  Future<void> removeFromCart(String userId, String itemId) async {
+    print('DEBUG: Suppression de l\'article $itemId du panier de $userId');
     final cartRef = _firestore
         .collection('carts')
         .doc(userId)
         .collection('items')
-        .doc(itemName);
+        .doc(itemId);
 
     await cartRef.delete();
     print('DEBUG: Article supprimé avec succès');

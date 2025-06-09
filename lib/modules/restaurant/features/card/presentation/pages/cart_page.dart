@@ -114,7 +114,7 @@ class CartPage extends ConsumerWidget {
                           onDelete: () async {
                             try {
                               await cartRepository.removeFromCart(
-                                  phoneNumber, item.name);
+                                  phoneNumber, item.id);
                               // Forcer le rafraîchissement de la page
                               ref.read(refreshKey.notifier).state++;
                               ScaffoldMessenger.of(context).showSnackBar(
@@ -127,7 +127,7 @@ class CartPage extends ConsumerWidget {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text(
-                                      'Erreur lors de la suppression: ${e.toString()}'),
+                                      'Erreur lors de la suppression: [38;5;9m${e.toString()}[0m'),
                                   backgroundColor: Colors.red,
                                 ),
                               );
