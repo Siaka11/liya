@@ -66,6 +66,26 @@ abstract class _$AppRouter extends RootStackRouter {
         ),
       );
     },
+    DishImageEditorRoute.name: (routeData) {
+      final args = routeData.argsAs<DishImageEditorRouteArgs>();
+      return AutoRoutePage<dynamic>(
+        routeData: routeData,
+        child: DishImageEditorPage(
+          key: args.key,
+          dish: args.dish,
+        ),
+      );
+    },
+    DishListRoute.name: (routeData) {
+      final args = routeData.argsAs<DishListRouteArgs>();
+      return AutoRoutePage<dynamic>(
+        routeData: routeData,
+        child: DishListPage(
+          key: args.key,
+          restaurantId: args.restaurantId,
+        ),
+      );
+    },
     HomeRoute.name: (routeData) {
       return AutoRoutePage<dynamic>(
         routeData: routeData,
@@ -141,6 +161,12 @@ abstract class _$AppRouter extends RootStackRouter {
           description: args.description,
           coverImage: args.coverImage,
         ),
+      );
+    },
+    RestaurantSelectRoute.name: (routeData) {
+      return AutoRoutePage<dynamic>(
+        routeData: routeData,
+        child: const RestaurantSelectPage(),
       );
     },
     SearchRoute.name: (routeData) {
@@ -322,6 +348,82 @@ class DishDetailRouteArgs {
   @override
   String toString() {
     return 'DishDetailRouteArgs{id: $id, restaurantId: $restaurantId, name: $name, price: $price, imageUrl: $imageUrl, rating: $rating, description: $description, sodas: $sodas}';
+  }
+}
+
+/// generated route for
+/// [DishImageEditorPage]
+class DishImageEditorRoute extends PageRouteInfo<DishImageEditorRouteArgs> {
+  DishImageEditorRoute({
+    Key? key,
+    required DishModel dish,
+    List<PageRouteInfo>? children,
+  }) : super(
+          DishImageEditorRoute.name,
+          args: DishImageEditorRouteArgs(
+            key: key,
+            dish: dish,
+          ),
+          initialChildren: children,
+        );
+
+  static const String name = 'DishImageEditorRoute';
+
+  static const PageInfo<DishImageEditorRouteArgs> page =
+      PageInfo<DishImageEditorRouteArgs>(name);
+}
+
+class DishImageEditorRouteArgs {
+  const DishImageEditorRouteArgs({
+    this.key,
+    required this.dish,
+  });
+
+  final Key? key;
+
+  final DishModel dish;
+
+  @override
+  String toString() {
+    return 'DishImageEditorRouteArgs{key: $key, dish: $dish}';
+  }
+}
+
+/// generated route for
+/// [DishListPage]
+class DishListRoute extends PageRouteInfo<DishListRouteArgs> {
+  DishListRoute({
+    Key? key,
+    required String restaurantId,
+    List<PageRouteInfo>? children,
+  }) : super(
+          DishListRoute.name,
+          args: DishListRouteArgs(
+            key: key,
+            restaurantId: restaurantId,
+          ),
+          initialChildren: children,
+        );
+
+  static const String name = 'DishListRoute';
+
+  static const PageInfo<DishListRouteArgs> page =
+      PageInfo<DishListRouteArgs>(name);
+}
+
+class DishListRouteArgs {
+  const DishListRouteArgs({
+    this.key,
+    required this.restaurantId,
+  });
+
+  final Key? key;
+
+  final String restaurantId;
+
+  @override
+  String toString() {
+    return 'DishListRouteArgs{key: $key, restaurantId: $restaurantId}';
   }
 }
 
@@ -583,6 +685,20 @@ class RestaurantDetailRouteArgs {
   String toString() {
     return 'RestaurantDetailRouteArgs{key: $key, id: $id, name: $name, description: $description, coverImage: $coverImage}';
   }
+}
+
+/// generated route for
+/// [RestaurantSelectPage]
+class RestaurantSelectRoute extends PageRouteInfo<void> {
+  const RestaurantSelectRoute({List<PageRouteInfo>? children})
+      : super(
+          RestaurantSelectRoute.name,
+          initialChildren: children,
+        );
+
+  static const String name = 'RestaurantSelectRoute';
+
+  static const PageInfo<void> page = PageInfo<void>(name);
 }
 
 /// generated route for

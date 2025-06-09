@@ -5,6 +5,10 @@ import 'package:liya/modules/restaurant/features/home/presentation/pages/dish_de
 import 'package:liya/modules/restaurant/features/home/presentation/pages/home_restaurant.dart';
 import 'package:liya/modules/restaurant/features/home/presentation/pages/restaurant_detail_page.dart';
 
+import '../../modules/admin/features/dishes/data/models/dish_model.dart';
+import '../../modules/admin/features/dishes/presentation/pages/dish_image_editor_page.dart';
+import '../../modules/admin/features/dishes/presentation/pages/dish_list_page.dart';
+import '../../modules/admin/features/dishes/presentation/pages/restaurant_select_page.dart';
 import '../../modules/auth/auth_page.dart';
 import '../../modules/auth/info_user_page.dart';
 import '../../modules/auth/otp_page.dart';

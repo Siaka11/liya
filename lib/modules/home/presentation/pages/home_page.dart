@@ -1,9 +1,11 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:liya/modules/admin/features/dishes/presentation/pages/restaurant_select_page.dart';
 import 'package:liya/modules/home/presentation/pages/utils/top_menu.dart';
 import 'package:liya/modules/home/presentation/pages/widget/home_card_widget.dart';
 
+import '../../../../core/routes/app_router.dart';
 import '../../application/home_provider.dart';
 
 @RoutePage()
@@ -107,13 +109,20 @@ class HomePage extends ConsumerWidget {
                           style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 18,
-                              color: Colors.black
-                          )
-                      ),
+                              color: Colors.black)),
                     ],
-                  )
-              )
-          )
+                  ))),
+          //bouton pour accéder DishListRoute
+          Positioned(
+            bottom: 10,
+            right: 10,
+            child: ElevatedButton(
+              onPressed: () {
+                context.router.push(const RestaurantSelectRoute());
+              },
+              child: const Text('Accéder à la gestion des plats'),
+            ),
+          ),
         ],
       )),
     );

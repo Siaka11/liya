@@ -12,7 +12,7 @@ class RestaurantRemoteDatasource {
   RestaurantRemoteDatasource(this.client);
 
   Future<List<Restaurant>> getRestaurants() async {
-    const String baseUrl = 'http://api-restaurant.toptelsig.com/restaurants'; // Remplacez par une vraie URL
+    const String baseUrl = 'http://api-restaurant.toptelsig.com/restaurants';
     final response = await client.get(Uri.parse(baseUrl));
     if (response.statusCode == 200) {
       final List<dynamic> data = json.decode(response.body);

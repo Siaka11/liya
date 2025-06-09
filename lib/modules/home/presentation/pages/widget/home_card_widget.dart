@@ -42,7 +42,7 @@ class HomeOptionCard extends StatelessWidget {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
         ),
-        elevation: 1,
+        elevation: 0.1,
         child: Padding(
           padding: const EdgeInsets.all(8),
           child: Column(
