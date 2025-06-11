@@ -12,6 +12,8 @@ import '../../core/loading_provider.dart';
 import '../../routes/app_router.gr.dart';
 import '../home/application/home_provider.dart';
 import 'auth_provider.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 enum AuthStatus { Empty, Dirty, Processing, Error, Success }
 
@@ -73,58 +75,28 @@ class LoginProvider extends StateNotifier<AuthModel> {
     );
   }
 
-  /*Future<bool> submit() async {
-    final phoneNumber = state.phoneNumber.trim();
-
-    if (phoneNumber.isEmpty) {
-      state = state.copyWith(
-        hasError: true,
-        errorText: 'Veuillez entrer un numéro de téléphone',
-        status: AuthStatus.Error,
-      );
-      return false;
-    }
-
-    if (!RegExp(r'^\d{10}$').hasMatch(phoneNumber)) {
-      state = state.copyWith(
-        hasError: true,
-        errorText: 'Le numéro doit contenir exactement 10 chiffres',
-        status: AuthStatus.Error,
-      );
-      return false;
-    }
-
-    state = state.copyWith(
-      status: AuthStatus.Processing,
-      hasError: false,
-      errorText: '',
+  Future<bool> checkUserExists(String phoneNumber) async {
+    print('Checking user with phone: $phoneNumber');
+    final response = await http.get(
+      Uri.parse('http://api-restaurant.toptelsig.com/user/$phoneNumber'),
     );
+    print('Response status: ${response.statusCode}');
+    print('Response body: ${response.body}');
 
-    try {
-      // Simulation de l'envoi d'un OTP (remplace par une vraie requête si nécessaire)
-      //await Future.delayed(const Duration(seconds: 2));
-      const verificationId = '123456'; // Simulé
-      state = state.copyWith(
-        verificationId: verificationId,
-        status: AuthStatus.Success,
-      );
-
-      // Afficher une snackbar pour indiquer que le code a été envoyé
-
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      await singleton<LocalStorageFactory>().setUserDetails({
+        "name": data["name"],
+        "lastName": data["lastname"],
+        "phoneNumber": data["phone_number"],
+      });
       return true;
-    } catch (e) {
-      state = state.copyWith(
-        status: AuthStatus.Error,
-        hasError: true,
-        errorText: 'Une erreur est survenue : $e',
-      );
-      return false;
     }
-  }*/
+    return false;
+  }
 
   Future<bool> submit(BuildContext context, WidgetRef ref) async {
     final phoneNumber = state.phoneNumber.trim();
-
     state = state.copyWith(
       hasError: false,
       errorText: '',
@@ -152,14 +124,21 @@ class LoginProvider extends StateNotifier<AuthModel> {
       return false;
     }
 
+    // Vérification MySQL
+    final exists = await checkUserExists(phoneNumber);
+    if (!exists) {
+      state = state.copyWith(
+        hasError: true,
+        errorText: 'Ce numéro n\'existe pas dans notre base.',
+        status: AuthStatus.Error,
+      );
+      ref.read(loadingProvider.notifier).complete();
+
+    }
+
     try {
-      if (phoneNumber == '0709976498') {
+      if (exists) {
         ref.read(authProvider).login();
-        await singleton<LocalStorageFactory>().setUserDetails({
-          "name": "Sidoine",
-          "lastName": "Konan",
-          "phoneNumber": phoneNumber,
-        });
 
         ref.read(homeProvider.notifier).refreshUser();
 

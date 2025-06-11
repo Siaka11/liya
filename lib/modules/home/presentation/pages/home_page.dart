@@ -113,7 +113,7 @@ class HomePage extends ConsumerWidget {
                     ],
                   ))),
           //bouton pour accéder DishListRoute
-          Positioned(
+         /* Positioned(
             bottom: 10,
             right: 10,
             child: ElevatedButton(
@@ -122,7 +122,7 @@ class HomePage extends ConsumerWidget {
               },
               child: const Text('Accéder à la gestion des plats'),
             ),
-          ),
+          ),*/
         ],
       )),
     );

@@ -58,16 +58,22 @@ class HomeRestaurantPage extends ConsumerWidget {
               Padding(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: TextField(
-                  decoration: InputDecoration(
-                    hintText: "Rechercher",
-                    hintStyle: TextStyle(color: Colors.grey),
-                    prefixIcon: Icon(Icons.search, color: Colors.grey),
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(30),
-                      borderSide: BorderSide.none,
+                child: GestureDetector(
+                  onTap: () {
+                    context.router.push(SearchRoute());
+                  },
+                  child: TextField(
+                    enabled: false, // Désactive la saisie directe
+                    decoration: InputDecoration(
+                      hintText: "Rechercher",
+                      hintStyle: TextStyle(color: Colors.grey),
+                      prefixIcon: Icon(Icons.search, color: Colors.grey),
+                      filled: true,
+                      fillColor: Colors.white,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(30),
+                        borderSide: BorderSide.none,
+                      ),
                     ),
                   ),
                 ),
@@ -145,8 +151,7 @@ class HomeRestaurantPage extends ConsumerWidget {
                                                         popularDishState
                                                             .popularDishes![i]
                                                             .description,
-                                                    sodas:
-                                                    popularDishState
+                                                    sodas: popularDishState
                                                         .popularDishes![i]
                                                         .sodas,
                                                     userId: phoneNumber,
@@ -191,10 +196,9 @@ class HomeRestaurantPage extends ConsumerWidget {
                                                                 .popularDishes![
                                                                     i + 1]
                                                                 .description,
-                                                        sodas:
-                                                        popularDishState
+                                                        sodas: popularDishState
                                                             .popularDishes![
-                                                        i + 1]
+                                                                i + 1]
                                                             .sodas,
                                                         userId: phoneNumber,
                                                         onAddToCart: () {
@@ -229,7 +233,7 @@ class HomeRestaurantPage extends ConsumerWidget {
                         ),
                         TextButton(
                           onPressed: () {
-                            context.router.push(const AllRestaurantsRoute());
+                            context.router.push(AllRestaurantsRoute());
                           },
                           child: Text("Voir tout"),
                           style: TextButton.styleFrom(

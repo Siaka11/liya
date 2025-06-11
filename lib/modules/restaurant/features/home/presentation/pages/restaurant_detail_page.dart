@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:liya/core/ui/theme/theme.dart';
 
 import '../../../../../../core/local_storage_factory.dart';
+import '../../../../../../core/routes/app_router.dart';
 import '../../../../../../core/singletons.dart';
 import '../../../card/data/datasources/cart_remote_data_source.dart';
 import '../../../card/domain/repositories/cart_repository.dart';
@@ -15,6 +16,7 @@ import '../../application/dish_provider.dart';
 import '../../application/selected_quantity_provider.dart';
 import '../widget/dish_card.dart';
 import 'dish_detail_page.dart';
+import 'package:liya/modules/restaurant/features/card/presentation/pages/cart_page.dart';
 
 final addToCartProvider = Provider<AddToCart>((ref) {
   return AddToCart(
@@ -51,6 +53,9 @@ class RestaurantDetailPage extends ConsumerWidget {
         ? jsonDecode(userDetailsJson)
         : userDetailsJson;
     final phoneNumber = userDetails['phoneNumber'] ?? '';
+
+    List<dynamic> selectedDishes = [];
+    double totalAmount = 0.0;
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (dishState.dishes == null && !dishState.isLoading) {

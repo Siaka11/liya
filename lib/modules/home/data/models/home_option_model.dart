@@ -5,8 +5,8 @@ class HomeOptionModel extends HomeOption {
   const HomeOptionModel({
     required super.title,
     required super.icon,
-    String location = 'Yamoussoukro',
-    String availability = 'Ouvert tous les jours',
+    String location = '',
+    String availability = '',
   }) : super(
 
     location: location,
@@ -17,8 +17,8 @@ class HomeOptionModel extends HomeOption {
     return HomeOptionModel(
       title: json['title'] as String,
       icon: json['icon'] as String,
-      location: json['location'] as String? ?? 'Yamoussoukro',
-      availability: json['availability'] as String? ?? 'Ouvert tous les jours',
+      location: json['location'] as String? ?? '',
+      availability: json['availability'] as String? ?? '',
     );
 
   }
