@@ -27,6 +27,9 @@ class App extends ConsumerWidget{
   @override
   Widget build(BuildContext context, WidgetRef ref){
     final String appName= ref.read(appNameProvider);
+    final authProviderInstance = ref.watch(authProvider.notifier);
+    final appRouter = AppRouter(authProviderInstance);
+
     return MaterialApp.router(
       title: appName,
       theme: ThemeData(primarySwatch: LiyaColor),

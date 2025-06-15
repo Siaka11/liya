@@ -1,11 +1,14 @@
-import 'dart:math';
-
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:liya/core/ui/components/custom_button.dart';
-import 'package:liya/core/ui/components/custom_number_field.dart';
+import 'package:liya/core/ui/components/custom_field.dart';
+import 'package:liya/modules/auth/login_provider.dart';
+
+import '../../core/ui/theme/theme.dart';
+import '../../routes/app_router.gr.dart';
+
 
 @RoutePage()
 class AuthPage extends ConsumerStatefulWidget {
@@ -15,17 +18,25 @@ class AuthPage extends ConsumerStatefulWidget {
   ConsumerState<AuthPage> createState() => _AuthPageState();
 }
 
-class _AuthPageState extends ConsumerState<AuthPage> with SingleTickerProviderStateMixin {
-  final TextEditingController _phoneController = TextEditingController();
+class _AuthPageState extends ConsumerState<AuthPage>
+    with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _animation;
+  late final TextEditingController _phoneController;
+  bool _isSubmitting = false;
 
   @override
   void initState() {
     super.initState();
+
+    _phoneController = TextEditingController();
+    _phoneController.addListener(() {
+      ref.read(loginProvider.notifier).updatePhoneNumber(_phoneController.text);
+    });
+
     _animationController = AnimationController(
       vsync: this,
-      duration: Duration(seconds: 2),
+      duration: const Duration(seconds: 2),
     )..forward();
 
     _animation = Tween<double>(begin: 1.5, end: 1.0).animate(
@@ -33,33 +44,49 @@ class _AuthPageState extends ConsumerState<AuthPage> with SingleTickerProviderSt
     );
   }
 
-  void _verifyPhone() async {
-   // await FirebaseAuth.instance.useAuthEmulator('10.0.2.2', 9099);
-    print("Avant d'envoyer le SMS");
-    //String phone = "+225" + _phoneController.text.trim();
-    String phone = "+2250102030405";
-    await FirebaseAuth.instance.verifyPhoneNumber(
-      phoneNumber: phone,
-      timeout: Duration(seconds: 60),  // Augmenter le délai
-      verificationCompleted: (PhoneAuthCredential credential) {
-        print("Vérification automatique réussie");
-      },
-      verificationFailed: (FirebaseAuthException e) {
-        print("Erreur lors de la vérification : ${e.message}");
-      },
-      codeSent: (String verificationId, int? resendToken) {
-        print("Code envoyé avec succès : $verificationId");
-      },
-      codeAutoRetrievalTimeout: (String verificationId) {
-        print("Timeout, code non reçu.");
-      },
-    );
-    print("Après l'envoi du SMS");
+  @override
+  void dispose() {
+    _animationController.dispose();
+    _phoneController.dispose();
+    super.dispose();
+  }
 
+  Future<void> _handleSubmit() async {
+    setState(() => _isSubmitting = true);
+    try {
+      final loginForm = ref.read(loginProvider.notifier);
+      final success = await loginForm.submit(context, ref);
+      if (mounted && success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Code envoyé'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        // Utiliser ref.read pour obtenir l'état le plus récent
+        final updatedLoginState = ref.read(loginProvider);
+        final verificationId = updatedLoginState.verificationId;
+        if (mounted && verificationId != null) {
+          context.router.replace(OtpRoute(verificationId: verificationId));
+        } else if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Erreur : verificationId manquant'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final loginState = ref.watch(loginProvider);
+    final loginForm = ref.read(loginProvider.notifier);
+
     return Scaffold(
       body: Stack(
         children: [
@@ -90,7 +117,7 @@ class _AuthPageState extends ConsumerState<AuthPage> with SingleTickerProviderSt
             },
           ),
           Padding(
-            padding: EdgeInsets.all(26.0),
+            padding: const EdgeInsets.all(26.0),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -103,63 +130,66 @@ class _AuthPageState extends ConsumerState<AuthPage> with SingleTickerProviderSt
               ],
             ),
           ),
-          const SizedBox(height: 100),
-          // Contenu UI
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 200.0, horizontal: 20.0),
+            padding: const EdgeInsets.symmetric(vertical: 200, horizontal: 20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
                   "VEUILLEZ SAISIR VOTRE NUMERO S'IL VOUS PLAÎT",
-                  style: TextStyle(color: Colors.white, fontSize: 21, fontWeight: FontWeight.bold),
-                  textDirection: TextDirection.ltr,
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 21,
+                      fontWeight: FontWeight.bold),
                 ),
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
                 const Text(
                   "Ce numéro recevra un code de confirmation",
                   style: TextStyle(color: Colors.white, fontSize: 13),
-                  textDirection: TextDirection.ltr,
                 ),
-                SizedBox(height: 30),
+                const SizedBox(height: 30),
                 SizedBox(
                   width: double.infinity,
                   height: 55,
-                    child: CustomerNumberField(
-                      controller: _phoneController,
-                      fontSize: 21,
-                      prefixText: "+225 ",
-                      paddingLeft: 12,
-                      keyboardType: TextInputType.phone,
-                    ),
+                  child: CustomField(
+                    controller: _phoneController,
+                    fontSize: 21,
+                    prefixText: "+225 ",
+                    paddingLeft: 12,
+                    keyboardType: TextInputType.phone,
+                  ),
                 ),
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
+                if (loginState.hasError)
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                    padding: const EdgeInsets.all(8),
+                    child: Text(
+                      loginState.errorText,
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                  ),
               ],
             ),
           ),
           Align(
             alignment: Alignment.bottomCenter,
             child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 80.0, horizontal: 20.0),
+              padding: const EdgeInsets.symmetric(vertical: 80, horizontal: 20),
               child: SizedBox(
                 width: double.infinity,
                 child: CustomButton(
-                  text: "Envoyer",
-                  borderRaduis: 50,
-                  onPressedButton: _verifyPhone,
-                  bgColor: Colors.orange,
+                  text: _isSubmitting ? "Envoi en cours..." : "Envoyer",
+                  borderRadius: 50,
+                  onPressedButton: _isSubmitting ? null : _handleSubmit,
+                  bgColor: UIColors.white,
                   fontSize: 18,
                   paddingVertical: 18,
+                  width: 120,
                 ),
-                // child: ElevatedButton(
-                //   onPressed: _verifyPhone,
-                //   style: ElevatedButton.styleFrom(
-                //     padding: EdgeInsets.symmetric(vertical: 15),
-                //     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(40)),
-                //   ),
-                //   child: Text("Envoyer", style: TextStyle(fontSize: 16)),
-                // ),
-
               ),
             ),
           ),
@@ -167,6 +197,5 @@ class _AuthPageState extends ConsumerState<AuthPage> with SingleTickerProviderSt
       ),
     );
   }
-
 }
 

@@ -1,7 +1,6 @@
 
 
 import 'package:flutter/material.dart';
-import 'package:liya/config/app_information.dart';
 
 
 // colors scheme
@@ -23,6 +22,7 @@ class UIColors {
   static const Color none = Colors.transparent;
   static const Color black = Colors.black;
   static const Color borderColor = Colors.black12;
+  static const Color defaultColor = Color(0xFFF2F2F4);
 
   static const Color buttonBG= Color(0xFFedfaf4);
   static const Color buttonBGRed= Color(0xFFfaeded);
@@ -34,7 +34,7 @@ class UIColors {
   static const mainColor = Color(0xFFFF9A35);
   static const darker = Color(0xFF3E4249);
   static const cardColor = Colors.white;
-  static const appBgColor = Color(0xFFF7F7F7);
+  static const appBgColor = Color(0xFFF2F2F4);
   static const appBarColor = Color(0xFFF7F7F7);
   static const bottomBarColor = Colors.white;
   static const inActiveColor = Colors.grey;
@@ -68,13 +68,13 @@ class UIColors {
   static Color shadow = Colors.grey;
   // dark
   static const Color backgroundDark = Color(0xFF424242);
-  static Color cardDark = Color(0xFF212121);
+  static Color cardDark = const Color(0xFF212121);
   static Color shadowDark = Colors.grey;
   //icon
-  static  Color indigoColor = Color(0xFF3F51B5);
-  static  Color greenColor = Color(0xFF388E3C);
-  static  Color orangeColor = Color(0xfff57c00);
-  static  Color darkgreenColor = Color(0xff5b5b5b);
+  static  Color indigoColor = const Color(0xFF3F51B5);
+  static  Color greenColor = const Color(0xFF388E3C);
+  static  Color orangeColor = const Color(0xfff57c00);
+  static  Color darkgreenColor = const Color(0xff5b5b5b);
 
 }
 
@@ -169,10 +169,10 @@ class UIForms {
     return InputDecoration(
       prefixIcon: icon,
       prefixIconColor: textColor,
-      prefixIconConstraints: BoxConstraints.tight(Size(30, 15)),
+      prefixIconConstraints: BoxConstraints.tight(const Size(30, 15)),
       suffixIcon: suffixIcon,
       suffixIconColor: textColor,
-      suffixIconConstraints: BoxConstraints.tightFor(),
+      suffixIconConstraints: const BoxConstraints.tightFor(),
       contentPadding: contentPadding,
       isDense: true,
       hoverColor: UIColors.white,
@@ -191,7 +191,7 @@ class UIForms {
         fontSize: fontSize,
         decoration: TextDecoration.none,
       ),
-      errorStyle: TextStyle(
+      errorStyle: const TextStyle(
         color: UIColors.danger,
         fontSize: 12,
         decoration: TextDecoration.none,
@@ -402,7 +402,7 @@ class UIText {
 }
 
 
-MaterialColor LiyaColor = MaterialColor(Color.fromRGBO(0, 46, 79, 1).value, const <int, Color>{
+MaterialColor LiyaColor = MaterialColor(const Color.fromRGBO(0, 46, 79, 1).value, const <int, Color>{
   50: Color.fromRGBO(0, 157, 79, 0.1),
   100: Color.fromRGBO(0, 157, 79, 0.2),
   200: Color.fromRGBO(0, 157, 79, 0.3),
