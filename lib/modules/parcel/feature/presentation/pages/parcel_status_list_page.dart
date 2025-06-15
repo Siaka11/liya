@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:liya/modules/parcel/feature/presentation/pages/parcel_home_page.dart';
 import '../providers/parcel_provider.dart';
 import '../../domain/entities/parcel.dart';
 import 'package:liya/modules/restaurant/features/profile/presentation/pages/profile_page.dart';
@@ -25,18 +26,16 @@ class ParcelStatusListPage extends ConsumerWidget {
       appBar: AppBar(
         backgroundColor: const Color(0xFFFFF3ED),
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
-        ),
+        leading: SizedBox(),
+        title: const Text('Mes livraisons',
+            style: TextStyle(color: Colors.black, fontSize: 18)),
+        centerTitle: true,
       ),
       body: parcelsAsync.when(
         data: (parcels) {
           final filtered = status == 'ALL'
-              ? parcels.where((p) => p.phone == phoneNumber).toList()
-              : parcels
-                  .where((p) => p.status == status && p.phone == phoneNumber)
-                  .toList();
+              ? parcels
+              : parcels.where((p) => p.status == status).toList();
           if (filtered.isEmpty) {
             return const Center(child: Text('Aucune demande.'));
           }
@@ -53,6 +52,7 @@ class ParcelStatusListPage extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Erreur: $e')),
       ),
+      bottomNavigationBar: _ParcelBottomNavBar(),
     );
   }
 }
@@ -73,7 +73,7 @@ class _ParcelCardList extends StatelessWidget {
     final statusTextColor =
         parcel.status == 'EN ROUTE' ? Colors.white : Colors.black;
     return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       margin: EdgeInsets.zero,
       child: InkWell(
         borderRadius: BorderRadius.circular(24),
@@ -113,7 +113,7 @@ class _ParcelCardList extends StatelessWidget {
                                   horizontal: 12, vertical: 4),
                               decoration: BoxDecoration(
                                 color: statusColor,
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
                                 parcel.status,
@@ -134,15 +134,13 @@ class _ParcelCardList extends StatelessWidget {
                         Text(parcel.instructions ?? '',
                             style:
                                 const TextStyle(fontWeight: FontWeight.bold)),
-                        if (parcel.address != null)
-                          Text(parcel.address!,
-                              maxLines: 2, overflow: TextOverflow.ellipsis),
+
                         const SizedBox(height: 4),
-                        Text('ID livraison: ${parcel.id}',
+                        Text('ID: ${parcel.id}',
                             style: const TextStyle(
                                 color: Colors.blue,
-                                fontSize: 13,
-                                decoration: TextDecoration.underline)),
+                                fontSize: 13
+                            )),
                       ],
                     ),
                   ),
@@ -182,5 +180,33 @@ class _ParcelCardList extends StatelessWidget {
       'déc.'
     ];
     return months[month];
+  }
+}
+
+class _ParcelBottomNavBar extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return BottomNavigationBar(
+      items: const [
+        BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
+        BottomNavigationBarItem(icon: Icon(Icons.local_shipping), label: ''),
+        BottomNavigationBarItem(icon: Icon(Icons.person), label: ''),
+      ],
+      currentIndex: 1,
+      onTap: (index) {
+        if (index == 0) {
+          Navigator.pushReplacement(context,
+              MaterialPageRoute(builder: (_) => const ParcelHomePage()));
+        } else if (index == 1) {
+          Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                  builder: (_) => ParcelStatusListPage(status: 'ALL')));
+        } else if (index == 2) {
+          Navigator.pushReplacement(
+              context, MaterialPageRoute(builder: (_) => const ProfilePage()));
+        }
+      },
+    );
   }
 }

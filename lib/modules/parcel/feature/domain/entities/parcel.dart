@@ -9,6 +9,7 @@ class Parcel {
   final String? phoneNumber;
   final String? instructions;
   final String? ville;
+  final double? prix;
 
   Parcel({
     required this.id,
@@ -21,5 +22,6 @@ class Parcel {
     this.phoneNumber,
     this.instructions,
     this.ville,
+    this.prix,
   });
 }

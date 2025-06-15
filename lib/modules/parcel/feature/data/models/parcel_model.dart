@@ -13,6 +13,7 @@ class ParcelModel extends Parcel {
     String? phoneNumber,
     String? instructions,
     String? ville,
+    double? prix,
   }) : super(
           id: id,
           senderName: senderName,
@@ -24,6 +25,7 @@ class ParcelModel extends Parcel {
           phoneNumber: phoneNumber,
           instructions: instructions,
           ville: ville,
+          prix: prix,
         );
 
   factory ParcelModel.fromMap(Map<String, dynamic> map, String id) {
@@ -38,6 +40,7 @@ class ParcelModel extends Parcel {
       phoneNumber: map['phoneNumber'],
       instructions: map['instructions'],
       ville: map['ville'],
+      prix: map['prix'] != null ? (map['prix'] as num).toDouble() : null,
     );
   }
 
@@ -53,6 +56,7 @@ class ParcelModel extends Parcel {
       'phoneNumber': phoneNumber ?? '',
       'instructions': instructions,
       'ville': ville ?? '',
+      'prix': prix,
     };
   }
 }

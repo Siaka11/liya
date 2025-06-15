@@ -21,10 +21,12 @@ class ParcelRemoteDataSource {
     await firestore.collection('parcels').doc(parcel.id).set(parcel.toMap());
   }
 
-  Future<void> updateParcelStatus(String parcelId, String status) async {
-    await firestore
-        .collection('parcels')
-        .doc(parcelId)
-        .update({'status': status});
+  Future<void> updateParcelStatus(String parcelId, String status,
+      {double? prix}) async {
+    final updateData = <String, dynamic>{'status': status};
+    if (prix != null) {
+      updateData['prix'] = prix;
+    }
+    await firestore.collection('parcels').doc(parcelId).update(updateData);
   }
 }

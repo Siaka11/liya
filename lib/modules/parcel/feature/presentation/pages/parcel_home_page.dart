@@ -174,13 +174,20 @@ class ParcelHomePage extends ConsumerWidget {
   }
 
   Map<String, int> _getStatusCounts(List<Parcel> parcels) {
+    final userDetailsJson = LocalStorageFactory().getUserDetails();
+    final userDetails = userDetailsJson is String
+        ? jsonDecode(userDetailsJson)
+        : userDetailsJson;
+    final phoneNumber = (userDetails['phoneNumber'] ?? '').toString();
+    final userParcels =
+        parcels.where((p) => p.phoneNumber == phoneNumber).toList();
     final Map<String, int> counts = {
       'RECEPTION': 0,
       'EN ROUTE': 0,
       'NON LIVRÉ': 0,
       'LIVRÉ': 0,
     };
-    for (final parcel in parcels) {
+    for (final parcel in userParcels) {
       counts[parcel.status] = (counts[parcel.status] ?? 0) + 1;
     }
     return counts;

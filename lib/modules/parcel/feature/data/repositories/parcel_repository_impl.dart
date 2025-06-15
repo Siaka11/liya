@@ -29,7 +29,8 @@ class ParcelRepositoryImpl implements ParcelRepository {
   }
 
   @override
-  Future<void> updateParcelStatus(String parcelId, String status) async {
-    await remoteDataSource.updateParcelStatus(parcelId, status);
+  Future<void> updateParcelStatus(String parcelId, String status,
+      {double? prix}) async {
+    await remoteDataSource.updateParcelStatus(parcelId, status, prix: prix);
   }
 }
