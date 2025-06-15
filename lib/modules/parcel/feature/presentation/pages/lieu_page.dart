@@ -10,12 +10,16 @@ class LieuPage extends ConsumerStatefulWidget {
   final String typeProduit;
   final bool isReception;
   final String ville;
+  final String? colisDescription;
+  final List? colisList;
   const LieuPage(
       {Key? key,
       required this.phoneNumber,
       required this.typeProduit,
       this.isReception = false,
-      required this.ville})
+      required this.ville,
+      this.colisDescription,
+      this.colisList})
       : super(key: key);
 
   @override

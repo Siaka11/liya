@@ -5,11 +5,15 @@ class VillePage extends StatelessWidget {
   final String phoneNumber;
   final String typeProduit;
   final bool isReception;
+  final String? colisDescription;
+  final List? colisList;
   const VillePage(
       {Key? key,
       required this.phoneNumber,
       required this.typeProduit,
-      required this.isReception})
+      required this.isReception,
+      this.colisDescription,
+      this.colisList})
       : super(key: key);
 
   @override
@@ -46,6 +50,8 @@ class VillePage extends StatelessWidget {
                           typeProduit: typeProduit,
                           isReception: isReception,
                           ville: 'Yamoussoukro ou ville voisine',
+                          colisDescription: colisDescription,
+                          colisList: colisList,
                         ),
                       ));
                 }),
@@ -61,6 +67,8 @@ class VillePage extends StatelessWidget {
                           typeProduit: typeProduit,
                           isReception: isReception,
                           ville: 'Abidjan',
+                          colisDescription: colisDescription,
+                          colisList: colisList,
                         ),
                       ));
                 }),

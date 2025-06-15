@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'ville_page.dart';
+import 'colis_info_page.dart';
 
 class TypeProduitPage extends StatelessWidget {
   final String phoneNumber;
@@ -49,10 +50,10 @@ class TypeProduitPage extends StatelessWidget {
                   Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (_) => VillePage(
-                              phoneNumber: phoneNumber,
-                              typeProduit: 'Colis',
-                              isReception: isReception)));
+                          builder: (_) => ColisInfoPage(
+                                phoneNumber: phoneNumber,
+                                isReception: isReception,
+                              )));
                 }),
           ],
         ),
