@@ -1,9 +1,9 @@
-
 import 'dart:convert';
 
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/material.dart';
 
 import '../../../core/local_storage_factory.dart';
 import '../../../core/singletons.dart';
@@ -15,6 +15,7 @@ import 'package:liya/modules/home/domain/entities/home_option.dart';
 import '../domain/entities/user.dart';
 import '../domain/repositories/home_repository.dart';
 import '../domain/usecases/get_home_options.dart';
+import 'package:liya/modules/parcel/feature/presentation/pages/parcel_home_page.dart';
 
 class HomeState {
   final List<HomeOption> options;
@@ -47,7 +48,6 @@ class HomeState {
 class HomeNotifier extends StateNotifier<HomeState> {
   final GetHomeOptions getHomeOptions;
 
-
   HomeNotifier(this.getHomeOptions) : super(const HomeState()) {
     _init();
   }
@@ -69,14 +69,15 @@ class HomeNotifier extends StateNotifier<HomeState> {
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
-        user: const User(name: '', lastName: ''), // Valeur par défaut en cas d'erreur
+        user: const User(
+            name: '', lastName: ''), // Valeur par défaut en cas d'erreur
       );
     }
   }
 
   Future<void> refreshUser() async {
     print('Refreshing user data');
-    await _loadUserData();  // ça recharge depuis LocalStorage et update state
+    await _loadUserData(); // ça recharge depuis LocalStorage et update state
   }
 
   Future<void> fetchOptions() async {
@@ -88,14 +89,16 @@ class HomeNotifier extends StateNotifier<HomeState> {
       state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
+
   // Map pour associer les titres aux routes
   final _routeMap = {
-    'Je veux commander un plat': (context, option) => AutoRouter.of(context).push(HomeRestaurantRoute(option: option)),
-    //'Je veux commander un plat': (context, option) => singleton<AppRouter>().push(const HomeRestaurantRoute()),
-/*    'Je veux expédier un colis': (context, option) => singleton<AppRouter>().push(const ShipPackageRoute()),
-    'Je veux livrer': (context, option) => singleton<AppRouter>().push(const DeliveryRoute()),
-    'Faire des courses': (context, option) => singleton<AppRouter>().push(const ShoppingRoute()),
-    'Administrateur': (context, option) => singleton<AppRouter>().push(const AdminRoute()),*/
+    'Je veux commander un plat': (context, option) =>
+        AutoRouter.of(context).push(HomeRestaurantRoute(option: option)),
+    'Je veux expédier un colis': (context, option) => Navigator.of(context)
+        .push(MaterialPageRoute(builder: (_) => const ParcelHomePage())),
+    //'Je veux livrer': (context, option) => singleton<AppRouter>().push(const DeliveryRoute()),
+    //'Faire des courses': (context, option) => singleton<AppRouter>().push(const ShoppingRoute()),
+    //'Administrateur': (context, option) => singleton<AppRouter>().push(const AdminRoute()),
   };
 
   void onOptionSelected(BuildContext context, HomeOption option) {
@@ -112,7 +115,6 @@ class HomeNotifier extends StateNotifier<HomeState> {
     print('Logging out from HomeNotifier');
     state = state.copyWith(user: const User(name: '', lastName: ''));
     await _loadUserData(); // Recharger les données pour refléter l'état local
-
   }
 }
 

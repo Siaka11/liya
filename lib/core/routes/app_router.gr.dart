@@ -15,6 +15,12 @@ abstract class _$AppRouter extends RootStackRouter {
 
   @override
   final Map<String, PageFactory> pagesMap = {
+    AddParcelRoute.name: (routeData) {
+      return AutoRoutePage<dynamic>(
+        routeData: routeData,
+        child: const AddParcelPage(),
+      );
+    },
     AllDishesRoute.name: (routeData) {
       return AutoRoutePage<dynamic>(
         routeData: routeData,
@@ -144,6 +150,22 @@ abstract class _$AppRouter extends RootStackRouter {
         ),
       );
     },
+    ParcelDetailRoute.name: (routeData) {
+      final args = routeData.argsAs<ParcelDetailRouteArgs>();
+      return AutoRoutePage<dynamic>(
+        routeData: routeData,
+        child: ParcelDetailPage(
+          key: args.key,
+          parcel: args.parcel,
+        ),
+      );
+    },
+    ParcelListRoute.name: (routeData) {
+      return AutoRoutePage<dynamic>(
+        routeData: routeData,
+        child: const ParcelListPage(),
+      );
+    },
     ProfileRoute.name: (routeData) {
       return AutoRoutePage<dynamic>(
         routeData: routeData,
@@ -182,6 +204,20 @@ abstract class _$AppRouter extends RootStackRouter {
       );
     },
   };
+}
+
+/// generated route for
+/// [AddParcelPage]
+class AddParcelRoute extends PageRouteInfo<void> {
+  const AddParcelRoute({List<PageRouteInfo>? children})
+      : super(
+          AddParcelRoute.name,
+          initialChildren: children,
+        );
+
+  static const String name = 'AddParcelRoute';
+
+  static const PageInfo<void> page = PageInfo<void>(name);
 }
 
 /// generated route for
@@ -618,6 +654,58 @@ class OtpRouteArgs {
   String toString() {
     return 'OtpRouteArgs{verificationId: $verificationId, key: $key}';
   }
+}
+
+/// generated route for
+/// [ParcelDetailPage]
+class ParcelDetailRoute extends PageRouteInfo<ParcelDetailRouteArgs> {
+  ParcelDetailRoute({
+    Key? key,
+    required Parcel parcel,
+    List<PageRouteInfo>? children,
+  }) : super(
+          ParcelDetailRoute.name,
+          args: ParcelDetailRouteArgs(
+            key: key,
+            parcel: parcel,
+          ),
+          initialChildren: children,
+        );
+
+  static const String name = 'ParcelDetailRoute';
+
+  static const PageInfo<ParcelDetailRouteArgs> page =
+      PageInfo<ParcelDetailRouteArgs>(name);
+}
+
+class ParcelDetailRouteArgs {
+  const ParcelDetailRouteArgs({
+    this.key,
+    required this.parcel,
+  });
+
+  final Key? key;
+
+  final Parcel parcel;
+
+  @override
+  String toString() {
+    return 'ParcelDetailRouteArgs{key: $key, parcel: $parcel}';
+  }
+}
+
+/// generated route for
+/// [ParcelListPage]
+class ParcelListRoute extends PageRouteInfo<void> {
+  const ParcelListRoute({List<PageRouteInfo>? children})
+      : super(
+          ParcelListRoute.name,
+          initialChildren: children,
+        );
+
+  static const String name = 'ParcelListRoute';
+
+  static const PageInfo<void> page = PageInfo<void>(name);
 }
 
 /// generated route for
