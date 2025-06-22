@@ -238,7 +238,7 @@ class ProfilePage extends ConsumerWidget {
                       // TODO: Navigate to addresses
                     },
                   ),
-                  ListTile(
+/*                  ListTile(
                     leading: Icon(Icons.mail),
                     title: Text('Adresses'),
                     subtitle: Text('${profile.email.length} adress'),
@@ -246,7 +246,7 @@ class ProfilePage extends ConsumerWidget {
                     onTap: () {
                       // TODO: Navigate to addresses
                     },
-                  ),
+                  ),*/
 /*              ListTile(
                 leading: Icon(Icons.credit_card_outlined),
                 title: Text('Moyens de paiement'),

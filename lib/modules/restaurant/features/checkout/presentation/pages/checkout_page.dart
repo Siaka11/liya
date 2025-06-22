@@ -546,11 +546,16 @@ class _CheckoutPageState extends State<CheckoutPage> {
                 phoneNumber: phoneInput ?? phoneNumber,
                 items: items,
                 total: total, // Total incluant les frais de livraison
+                subtotal: subtotal,
+                deliveryFee: deliveryFee!,
                 status: OrderStatus.reception,
                 createdAt: DateTime.now(),
                 latitude: selectedLat,
                 longitude: selectedLng,
                 deliveryInstructions: deliveryInstructions,
+                distance: calculatedDistance,
+                deliveryTime: deliveryTime,
+                address: selectedAddress,
               );
 
               // Enregistre la commande sur Firestore avec les détails de livraison
@@ -560,10 +565,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
               try {
                 await repository.createOrder(order);
-
-                // Enregistrer les détails de livraison séparément
-                await _saveDeliveryDetails(order.id, subtotal, deliveryFee!,
-                    calculatedDistance!, deliveryTime!);
 
                 // Vide le panier Firestore
                 final cartRepo = CartRepositoryImpl(
@@ -647,44 +648,5 @@ class _CheckoutPageState extends State<CheckoutPage> {
     final subtotal = _calculateSubtotal();
     final deliveryFeeAmount = deliveryFee?.toDouble() ?? 0.0;
     return subtotal + deliveryFeeAmount;
-  }
-
-  Future<void> _saveDeliveryDetails(String orderId, double subtotal,
-      int deliveryFee, double distance, int deliveryTime) async {
-    try {
-      final firestore = cf.FirebaseFirestore.instance;
-
-      // Mettre à jour la commande avec les détails de livraison
-      await firestore.collection('orders').doc(orderId).update({
-        'deliveryDetails': {
-          'subtotal': subtotal,
-          'deliveryFee': deliveryFee,
-          'total': subtotal + deliveryFee,
-          'distance': distance,
-          'deliveryTime': deliveryTime,
-          'distanceFormatted': DistanceService.formatDistance(distance),
-          'deliveryTimeFormatted':
-              DistanceService.formatDeliveryTime(deliveryTime),
-          'deliveryFeeFormatted':
-              DistanceService.formatDeliveryFee(deliveryFee),
-          'restaurantCoordinates': {
-            'latitude': DistanceService.restaurantLatitude,
-            'longitude': DistanceService.restaurantLongitude,
-          },
-          'userCoordinates': {
-            'latitude': selectedLat,
-            'longitude': selectedLng,
-          },
-          'address': selectedAddress,
-          'calculatedAt': DateTime.now().toIso8601String(),
-        },
-        'updatedAt': DateTime.now().toIso8601String(),
-      });
-
-      print('Détails de livraison sauvegardés pour la commande: $orderId');
-    } catch (e) {
-      print('Erreur lors de la sauvegarde des détails de livraison: $e');
-      // Ne pas faire échouer la commande si la sauvegarde des détails échoue
-    }
   }
 }

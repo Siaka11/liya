@@ -90,11 +90,6 @@ class HomeOptionCard extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(
-                    Icons.location_on,
-                    size: 14,
-                    color: UIColors.grey,
-                  ),
                   const SizedBox(width: 5),
                   Text(
                     option.location,
