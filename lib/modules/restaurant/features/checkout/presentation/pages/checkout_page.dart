@@ -242,8 +242,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                       Spacer(),
                       Text(
                         calculatedDistance != null
-                            ? DistanceService.formatDeliveryTime(
-                            deliveryTime!)
+                            ? DistanceService.formatDeliveryTime(deliveryTime!)
                             : 'Calcul...',
                         style: TextStyle(
                           fontSize: 16,
@@ -419,6 +418,87 @@ class _CheckoutPageState extends State<CheckoutPage> {
               ],
             ),
 
+            // Calcul détaillé
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey.shade200),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Calcul détaillé',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Sous-total
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Sous-total'),
+                      Text(
+                        '${_calculateSubtotal()} FCFA',
+                        style: const TextStyle(fontWeight: FontWeight.w500),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Frais de livraison
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Frais de livraison'),
+                      Text(
+                        deliveryFee != null
+                            ? '${deliveryFee} FCFA'
+                            : 'Calcul...',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w500,
+                          color: UIColors.orange,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Ligne de séparation
+                  const Divider(),
+                  const SizedBox(height: 8),
+
+                  // Total
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Total',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        '${_calculateTotal()} FCFA',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: UIColors.orange,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
             // Instructions
             ListTile(
               leading: Icon(Icons.shopping_bag_outlined),
@@ -435,6 +515,18 @@ class _CheckoutPageState extends State<CheckoutPage> {
           padding: const EdgeInsets.all(16.0),
           child: ElevatedButton(
             onPressed: () async {
+              // Vérifier que la distance est calculée
+              if (calculatedDistance == null || deliveryFee == null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content:
+                        Text('Veuillez sélectionner une adresse de livraison'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+                return;
+              }
+
               // Crée la liste des OrderItem
               final items = widget.cartItems
                   .map((item) => OrderItem(
@@ -444,16 +536,16 @@ class _CheckoutPageState extends State<CheckoutPage> {
                       ))
                   .toList();
 
-              // Calcule le total
-              final total = items.fold(
-                  0.0, (sum, item) => sum + item.price * item.quantity);
+              // Calcule les totaux
+              final subtotal = _calculateSubtotal();
+              final total = _calculateTotal();
 
-              // Crée l'objet Order (l'id sera généré par le repo)
+              // Crée l'objet Order avec les informations de livraison
               final order = Order(
                 id: '', // Laisse vide, le repo s'en charge
                 phoneNumber: phoneInput ?? phoneNumber,
                 items: items,
-                total: total,
+                total: total, // Total incluant les frais de livraison
                 status: OrderStatus.reception,
                 createdAt: DateTime.now(),
                 latitude: selectedLat,
@@ -461,60 +553,65 @@ class _CheckoutPageState extends State<CheckoutPage> {
                 deliveryInstructions: deliveryInstructions,
               );
 
-              // Enregistre la commande sur Firestore
+              // Enregistre la commande sur Firestore avec les détails de livraison
               final dataSource = OrderRemoteDataSourceImpl(
                   firestore: cf.FirebaseFirestore.instance);
               final repository = OrderRepositoryImpl(dataSource);
-              await repository.createOrder(order);
 
-              // Vide le panier Firestore
-              final cartRepo = CartRepositoryImpl(
-                  remoteDataSource: CartRemoteDataSourceImpl());
-              await cartRepo.clearCart(phoneNumber);
-
-              if (!context.mounted) return;
-
-              // Afficher le message de confirmation
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Commande enregistrée !'),
-                  duration: Duration(seconds: 2),
-                ),
-              );
-
-              // Attendre que le SnackBar soit visible
-              await Future.delayed(const Duration(milliseconds: 500));
-              if (!context.mounted) return;
-
-              // Rediriger vers la page d'accueil du restaurant
               try {
-                /*Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(
-                    builder: (_) => HomeRestaurantPage(
-                      option: const HomeOption(
-                        title: 'Restaurants',
-                        icon: 'restaurant',
-                      ),
-                    ),
+                await repository.createOrder(order);
+
+                // Enregistrer les détails de livraison séparément
+                await _saveDeliveryDetails(order.id, subtotal, deliveryFee!,
+                    calculatedDistance!, deliveryTime!);
+
+                // Vide le panier Firestore
+                final cartRepo = CartRepositoryImpl(
+                    remoteDataSource: CartRemoteDataSourceImpl());
+                await cartRepo.clearCart(phoneNumber);
+
+                if (!context.mounted) return;
+
+                // Afficher le message de confirmation
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                        'Commande enregistrée ! Total: ${total.toStringAsFixed(0)} FCFA'),
+                    duration: const Duration(seconds: 2),
                   ),
-                  (route) => false,
-                );*/
-                context.router
-                    .replace(OrderListRoute(phoneNumber: phoneNumber));
-              } catch (e) {
-                // En cas d'erreur, essayer une navigation plus simple
-                if (context.mounted) {
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(
-                      builder: (_) => HomeRestaurantPage(
-                        option: const HomeOption(
-                          title: 'Restaurants',
-                          icon: 'restaurant',
+                );
+
+                // Attendre que le SnackBar soit visible
+                await Future.delayed(const Duration(milliseconds: 500));
+                if (!context.mounted) return;
+
+                // Rediriger vers la page d'accueil du restaurant
+                try {
+                  context.router
+                      .replace(OrderListRoute(phoneNumber: phoneNumber));
+                } catch (e) {
+                  // En cas d'erreur, essayer une navigation plus simple
+                  if (context.mounted) {
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(
+                        builder: (_) => HomeRestaurantPage(
+                          option: const HomeOption(
+                            title: 'Restaurants',
+                            icon: 'restaurant',
+                          ),
                         ),
                       ),
-                    ),
-                  );
+                    );
+                  }
                 }
+              } catch (e) {
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Erreur lors de l\'enregistrement: $e'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
               }
             },
             style: ElevatedButton.styleFrom(
@@ -525,7 +622,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
               ),
             ),
             child: Text(
-              'Confirmer la commande',
+              'Confirmer la commande • ${_calculateTotal().toStringAsFixed(0)} FCFA',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
@@ -536,5 +633,58 @@ class _CheckoutPageState extends State<CheckoutPage> {
         ),
       ),
     );
+  }
+
+  double _calculateSubtotal() {
+    return widget.cartItems.fold(0.0, (sum, item) {
+      final price = double.tryParse(item['price'].toString()) ?? 0.0;
+      final quantity = item['quantity'] as int? ?? 1;
+      return sum + (price * quantity);
+    });
+  }
+
+  double _calculateTotal() {
+    final subtotal = _calculateSubtotal();
+    final deliveryFeeAmount = deliveryFee?.toDouble() ?? 0.0;
+    return subtotal + deliveryFeeAmount;
+  }
+
+  Future<void> _saveDeliveryDetails(String orderId, double subtotal,
+      int deliveryFee, double distance, int deliveryTime) async {
+    try {
+      final firestore = cf.FirebaseFirestore.instance;
+
+      // Mettre à jour la commande avec les détails de livraison
+      await firestore.collection('orders').doc(orderId).update({
+        'deliveryDetails': {
+          'subtotal': subtotal,
+          'deliveryFee': deliveryFee,
+          'total': subtotal + deliveryFee,
+          'distance': distance,
+          'deliveryTime': deliveryTime,
+          'distanceFormatted': DistanceService.formatDistance(distance),
+          'deliveryTimeFormatted':
+              DistanceService.formatDeliveryTime(deliveryTime),
+          'deliveryFeeFormatted':
+              DistanceService.formatDeliveryFee(deliveryFee),
+          'restaurantCoordinates': {
+            'latitude': DistanceService.restaurantLatitude,
+            'longitude': DistanceService.restaurantLongitude,
+          },
+          'userCoordinates': {
+            'latitude': selectedLat,
+            'longitude': selectedLng,
+          },
+          'address': selectedAddress,
+          'calculatedAt': DateTime.now().toIso8601String(),
+        },
+        'updatedAt': DateTime.now().toIso8601String(),
+      });
+
+      print('Détails de livraison sauvegardés pour la commande: $orderId');
+    } catch (e) {
+      print('Erreur lors de la sauvegarde des détails de livraison: $e');
+      // Ne pas faire échouer la commande si la sauvegarde des détails échoue
+    }
   }
 }
