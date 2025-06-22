@@ -10,6 +10,7 @@ import '../../../order/domain/entities/order.dart';
 import '../../../order/data/datasources/order_remote_data_source.dart';
 import '../../../order/data/repositories/order_repository_impl.dart';
 import 'package:liya/core/local_storage_factory.dart';
+import 'package:liya/core/distance_service.dart';
 import 'dart:convert';
 import 'package:liya/core/singletons.dart';
 import '../../../order/presentation/pages/order_list_page.dart';
@@ -40,8 +41,32 @@ class _CheckoutPageState extends State<CheckoutPage> {
   double? selectedLat;
   double? selectedLng;
   String? selectedAddress;
+  double? calculatedDistance;
+  int? deliveryTime;
+  int? deliveryFee;
   final phoneController = TextEditingController();
   final instructionsController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeUserLocation();
+  }
+
+  void _initializeUserLocation() {
+    final localStorage = singleton<LocalStorageFactory>();
+    if (localStorage.hasUserLocation()) {
+      final userLocation = localStorage.getUserLocation();
+      if (userLocation.isNotEmpty) {
+        final userLat = userLocation['latitude'] as double?;
+        final userLng = userLocation['longitude'] as double?;
+
+        if (userLat != null && userLng != null) {
+          _calculateDistance(userLat, userLng);
+        }
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -66,6 +91,21 @@ class _CheckoutPageState extends State<CheckoutPage> {
             'Lat: ${lat.toStringAsFixed(5)}, Lng: ${lng.toStringAsFixed(5)}';
       });
     }
+
+    // Calculer la distance
+    _calculateDistance(lat, lng);
+  }
+
+  void _calculateDistance(double lat, double lng) {
+    final distance = DistanceService.calculateDistanceToRestaurant(lat, lng);
+    final time = DistanceService.calculateDeliveryTime(distance);
+    final fee = DistanceService.calculateDeliveryFee(distance);
+
+    setState(() {
+      calculatedDistance = distance;
+      deliveryTime = time;
+      deliveryFee = fee;
+    });
   }
 
   Future<void> _showPhoneDialog() async {
@@ -201,7 +241,10 @@ class _CheckoutPageState extends State<CheckoutPage> {
                       ),
                       Spacer(),
                       Text(
-                        '16-21 min',
+                        calculatedDistance != null
+                            ? DistanceService.formatDeliveryTime(
+                            deliveryTime!)
+                            : 'Calcul...',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w500,
@@ -210,6 +253,34 @@ class _CheckoutPageState extends State<CheckoutPage> {
                     ],
                   ),
                   SizedBox(height: 16),
+
+                  // Frais de livraison
+                  if (deliveryFee != null) ...[
+                    Row(
+                      children: [
+                        Icon(Icons.delivery_dining, size: 20),
+                        SizedBox(width: 8),
+                        Text(
+                          'Frais de livraison',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        Spacer(),
+                        Text(
+                          DistanceService.formatDeliveryFee(deliveryFee!),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            color: UIColors.orange,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 16),
+                  ],
+
                   Row(
                     children: [
                       Expanded(
@@ -229,9 +300,24 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                 ),
                               ),
                               Text(
-                                '16-21 min',
+                                calculatedDistance != null
+                                    ? DistanceService.formatDistance(
+                                        calculatedDistance!)
+                                    : 'Calcul...',
                                 style: TextStyle(color: Colors.grey),
                               ),
+                              if (deliveryTime != null) ...[
+                                SizedBox(height: 4),
+                                Text(
+                                  DistanceService.formatDeliveryTime(
+                                      deliveryTime!),
+                                  style: TextStyle(
+                                    color: UIColors.orange,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
                             ],
                           ),
                         ),
@@ -246,7 +332,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                           ),
                           child: Column(
                             children: [
-                             *//* Text(
+                             */ /* Text(
                                 'Programmer',
                                 style: TextStyle(
                                   color: Colors.grey[600],
@@ -256,7 +342,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                               Text(
                                 'Choisir une heure',
                                 style: TextStyle(color: Colors.grey),
-                              ),*//*
+                              ),*/ /*
                             ],
                           ),
                         ),
@@ -275,7 +361,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
             ),
 
             // Delivery Instructions
-           /* ListTile(
+            /* ListTile(
               leading: Icon(Icons.gps_fixed),
               title: Text('Coordonnées'),
               subtitle: Text(selectedLat != null && selectedLng != null
@@ -293,7 +379,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
             ),
 
             // Send as Gift
-           /* ListTile(
+            /* ListTile(
               leading: Icon(Icons.card_giftcard_outlined),
               title: Text('Envoyer comme cadeau'),
               trailing: Icon(Icons.chevron_right),
