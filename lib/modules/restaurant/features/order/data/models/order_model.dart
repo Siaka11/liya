@@ -6,21 +6,31 @@ class OrderModel extends Order {
     required String phoneNumber,
     required List<OrderItem> items,
     required double total,
+    required double subtotal,
+    required int deliveryFee,
     required OrderStatus status,
     required DateTime createdAt,
     double? latitude,
     double? longitude,
     String? deliveryInstructions,
+    double? distance,
+    int? deliveryTime,
+    String? address,
   }) : super(
           id: id,
           phoneNumber: phoneNumber,
           items: items,
           total: total,
+          subtotal: subtotal,
+          deliveryFee: deliveryFee,
           status: status,
           createdAt: createdAt,
           latitude: latitude,
           longitude: longitude,
           deliveryInstructions: deliveryInstructions,
+          distance: distance,
+          deliveryTime: deliveryTime,
+          address: address,
         );
 
   factory OrderModel.fromJson(Map<String, dynamic> json) {
@@ -31,6 +41,8 @@ class OrderModel extends Order {
           .map((item) => OrderItemModel.fromJson(item))
           .toList(),
       total: (json['total'] as num).toDouble(),
+      subtotal: (json['subtotal'] as num?)?.toDouble() ?? 0.0,
+      deliveryFee: json['deliveryFee'] as int? ?? 0,
       status: _statusFromString(json['status']),
       createdAt: DateTime.parse(json['createdAt']),
       latitude: json['latitude'] != null
@@ -40,6 +52,11 @@ class OrderModel extends Order {
           ? (json['longitude'] as num).toDouble()
           : null,
       deliveryInstructions: json['deliveryInstructions'],
+      distance: json['distance'] != null
+          ? (json['distance'] as num).toDouble()
+          : null,
+      deliveryTime: json['deliveryTime'] as int?,
+      address: json['address'],
     );
   }
 
@@ -59,11 +76,16 @@ class OrderModel extends Order {
         }
       }).toList(),
       'total': total,
+      'subtotal': subtotal,
+      'deliveryFee': deliveryFee,
       'status': status.toString().split('.').last,
       'createdAt': createdAt.toIso8601String(),
       'latitude': latitude,
       'longitude': longitude,
       'deliveryInstructions': deliveryInstructions,
+      'distance': distance,
+      'deliveryTime': deliveryTime,
+      'address': address,
     };
   }
 

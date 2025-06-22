@@ -1,10 +1,26 @@
+import 'dart:convert';
+
 import 'package:liya/modules/home/data/models/home_option_model.dart';
+
+import '../../../../core/local_storage_factory.dart';
+import '../../../../core/singletons.dart';
 
 abstract class HomeLocalDataSource {
   Future<List<HomeOptionModel>> getHomeOptions();
 }
 
-class HomeLocalDataSourceImpl implements HomeLocalDataSource{
+class HomeLocalDataSourceImpl implements HomeLocalDataSource {
+  late final Map<String, dynamic> userDetails;
+  late final String? role;
+
+  HomeLocalDataSourceImpl() {
+    final userDetailsJson = singleton<LocalStorageFactory>().getUserDetails();
+    userDetails = userDetailsJson is String
+        ? jsonDecode(userDetailsJson)
+        : userDetailsJson;
+    role = userDetails['role'];
+  }
+
   @override
   Future<List<HomeOptionModel>> getHomeOptions() async {
     return [
@@ -24,10 +40,12 @@ class HomeLocalDataSourceImpl implements HomeLocalDataSource{
         title: 'Faire des courses',
         icon: 'shopping_cart',
       ),*/
-      const HomeOptionModel(
-        title: 'Administrateur',
-        icon: 'admin_panel_settings',
-      ),
+      if (role == 'admin') ...[
+        const HomeOptionModel(
+          title: 'Administrateur',
+          icon: 'admin_panel_settings',
+        ),
+      ],
     ];
   }
 }

@@ -1,11 +1,8 @@
-
-
 import 'dart:convert';
 import 'dart:ui';
 
 import 'package:liya/core/singletons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 
 enum SupportedLocale {
   fr,
@@ -103,7 +100,6 @@ class LocalStorageFactory {
     return counter;
   }
 
-
   getInitialRunFlag(flag) {
     return get('InitialRunFlag', flag);
   }
@@ -117,7 +113,8 @@ class LocalStorageFactory {
   }
 
   static Locale getLocale() {
-    final String localeCode = singleton<SharedPreferences>().getString(_LOCALE_KEY) ?? 'fr';
+    final String localeCode =
+        singleton<SharedPreferences>().getString(_LOCALE_KEY) ?? 'fr';
     return Locale(localeCode);
   }
 
@@ -154,11 +151,15 @@ class LocalStorageFactory {
   getNotifsSetting() {}
 
   initNotifsSettings() {
-    final String localeCode = singleton<SharedPreferences>().getString(_LOCALE_KEY) ?? 'fr';
+    final String localeCode =
+        singleton<SharedPreferences>().getString(_LOCALE_KEY) ?? 'fr';
   }
 
   // Nouvelles méthodes pour gérer la localisation
-   setUserLocation({required double latitude, required double longitude, required String address}) {
+  setUserLocation(
+      {required double latitude,
+      required double longitude,
+      required String address}) {
     final locationData = {
       'latitude': latitude,
       'longitude': longitude,
@@ -169,6 +170,15 @@ class LocalStorageFactory {
 
   Map<String, dynamic> getUserLocation() {
     final locationData = getObject("UserLocation");
+    if (locationData == '{}') {
+      return {};
+    }
     return jsonDecode(locationData);
+  }
+
+  // Méthode pour vérifier si la localisation existe
+  bool hasUserLocation() {
+    final locationData = getObject("UserLocation");
+    return locationData != '{}';
   }
 }

@@ -50,7 +50,6 @@ class UserProfileModel extends UserProfile {
       paymentMethods: List<String>.from(data['paymentMethods'] ?? []),
       orders: orders,
       phone: data['phone'] ?? '',
-
     );
   }
 

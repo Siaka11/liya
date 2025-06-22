@@ -89,6 +89,7 @@ class LoginProvider extends StateNotifier<AuthModel> {
         "name": data["name"],
         "lastName": data["lastname"],
         "phoneNumber": data["phone_number"],
+        "role" : data["role"],
       });
       return true;
     }

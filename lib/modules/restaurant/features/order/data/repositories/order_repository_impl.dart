@@ -21,16 +21,32 @@ class OrderRepositoryImpl implements OrderRepository {
       phoneNumber: order.phoneNumber,
       items: order.items,
       total: order.total,
+      subtotal: order.subtotal,
+      deliveryFee: order.deliveryFee,
       status: order.status,
       createdAt: order.createdAt,
+      latitude: order.latitude,
+      longitude: order.longitude,
+      deliveryInstructions: order.deliveryInstructions,
+      distance: order.distance,
+      deliveryTime: order.deliveryTime,
+      address: order.address,
     );
     return remoteDataSource.createOrder(OrderModel(
       id: orderWithId.id,
       phoneNumber: orderWithId.phoneNumber,
       items: orderWithId.items,
       total: orderWithId.total,
+      subtotal: orderWithId.subtotal,
+      deliveryFee: orderWithId.deliveryFee,
       status: orderWithId.status,
       createdAt: orderWithId.createdAt,
+      latitude: orderWithId.latitude,
+      longitude: orderWithId.longitude,
+      deliveryInstructions: orderWithId.deliveryInstructions,
+      distance: orderWithId.distance,
+      deliveryTime: orderWithId.deliveryTime,
+      address: orderWithId.address,
     ));
   }
 
