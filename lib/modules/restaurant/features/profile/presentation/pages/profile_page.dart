@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../../core/local_storage_factory.dart';
 import '../../../../../../core/routes/app_router.dart';
@@ -12,6 +13,7 @@ import '../../../../../home/application/home_provider.dart';
 import '../../../home/presentation/widget/navigation_footer.dart';
 import '../providers/profile_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter/rendering.dart';
 
 @RoutePage(name: 'ProfileRoute')
 class ProfilePage extends ConsumerWidget {
@@ -40,12 +42,45 @@ class ProfilePage extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () async {
-              final Uri phoneUri = Uri(scheme: 'tel', path: '0709976498');
-              if (await canLaunchUrl(phoneUri)) {
-                await launchUrl(phoneUri);
-              } else {
+              try {
+                final Uri phoneUri = Uri.parse('tel:0709976498');
+                if (await canLaunchUrl(phoneUri)) {
+                  final result = await launchUrl(phoneUri);
+                  if (!result) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                          content: Text(
+                              'Impossible d\'ouvrir l\'application téléphone.')),
+                    );
+                  }
+                } else {
+                  // Fallback: essayer d'ouvrir avec un lien direct
+                  final fallbackUri = Uri.parse('https://wa.me/0709976498');
+                  if (await canLaunchUrl(fallbackUri)) {
+                    await launchUrl(fallbackUri);
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Numéro de téléphone: 0709976498'),
+                        action: SnackBarAction(
+                          label: 'Copier',
+                          onPressed: () {
+                            Clipboard.setData(
+                                ClipboardData(text: '0709976498'));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                  content: Text(
+                                      'Numéro copié dans le presse-papiers')),
+                            );
+                          },
+                        ),
+                      ),
+                    );
+                  }
+                }
+              } catch (e) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Impossible d\'ouvrir le téléphone.')),
+                  SnackBar(content: Text('Erreur: $e')),
                 );
               }
             },
@@ -63,7 +98,7 @@ class ProfilePage extends ConsumerWidget {
         data: (profile) => Stack(
           children: [
             SingleChildScrollView(
-              padding: EdgeInsets.only(bottom: 80),
+              padding: EdgeInsets.only(bottom: 140),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -273,33 +308,61 @@ class ProfilePage extends ConsumerWidget {
               bottom: 0,
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    icon: Icon(Icons.logout),
-                    label: Text('Déconnexion'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                      foregroundColor: Colors.white,
-                      padding: EdgeInsets.symmetric(vertical: 16),
-                      textStyle:
-                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        icon: Icon(Icons.home),
+                        label: Text('Menu principal'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.deepOrange,
+                          foregroundColor: Colors.white,
+                          padding: EdgeInsets.symmetric(vertical: 16),
+                          textStyle: TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        onPressed: () async {
+                          if (context.mounted) {
+                            context.router.replaceAll([const HomeRoute()]);
+                          }
+                        },
                       ),
                     ),
-                    onPressed: () async {
-                      // Efface le local storage et redirige vers la page de connexion
-                      await ref.read(homeProvider.notifier).logout();
-                      ref.invalidate(infoUserProvider);
-                      await ref.read(authProvider.notifier).logout();
-                      ref.invalidate(homeProvider);
+                    SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        icon: Icon(Icons.logout),
+                        label: Text('Déconnexion'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          foregroundColor: Colors.white,
+                          padding: EdgeInsets.symmetric(vertical: 16),
+                          textStyle: TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        onPressed: () async {
+                          // Efface le local storage et redirige vers la page de connexion
+                          await ref.read(homeProvider.notifier).logout();
+                          ref.invalidate(infoUserProvider);
+                          await ref.read(authProvider.notifier).logout();
+                          ref.invalidate(homeProvider);
 
-                      if (context.mounted) {
-                        context.router.replaceAll([const AuthRoute()]);
-                      }
-                    },
-                  ),
+                          if (context.mounted) {
+                            context.router.replaceAll([const AuthRoute()]);
+                          }
+                        },
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
