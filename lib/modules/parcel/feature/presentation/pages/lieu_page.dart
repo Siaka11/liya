@@ -1,10 +1,15 @@
+import 'package:auto_route/annotations.dart';
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../../core/routes/app_router.dart';
 import '../providers/parcel_action_provider.dart';
 import '../../domain/entities/parcel.dart';
 import 'package:liya/core/local_storage_factory.dart';
 import 'dart:convert';
+import 'parcel_home_page.dart';
 
+@RoutePage()
 class LieuPage extends ConsumerStatefulWidget {
   final String phoneNumber;
   final String typeProduit;
@@ -122,8 +127,12 @@ class _LieuPageState extends ConsumerState<LieuPage> {
       await Future.delayed(const Duration(seconds: 2));
       if (mounted) {
         Navigator.pop(context); // Ferme le dialog d'animation
-        Navigator.pop(context); // Retour à la page précédente
-        Navigator.pop(context); // Retour à la page d'accueil colis
+        // Utiliser addPostFrameCallback pour éviter le conflit de navigation
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            context.router.replaceAll([const ParcelHomeRoute()]);
+          }
+        });
       }
     }
   }

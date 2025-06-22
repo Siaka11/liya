@@ -34,6 +34,9 @@ class HomeRestaurantHeader extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cartItemsAsyncValue = ref.watch(cartItemsStreamProvider);
+    final userDetailsLocation =
+    singleton<LocalStorageFactory>().getUserLocation();
+    final address = userDetailsLocation['address'] ?? '';
 
     return Container(
       padding: EdgeInsets.all(16),
@@ -44,7 +47,7 @@ class HomeRestaurantHeader extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                "Yamoussoukro, Maison des députés",
+                "$address",
                 style: TextStyle(fontSize: 10, color: Colors.black),
               ),
             ],

@@ -20,7 +20,7 @@ class RestaurantCard extends StatelessWidget {
           child: Container(
             //remplir toute la largeur de l'écran
             width: width,
-            height: 200,
+            height: 180,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -49,6 +49,7 @@ class RestaurantCard extends StatelessWidget {
                   ),
                 ),
                 // Contenu (nom et livraison)
+                const SizedBox(height: 10),
                 Padding(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 6, vertical: 0),
@@ -68,8 +69,8 @@ class RestaurantCard extends StatelessWidget {
                               padding: EdgeInsets.only(
                                   right: 12.0,
                                   top: 6), // Ajustement pour l'icône
-                              child: Icon(Icons.favorite_border,
-                                  color: Colors.grey),
+                              /*child: Icon(Icons.favorite_border,
+                                  color: Colors.grey),*/
                             ),
                           ]),
                       const Row(

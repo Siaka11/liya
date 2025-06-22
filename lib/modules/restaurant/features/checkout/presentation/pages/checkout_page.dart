@@ -237,7 +237,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                         ),
                       ),
                       SizedBox(width: 16),
-                      Expanded(
+/*                      Expanded(
                         child: Container(
                           padding: EdgeInsets.all(16),
                           decoration: BoxDecoration(
@@ -246,7 +246,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                           ),
                           child: Column(
                             children: [
-                              Text(
+                             *//* Text(
                                 'Programmer',
                                 style: TextStyle(
                                   color: Colors.grey[600],
@@ -256,11 +256,11 @@ class _CheckoutPageState extends State<CheckoutPage> {
                               Text(
                                 'Choisir une heure',
                                 style: TextStyle(color: Colors.grey),
-                              ),
+                              ),*//*
                             ],
                           ),
                         ),
-                      ),
+                      ),*/
                     ],
                   ),
                 ],
@@ -275,13 +275,13 @@ class _CheckoutPageState extends State<CheckoutPage> {
             ),
 
             // Delivery Instructions
-            ListTile(
+           /* ListTile(
               leading: Icon(Icons.gps_fixed),
               title: Text('Coordonnées'),
               subtitle: Text(selectedLat != null && selectedLng != null
                   ? '${selectedLat!.toStringAsFixed(5)}, ${selectedLng!.toStringAsFixed(5)}'
                   : 'Non sélectionnées'),
-            ),
+            ),*/
 
             // Phone Number
             ListTile(
@@ -293,14 +293,14 @@ class _CheckoutPageState extends State<CheckoutPage> {
             ),
 
             // Send as Gift
-            ListTile(
+           /* ListTile(
               leading: Icon(Icons.card_giftcard_outlined),
               title: Text('Envoyer comme cadeau'),
               trailing: Icon(Icons.chevron_right),
               onTap: () {
                 // Navigate to gift options
               },
-            ),
+            ),*/
 
             // Cart Summary
             ExpansionTile(

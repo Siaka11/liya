@@ -107,7 +107,6 @@ class AuthService {
     try {
       print('Saving user location: lat=$latitude, lon=$longitude, address=$address');
       await singleton<LocalStorageFactory>().setUserLocation(latitude: latitude, longitude: longitude, address: address);
-      // Simuler la sauvegarde (remplace par une API réelle ou Firebase)
       onSuccess();
     } catch (e) {
       onError(e.toString());

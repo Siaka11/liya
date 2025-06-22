@@ -1,4 +1,5 @@
 import 'package:auto_route/auto_route.dart';
+import 'package:liya/modules/parcel/feature/presentation/pages/parcel_home_page.dart';
 import 'package:liya/modules/restaurant/features/order/presentation/pages/order_detail_page.dart';
 import 'package:liya/modules/restaurant/features/profile/presentation/pages/profile_page.dart';
 import 'package:liya/routes/app_router.gr.dart';
@@ -58,5 +59,7 @@ class AppRouter extends $AppRouter implements AutoRouteGuard {
         AutoRoute(page: ParcelListRoute.page),
         AutoRoute(page: AddParcelRoute.page),
         AutoRoute(page: ParcelDetailRoute.page),
+        AutoRoute(page: LieuRoute.page),
+        AutoRoute(page: ParcelHomeRoute.page),
       ];
 }

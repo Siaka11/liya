@@ -114,6 +114,21 @@ abstract class _$AppRouter extends RootStackRouter {
         child: const InfoUserPage(),
       );
     },
+    LieuRoute.name: (routeData) {
+      final args = routeData.argsAs<LieuRouteArgs>();
+      return AutoRoutePage<dynamic>(
+        routeData: routeData,
+        child: LieuPage(
+          key: args.key,
+          phoneNumber: args.phoneNumber,
+          typeProduit: args.typeProduit,
+          isReception: args.isReception,
+          ville: args.ville,
+          colisDescription: args.colisDescription,
+          colisList: args.colisList,
+        ),
+      );
+    },
     LikedDishesRoute.name: (routeData) {
       return AutoRoutePage<dynamic>(
         routeData: routeData,
@@ -158,6 +173,12 @@ abstract class _$AppRouter extends RootStackRouter {
           key: args.key,
           parcel: args.parcel,
         ),
+      );
+    },
+    ParcelHomeRoute.name: (routeData) {
+      return AutoRoutePage<dynamic>(
+        routeData: routeData,
+        child: const ParcelHomePage(),
       );
     },
     ParcelListRoute.name: (routeData) {
@@ -530,6 +551,68 @@ class InfoUserRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
+/// [LieuPage]
+class LieuRoute extends PageRouteInfo<LieuRouteArgs> {
+  LieuRoute({
+    Key? key,
+    required String phoneNumber,
+    required String typeProduit,
+    bool isReception = false,
+    required String ville,
+    String? colisDescription,
+    List<dynamic>? colisList,
+    List<PageRouteInfo>? children,
+  }) : super(
+          LieuRoute.name,
+          args: LieuRouteArgs(
+            key: key,
+            phoneNumber: phoneNumber,
+            typeProduit: typeProduit,
+            isReception: isReception,
+            ville: ville,
+            colisDescription: colisDescription,
+            colisList: colisList,
+          ),
+          initialChildren: children,
+        );
+
+  static const String name = 'LieuRoute';
+
+  static const PageInfo<LieuRouteArgs> page = PageInfo<LieuRouteArgs>(name);
+}
+
+class LieuRouteArgs {
+  const LieuRouteArgs({
+    this.key,
+    required this.phoneNumber,
+    required this.typeProduit,
+    this.isReception = false,
+    required this.ville,
+    this.colisDescription,
+    this.colisList,
+  });
+
+  final Key? key;
+
+  final String phoneNumber;
+
+  final String typeProduit;
+
+  final bool isReception;
+
+  final String ville;
+
+  final String? colisDescription;
+
+  final List<dynamic>? colisList;
+
+  @override
+  String toString() {
+    return 'LieuRouteArgs{key: $key, phoneNumber: $phoneNumber, typeProduit: $typeProduit, isReception: $isReception, ville: $ville, colisDescription: $colisDescription, colisList: $colisList}';
+  }
+}
+
+/// generated route for
 /// [LikedDishesPage]
 class LikedDishesRoute extends PageRouteInfo<void> {
   const LikedDishesRoute({List<PageRouteInfo>? children})
@@ -692,6 +775,20 @@ class ParcelDetailRouteArgs {
   String toString() {
     return 'ParcelDetailRouteArgs{key: $key, parcel: $parcel}';
   }
+}
+
+/// generated route for
+/// [ParcelHomePage]
+class ParcelHomeRoute extends PageRouteInfo<void> {
+  const ParcelHomeRoute({List<PageRouteInfo>? children})
+      : super(
+          ParcelHomeRoute.name,
+          initialChildren: children,
+        );
+
+  static const String name = 'ParcelHomeRoute';
+
+  static const PageInfo<void> page = PageInfo<void>(name);
 }
 
 /// generated route for
