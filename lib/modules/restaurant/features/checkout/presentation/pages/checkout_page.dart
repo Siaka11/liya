@@ -165,6 +165,11 @@ class _CheckoutPageState extends State<CheckoutPage> {
         : userDetailsJson;
     final phoneNumber = userDetails['phoneNumber'] ?? '';
 
+    final userLocation = singleton<LocalStorageFactory>().getUserLocation();
+    final userLat = userLocation['latitude'] as double?;
+    final userLng = userLocation['longitude'] as double?;
+    final userAddress = userLocation['address'] as String?;
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -356,7 +361,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
             ListTile(
               leading: Icon(Icons.location_on_outlined),
               title: Text('Adresse de livraison'),
-              subtitle: Text(selectedAddress ?? 'Sélectionnez sur la carte'),
+              subtitle: Text(userAddress ?? 'Sélectionnez sur la carte'),
             ),
 
             // Delivery Instructions
