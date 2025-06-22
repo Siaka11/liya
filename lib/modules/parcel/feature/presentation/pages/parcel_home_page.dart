@@ -1,3 +1,4 @@
+import 'package:auto_route/annotations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/parcel_provider.dart';
@@ -10,6 +11,7 @@ import 'package:liya/core/local_storage_factory.dart';
 import 'dart:convert';
 import 'parcel_search_page.dart';
 
+@RoutePage()
 class ParcelHomePage extends ConsumerWidget {
   const ParcelHomePage({Key? key}) : super(key: key);
 

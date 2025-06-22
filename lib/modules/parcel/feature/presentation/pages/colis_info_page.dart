@@ -19,7 +19,7 @@ class _ColisInfoPageState extends State<ColisInfoPage> {
   ];
 
   int get totalColis => colisList.fold(0, (sum, c) => sum + (c.nombre ?? 0));
-  double get totalPoids => colisList.fold(0, (sum, c) => sum + (c.poids ?? 0));
+  int get totalPoids => colisList.fold(0, (sum, c) => sum + (c.poids ?? 0));
 
   void _addColis() {
     setState(() {
@@ -51,6 +51,12 @@ class _ColisInfoPageState extends State<ColisInfoPage> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _descController.dispose();
+    super.dispose();
   }
 
   @override
@@ -107,24 +113,28 @@ class _ColisInfoPageState extends State<ColisInfoPage> {
                                 children: [
                                   _ColisField(
                                       label: 'Long.(en cm)',
-                                      initialValue: colisList[i].longueur,
+                                      value:
+                                          colisList[i].longueur?.toString() ??
+                                              '',
                                       onChanged: (v) => setState(() =>
                                           colisList[i].longueur =
-                                              double.tryParse(v))),
+                                              int.tryParse(v))),
                                   const SizedBox(width: 8),
                                   _ColisField(
                                       label: 'Larg.(en cm)',
-                                      initialValue: colisList[i].largeur,
+                                      value: colisList[i].largeur?.toString() ??
+                                          '',
                                       onChanged: (v) => setState(() =>
                                           colisList[i].largeur =
-                                              double.tryParse(v))),
+                                              int.tryParse(v))),
                                   const SizedBox(width: 8),
                                   _ColisField(
                                       label: 'Haut.(en cm)',
-                                      initialValue: colisList[i].hauteur,
+                                      value: colisList[i].hauteur?.toString() ??
+                                          '',
                                       onChanged: (v) => setState(() =>
                                           colisList[i].hauteur =
-                                              double.tryParse(v))),
+                                              int.tryParse(v))),
                                 ],
                               ),
                               const SizedBox(height: 8),
@@ -132,17 +142,19 @@ class _ColisInfoPageState extends State<ColisInfoPage> {
                                 children: [
                                   _ColisField(
                                       label: 'Nombre de colis',
-                                      initialValue: colisList[i].nombre,
+                                      value:
+                                          colisList[i].nombre?.toString() ?? '',
                                       onChanged: (v) => setState(() =>
                                           colisList[i].nombre =
                                               int.tryParse(v))),
                                   const SizedBox(width: 8),
                                   _ColisField(
                                       label: 'Poids(kg)',
-                                      initialValue: colisList[i].poids,
+                                      value:
+                                          colisList[i].poids?.toString() ?? '',
                                       onChanged: (v) => setState(() =>
                                           colisList[i].poids =
-                                              double.tryParse(v))),
+                                              int.tryParse(v))),
                                 ],
                               ),
                             ],
@@ -199,11 +211,11 @@ class _ColisInfoPageState extends State<ColisInfoPage> {
 }
 
 class _ColisBox {
-  double? longueur;
-  double? largeur;
-  double? hauteur;
+  int? longueur;
+  int? largeur;
+  int? hauteur;
   int? nombre;
-  double? poids;
+  int? poids;
 
   bool get isValid =>
       longueur != null &&
@@ -213,27 +225,56 @@ class _ColisBox {
       poids != null;
 }
 
-class _ColisField extends StatelessWidget {
+class _ColisField extends StatefulWidget {
   final String label;
-  final dynamic initialValue;
+  final String value;
   final ValueChanged<String> onChanged;
-  const _ColisField(
-      {required this.label,
-      required this.initialValue,
-      required this.onChanged});
+
+  const _ColisField({
+    required this.label,
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  State<_ColisField> createState() => _ColisFieldState();
+}
+
+class _ColisFieldState extends State<_ColisField> {
+  late TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.value);
+  }
+
+  @override
+  void didUpdateWidget(_ColisField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.value != widget.value) {
+      _controller.text = widget.value;
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Expanded(
       child: TextField(
+        controller: _controller,
         keyboardType: TextInputType.number,
         decoration: InputDecoration(
-          labelText: label,
+          labelText: widget.label,
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
           isDense: true,
         ),
-        controller: TextEditingController(text: initialValue?.toString() ?? ''),
-        onChanged: onChanged,
+        onChanged: widget.onChanged,
       ),
     );
   }
