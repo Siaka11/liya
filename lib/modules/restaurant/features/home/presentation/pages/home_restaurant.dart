@@ -315,7 +315,7 @@ class HomeRestaurantPage extends ConsumerWidget {
                     ),
                   ),
                   // Section Restaurants
-                  const SizedBox(height: 10), // Espace pour le bouton flottant
+                  const SizedBox(height: 10),
                   Padding(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 16, vertical: 12),
