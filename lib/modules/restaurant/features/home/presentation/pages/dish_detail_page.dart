@@ -172,6 +172,18 @@ class _DishDetailPageState extends ConsumerState<DishDetailPage> {
   Widget build(BuildContext context) {
     return Consumer(
       builder: (context, ref, child) {
+        final orderState = ref.watch(modernOrderProvider);
+        final item = orderState.items[widget.id];
+
+        // Si le plat n'est plus dans la commande, on vide la sélection locale
+        if (item == null && selectedBeverages.isNotEmpty) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            setState(() {
+              selectedBeverages.clear();
+            });
+          });
+        }
+
         final modernQuantity = _getCurrentQuantity(ref);
 
         return Scaffold(
@@ -350,7 +362,12 @@ class _DishDetailPageState extends ConsumerState<DishDetailPage> {
                                                             Icons
                                                                 .remove_circle_outline,
                                                             color:
-                                                                Colors.orange),
+                                                                canModifyAccompaniments(
+                                                                        ref)
+                                                                    ? Colors
+                                                                        .orange
+                                                                    : Colors
+                                                                        .grey),
                                                         onPressed:
                                                             canModifyAccompaniments(
                                                                     ref)
@@ -372,7 +389,13 @@ class _DishDetailPageState extends ConsumerState<DishDetailPage> {
                                                     IconButton(
                                                       icon: Icon(
                                                           Icons.add_circle,
-                                                          color: Colors.orange),
+                                                          color:
+                                                              canModifyAccompaniments(
+                                                                      ref)
+                                                                  ? Colors
+                                                                      .orange
+                                                                  : Colors
+                                                                      .grey),
                                                       onPressed:
                                                           canModifyAccompaniments(
                                                                   ref)

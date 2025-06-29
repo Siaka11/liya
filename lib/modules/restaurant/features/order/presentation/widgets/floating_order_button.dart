@@ -186,6 +186,16 @@ class OrderDetailsSheet extends ConsumerWidget {
     final totalPrice = ref.watch(orderTotalPriceProvider);
     final isLoading = orderState.isLoading;
 
+    // Fermeture automatique du modal si la commande devient vide
+    if (orderState.isEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        }
+      });
+      return const SizedBox.shrink();
+    }
+
     return Container(
       decoration: const BoxDecoration(
         color: Colors.white,
@@ -412,18 +422,23 @@ class _OrderItemTile extends ConsumerWidget {
                 // Affichage des accompagnements
                 if (item.accompaniments.isNotEmpty) ...[
                   const SizedBox(height: 4),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 2,
                     children: item.accompaniments
                         .map((acc) => Row(
+                              mainAxisSize: MainAxisSize.min,
                               children: [
                                 const Icon(Icons.local_drink,
                                     size: 16, color: Colors.orange),
                                 const SizedBox(width: 4),
-                                Text(
-                                  '${acc.beverage.name} (${acc.selectedSize}) x${acc.quantity}',
-                                  style: const TextStyle(
-                                      fontSize: 13, color: Colors.black87),
+                                Flexible(
+                                  child: Text(
+                                    '${acc.beverage.name} (${acc.selectedSize}) x${acc.quantity}',
+                                    style: const TextStyle(
+                                        fontSize: 13, color: Colors.black87),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
