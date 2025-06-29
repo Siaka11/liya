@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:liya/modules/admin/features/dishes/presentation/pages/restaurant_select_page.dart';
 import 'package:liya/modules/home/presentation/pages/utils/top_menu.dart';
 import 'package:liya/modules/home/presentation/pages/widget/home_card_widget.dart';
+import 'package:liya/core/test_modern_system.dart';
 
 import '../../../../core/routes/app_router.dart';
 import '../../application/home_provider.dart';
@@ -112,17 +113,37 @@ class HomePage extends ConsumerWidget {
                               color: Colors.black)),
                     ],
                   ))),
-          //bouton pour accéder DishListRoute
-         /* Positioned(
-            bottom: 10,
-            right: 10,
+          // Bouton de test pour le système moderne
+          Positioned(
+            bottom: 20,
+            left: 20,
+            right: 20,
             child: ElevatedButton(
               onPressed: () {
-                context.router.push(const RestaurantSelectRoute());
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const TestModernSystemPage(),
+                  ),
+                );
               },
-              child: const Text('Accéder à la gestion des plats'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text(
+                '🧪 Tester le Système Moderne',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
-          ),*/
+          ),
         ],
       )),
     );

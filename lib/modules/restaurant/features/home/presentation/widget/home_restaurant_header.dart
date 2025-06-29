@@ -43,12 +43,17 @@ class HomeRestaurantHeader extends ConsumerWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          Row(
             children: [
+              IconButton(
+                icon: Icon(Icons.location_on_rounded),
+                onPressed: () {
+                  //context.router.push(LieuRoute());
+                },
+              ),
               Text(
                 "$address",
-                style: TextStyle(fontSize: 10, color: Colors.black),
+                style: TextStyle(fontSize: 12, color: Colors.black),
               ),
             ],
           ),
@@ -61,9 +66,9 @@ class HomeRestaurantHeader extends ConsumerWidget {
                   clipBehavior: Clip.none,
                   children: [
                     IconButton(
-                      icon: Icon(Icons.shopping_cart_outlined),
+                      icon: Icon(Icons.widgets_rounded),
                       onPressed: () {
-                        context.router.push(CartRoute());
+                        context.router.push(HomeRoute());
                       },
                     ),
                     cartItemsAsyncValue.when(

@@ -135,6 +135,45 @@ abstract class _$AppRouter extends RootStackRouter {
         child: const LikedDishesPage(),
       );
     },
+    ModernDishDetailRoute.name: (routeData) {
+      final args = routeData.argsAs<ModernDishDetailRouteArgs>();
+      return AutoRoutePage<dynamic>(
+        routeData: routeData,
+        child: ModernDishDetailPage(
+          id: args.id,
+          restaurantId: args.restaurantId,
+          name: args.name,
+          price: args.price,
+          imageUrl: args.imageUrl,
+          rating: args.rating,
+          description: args.description,
+          sodas: args.sodas,
+        ),
+      );
+    },
+    ModernHomeRestaurantRoute.name: (routeData) {
+      final args = routeData.argsAs<ModernHomeRestaurantRouteArgs>();
+      return AutoRoutePage<dynamic>(
+        routeData: routeData,
+        child: ModernHomeRestaurantPage(
+          key: args.key,
+          option: args.option,
+        ),
+      );
+    },
+    ModernRestaurantDetailRoute.name: (routeData) {
+      final args = routeData.argsAs<ModernRestaurantDetailRouteArgs>();
+      return AutoRoutePage<dynamic>(
+        routeData: routeData,
+        child: ModernRestaurantDetailPage(
+          key: args.key,
+          id: args.id,
+          name: args.name,
+          description: args.description,
+          coverImage: args.coverImage,
+        ),
+      );
+    },
     OrderDetailRoute.name: (routeData) {
       final args = routeData.argsAs<OrderDetailRouteArgs>();
       return AutoRoutePage<dynamic>(
@@ -624,6 +663,167 @@ class LikedDishesRoute extends PageRouteInfo<void> {
   static const String name = 'LikedDishesRoute';
 
   static const PageInfo<void> page = PageInfo<void>(name);
+}
+
+/// generated route for
+/// [ModernDishDetailPage]
+class ModernDishDetailRoute extends PageRouteInfo<ModernDishDetailRouteArgs> {
+  ModernDishDetailRoute({
+    required String id,
+    required String restaurantId,
+    required String name,
+    required String price,
+    required String imageUrl,
+    required String rating,
+    required String description,
+    required bool sodas,
+    List<PageRouteInfo>? children,
+  }) : super(
+          ModernDishDetailRoute.name,
+          args: ModernDishDetailRouteArgs(
+            id: id,
+            restaurantId: restaurantId,
+            name: name,
+            price: price,
+            imageUrl: imageUrl,
+            rating: rating,
+            description: description,
+            sodas: sodas,
+          ),
+          initialChildren: children,
+        );
+
+  static const String name = 'ModernDishDetailRoute';
+
+  static const PageInfo<ModernDishDetailRouteArgs> page =
+      PageInfo<ModernDishDetailRouteArgs>(name);
+}
+
+class ModernDishDetailRouteArgs {
+  const ModernDishDetailRouteArgs({
+    required this.id,
+    required this.restaurantId,
+    required this.name,
+    required this.price,
+    required this.imageUrl,
+    required this.rating,
+    required this.description,
+    required this.sodas,
+  });
+
+  final String id;
+
+  final String restaurantId;
+
+  final String name;
+
+  final String price;
+
+  final String imageUrl;
+
+  final String rating;
+
+  final String description;
+
+  final bool sodas;
+
+  @override
+  String toString() {
+    return 'ModernDishDetailRouteArgs{id: $id, restaurantId: $restaurantId, name: $name, price: $price, imageUrl: $imageUrl, rating: $rating, description: $description, sodas: $sodas}';
+  }
+}
+
+/// generated route for
+/// [ModernHomeRestaurantPage]
+class ModernHomeRestaurantRoute
+    extends PageRouteInfo<ModernHomeRestaurantRouteArgs> {
+  ModernHomeRestaurantRoute({
+    Key? key,
+    required HomeOption option,
+    List<PageRouteInfo>? children,
+  }) : super(
+          ModernHomeRestaurantRoute.name,
+          args: ModernHomeRestaurantRouteArgs(
+            key: key,
+            option: option,
+          ),
+          initialChildren: children,
+        );
+
+  static const String name = 'ModernHomeRestaurantRoute';
+
+  static const PageInfo<ModernHomeRestaurantRouteArgs> page =
+      PageInfo<ModernHomeRestaurantRouteArgs>(name);
+}
+
+class ModernHomeRestaurantRouteArgs {
+  const ModernHomeRestaurantRouteArgs({
+    this.key,
+    required this.option,
+  });
+
+  final Key? key;
+
+  final HomeOption option;
+
+  @override
+  String toString() {
+    return 'ModernHomeRestaurantRouteArgs{key: $key, option: $option}';
+  }
+}
+
+/// generated route for
+/// [ModernRestaurantDetailPage]
+class ModernRestaurantDetailRoute
+    extends PageRouteInfo<ModernRestaurantDetailRouteArgs> {
+  ModernRestaurantDetailRoute({
+    Key? key,
+    required String id,
+    required String name,
+    required String description,
+    required String coverImage,
+    List<PageRouteInfo>? children,
+  }) : super(
+          ModernRestaurantDetailRoute.name,
+          args: ModernRestaurantDetailRouteArgs(
+            key: key,
+            id: id,
+            name: name,
+            description: description,
+            coverImage: coverImage,
+          ),
+          initialChildren: children,
+        );
+
+  static const String name = 'ModernRestaurantDetailRoute';
+
+  static const PageInfo<ModernRestaurantDetailRouteArgs> page =
+      PageInfo<ModernRestaurantDetailRouteArgs>(name);
+}
+
+class ModernRestaurantDetailRouteArgs {
+  const ModernRestaurantDetailRouteArgs({
+    this.key,
+    required this.id,
+    required this.name,
+    required this.description,
+    required this.coverImage,
+  });
+
+  final Key? key;
+
+  final String id;
+
+  final String name;
+
+  final String description;
+
+  final String coverImage;
+
+  @override
+  String toString() {
+    return 'ModernRestaurantDetailRouteArgs{key: $key, id: $id, name: $name, description: $description, coverImage: $coverImage}';
+  }
 }
 
 /// generated route for

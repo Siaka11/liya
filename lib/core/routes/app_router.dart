@@ -24,6 +24,9 @@ import '../../modules/restaurant/features/card/presentation/pages/cart_page.dart
 import '../../modules/restaurant/features/checkout/presentation/pages/checkout_page.dart';
 import '../../modules/restaurant/features/home/presentation/pages/all_dishes_page.dart';
 import '../../modules/restaurant/features/home/presentation/pages/all_restaurants_page.dart';
+import '../../modules/restaurant/features/home/presentation/pages/modern_dish_detail_page.dart';
+import '../../modules/restaurant/features/home/presentation/pages/modern_home_restaurant.dart';
+import '../../modules/restaurant/features/home/presentation/pages/modern_restaurant_detail_page.dart';
 import '../../modules/restaurant/features/like/presentation/pages/liked_dishes_page.dart';
 import '../../modules/restaurant/features/order/domain/entities/order.dart';
 import '../../modules/restaurant/features/order/presentation/pages/order_detail_page.dart';

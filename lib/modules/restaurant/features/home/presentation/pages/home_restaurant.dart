@@ -3,11 +3,15 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:liya/modules/restaurant/features/home/presentation/pages/restaurant_detail_page.dart';
+import 'package:liya/modules/restaurant/features/home/presentation/pages/dish_detail_page.dart';
 import 'package:liya/modules/restaurant/features/home/presentation/widget/filter_section.dart';
 import 'package:liya/modules/restaurant/features/home/presentation/widget/home_restaurant_header.dart';
 import 'package:liya/modules/restaurant/features/home/presentation/widget/navigation_footer.dart';
 import 'package:liya/core/local_storage_factory.dart';
 import 'package:liya/core/singletons.dart';
+// Import des nouveaux widgets modernes
+import 'package:liya/modules/restaurant/features/order/presentation/widgets/floating_order_button.dart';
+import 'package:liya/modules/restaurant/features/order/presentation/widgets/modern_dish_card.dart';
 
 import '../../../../../../core/routes/app_router.dart';
 import '../../../../../home/domain/entities/home_option.dart';
@@ -47,261 +51,344 @@ class HomeRestaurantPage extends ConsumerWidget {
     });
 
     return Scaffold(
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // En-tête personnalisé
-              HomeRestaurantHeader(),
-              // Barre de recherche
-              Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: GestureDetector(
-                  onTap: () {
-                    context.router.push(SearchRoute());
-                  },
-                  child: TextField(
-                    enabled: false, // Désactive la saisie directe
-                    decoration: InputDecoration(
-                      hintText: "Rechercher",
-                      hintStyle: TextStyle(color: Colors.grey),
-                      prefixIcon: Icon(Icons.search, color: Colors.grey),
-                      filled: true,
-                      fillColor: Colors.white,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(30),
-                        borderSide: BorderSide.none,
+      body: Stack(
+        children: [
+          SafeArea(
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // En-tête personnalisé
+                  HomeRestaurantHeader(),
+                  // Barre de recherche
+                  Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: GestureDetector(
+                      onTap: () {
+                        context.router.push(SearchRoute());
+                      },
+                      child: TextField(
+                        enabled: false, // Désactive la saisie directe
+                        decoration: InputDecoration(
+                          hintText: "Rechercher",
+                          hintStyle: TextStyle(color: Colors.grey),
+                          prefixIcon: Icon(Icons.search, color: Colors.grey),
+                          filled: true,
+                          fillColor: Colors.white,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(30),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ),
-              // Filtres régionaux
-              FilterSection(),
-              // Section Populaires
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  // Filtres régionaux
+                  FilterSection(),
+                  // Section Populaires
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          "Populaires",
-                          style: TextStyle(
-                              fontSize: 20, fontWeight: FontWeight.bold),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              "Populaires",
+                              style: TextStyle(
+                                  fontSize: 20, fontWeight: FontWeight.bold),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                context.router.push(AllDishesRoute());
+                              },
+                              child: Text("Voir tout"),
+                              style: TextButton.styleFrom(
+                                foregroundColor: Colors.grey,
+                              ),
+                            ),
+                          ],
                         ),
-                        TextButton(
-                          onPressed: () {
-                            context.router.push(AllDishesRoute());
-                          },
-                          child: Text("Voir tout"),
-                          style: TextButton.styleFrom(
-                            foregroundColor: Colors.grey,
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(
-                      // Hauteur fixe pour la section populaire
-                      child: popularDishState.isLoading
-                          ? Center(child: CircularProgressIndicator())
-                          : popularDishState.error != null
-                              ? Center(child: Text(popularDishState.error!))
-                              : popularDishState.popularDishes == null ||
-                                      popularDishState.popularDishes!.isEmpty
-                                  ? Center(
-                                      child: Text(
-                                          "Aucun plat populaire disponible"))
-                                  : SingleChildScrollView(
-                                      scrollDirection: Axis.horizontal,
-                                      child: Row(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          for (int i = 0;
-                                              i <
-                                                  popularDishState
-                                                      .popularDishes!.length;
-                                              i += 2)
-                                            Padding(
-                                              padding: const EdgeInsets.only(
-                                                  right: 10),
-                                              child: Row(
-                                                children: [
-                                                  PopularDishCard(
-                                                    id: popularDishState
-                                                        .popularDishes![i].id,
-                                                    name: popularDishState
-                                                        .popularDishes![i].name,
-                                                    price: popularDishState
-                                                        .popularDishes![i]
-                                                        .price,
-                                                    imageUrl: popularDishState
-                                                        .popularDishes![i]
-                                                        .imageUrl,
-                                                    restaurantId:
-                                                        popularDishState
-                                                            .popularDishes![i]
-                                                            .restaurantId,
-                                                    description:
-                                                        popularDishState
-                                                            .popularDishes![i]
-                                                            .description,
-                                                    sodas: popularDishState
-                                                        .popularDishes![i]
-                                                        .sodas,
-                                                    userId: phoneNumber,
-                                                    onAddToCart: () {
-                                                      print(
-                                                          "Ajouté au panier : ${popularDishState.popularDishes![i].name} (Restaurant: ${popularDishState.popularDishes![i].restaurantId})");
-                                                    },
-                                                  ),
-                                                  if (i + 1 <
+                        SizedBox(
+                          // Hauteur fixe pour la section populaire
+                          child: popularDishState.isLoading
+                              ? Center(child: CircularProgressIndicator())
+                              : popularDishState.error != null
+                                  ? Center(child: Text(popularDishState.error!))
+                                  : popularDishState.popularDishes == null ||
+                                          popularDishState
+                                              .popularDishes!.isEmpty
+                                      ? Center(
+                                          child: Text(
+                                              "Aucun plat populaire disponible"))
+                                      : SingleChildScrollView(
+                                          scrollDirection: Axis.horizontal,
+                                          child: Row(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              for (int i = 0;
+                                                  i <
                                                       popularDishState
                                                           .popularDishes!
-                                                          .length)
-                                                    Padding(
-                                                      padding:
-                                                          const EdgeInsets.only(
-                                                              left: 4),
-                                                      child: PopularDishCard(
-                                                        id: popularDishState
-                                                            .popularDishes![
-                                                                i + 1]
-                                                            .id,
-                                                        name: popularDishState
-                                                            .popularDishes![
-                                                                i + 1]
-                                                            .name,
-                                                        price: popularDishState
-                                                            .popularDishes![
-                                                                i + 1]
-                                                            .price,
-                                                        imageUrl:
-                                                            popularDishState
-                                                                .popularDishes![
-                                                                    i + 1]
-                                                                .imageUrl,
-                                                        restaurantId:
-                                                            popularDishState
-                                                                .popularDishes![
-                                                                    i + 1]
-                                                                .restaurantId,
-                                                        description:
-                                                            popularDishState
-                                                                .popularDishes![
-                                                                    i + 1]
-                                                                .description,
-                                                        sodas: popularDishState
-                                                            .popularDishes![
-                                                                i + 1]
-                                                            .sodas,
-                                                        userId: phoneNumber,
-                                                        onAddToCart: () {
-                                                          print(
-                                                              "Ajouté au panier : ${popularDishState.popularDishes![i + 1].name} (Restaurant: ${popularDishState.popularDishes![i + 1].restaurantId})");
-                                                        },
+                                                          .length;
+                                                  i += 2)
+                                                Padding(
+                                                  padding:
+                                                      const EdgeInsets.only(
+                                                          right: 10),
+                                                  child: Row(
+                                                    children: [
+                                                      // Utiliser ModernDishCard au lieu de PopularDishCard
+                                                      Container(
+                                                        width: 200,
+                                                        child: ModernDishCard(
+                                                          id: popularDishState
+                                                              .popularDishes![i]
+                                                              .id,
+                                                          name: popularDishState
+                                                              .popularDishes![i]
+                                                              .name,
+                                                          price: popularDishState
+                                                              .popularDishes![i]
+                                                              .price,
+                                                          imageUrl:
+                                                              popularDishState
+                                                                  .popularDishes![
+                                                                      i]
+                                                                  .imageUrl,
+                                                          restaurantId:
+                                                              popularDishState
+                                                                  .popularDishes![
+                                                                      i]
+                                                                  .restaurantId,
+                                                          description:
+                                                              popularDishState
+                                                                  .popularDishes![
+                                                                      i]
+                                                                  .description,
+                                                          sodas: popularDishState
+                                                              .popularDishes![i]
+                                                              .sodas,
+                                                          onTap: () {
+                                                            // Navigation vers la page de détail du plat
+                                                            Navigator.push(
+                                                              context,
+                                                              MaterialPageRoute(
+                                                                builder:
+                                                                    (context) =>
+                                                                        DishDetailPage(
+                                                                  id: popularDishState
+                                                                      .popularDishes![
+                                                                          i]
+                                                                      .id,
+                                                                  restaurantId:
+                                                                      popularDishState
+                                                                          .popularDishes![
+                                                                              i]
+                                                                          .restaurantId,
+                                                                  name: popularDishState
+                                                                      .popularDishes![
+                                                                          i]
+                                                                      .name,
+                                                                  price: popularDishState
+                                                                      .popularDishes![
+                                                                          i]
+                                                                      .price,
+                                                                  imageUrl: popularDishState
+                                                                      .popularDishes![
+                                                                          i]
+                                                                      .imageUrl,
+                                                                  rating: '0.0',
+                                                                  description:
+                                                                      popularDishState
+                                                                          .popularDishes![
+                                                                              i]
+                                                                          .description,
+                                                                  sodas: popularDishState
+                                                                      .popularDishes![
+                                                                          i]
+                                                                      .sodas,
+                                                                ),
+                                                              ),
+                                                            );
+                                                          },
+                                                        ),
                                                       ),
-                                                    ),
-                                                ],
-                                              ),
-                                            ),
-                                        ],
-                                      ),
-                                    ),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(height: 16),
-              // Section Restaurants
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          "Restaurants",
-                          style: TextStyle(
-                              fontSize: 20, fontWeight: FontWeight.bold),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            context.router.push(AllRestaurantsRoute());
-                          },
-                          child: Text("Voir tout"),
-                          style: TextButton.styleFrom(
-                            foregroundColor: Colors.grey,
-                          ),
+                                                      if (i + 1 <
+                                                          popularDishState
+                                                              .popularDishes!
+                                                              .length)
+                                                        Padding(
+                                                          padding:
+                                                              const EdgeInsets
+                                                                  .only(
+                                                                  left: 4),
+                                                          child: Container(
+                                                            width: 200,
+                                                            child:
+                                                                ModernDishCard(
+                                                              id: popularDishState
+                                                                  .popularDishes![
+                                                                      i + 1]
+                                                                  .id,
+                                                              name: popularDishState
+                                                                  .popularDishes![
+                                                                      i + 1]
+                                                                  .name,
+                                                              price: popularDishState
+                                                                  .popularDishes![
+                                                                      i + 1]
+                                                                  .price,
+                                                              imageUrl:
+                                                                  popularDishState
+                                                                      .popularDishes![
+                                                                          i + 1]
+                                                                      .imageUrl,
+                                                              restaurantId:
+                                                                  popularDishState
+                                                                      .popularDishes![
+                                                                          i + 1]
+                                                                      .restaurantId,
+                                                              description:
+                                                                  popularDishState
+                                                                      .popularDishes![
+                                                                          i + 1]
+                                                                      .description,
+                                                              sodas: popularDishState
+                                                                  .popularDishes![
+                                                                      i + 1]
+                                                                  .sodas,
+                                                              onTap: () {
+                                                                Navigator.push(
+                                                                  context,
+                                                                  MaterialPageRoute(
+                                                                    builder:
+                                                                        (context) =>
+                                                                            DishDetailPage(
+                                                                      id: popularDishState
+                                                                          .popularDishes![i +
+                                                                              1]
+                                                                          .id,
+                                                                      restaurantId: popularDishState
+                                                                          .popularDishes![i +
+                                                                              1]
+                                                                          .restaurantId,
+                                                                      name: popularDishState
+                                                                          .popularDishes![i +
+                                                                              1]
+                                                                          .name,
+                                                                      price: popularDishState
+                                                                          .popularDishes![i +
+                                                                              1]
+                                                                          .price,
+                                                                      imageUrl: popularDishState
+                                                                          .popularDishes![i +
+                                                                              1]
+                                                                          .imageUrl,
+                                                                      rating:
+                                                                          '0.0',
+                                                                      description: popularDishState
+                                                                          .popularDishes![i +
+                                                                              1]
+                                                                          .description,
+                                                                      sodas: popularDishState
+                                                                          .popularDishes![i +
+                                                                              1]
+                                                                          .sodas,
+                                                                    ),
+                                                                  ),
+                                                                );
+                                                              },
+                                                            ),
+                                                          ),
+                                                        ),
+                                                    ],
+                                                  ),
+                                                ),
+                                            ],
+                                          ),
+                                        ),
                         ),
                       ],
                     ),
-                    SizedBox(height: 8),
-                    restaurantState.isLoading
-                        ? Center(child: CircularProgressIndicator())
-                        : restaurantState.error != null
-                            ? Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text("Erreur : ${restaurantState.error}"),
-                                    SizedBox(height: 16),
-                                    ElevatedButton(
-                                      onPressed: () =>
-                                          controller.loadRestaurants(),
-                                      child: Text("Réessayer"),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.orange,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              )
-                            : restaurantState.restaurants == null
-                                ? Center(child: CircularProgressIndicator())
-                                : SingleChildScrollView(
-                                    scrollDirection: Axis.horizontal,
-                                    child: Row(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        for (int i = 0;
-                                            i <
-                                                restaurantState
-                                                    .restaurants!.length;
-                                            i += 2)
-                                          Padding(
-                                            padding: const EdgeInsets.only(
-                                                right: 12),
-                                            child: Row(
-                                              children: [
-                                                RestaurantCard(
+                  ),
+                  // Section Restaurants
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              "Restaurants",
+                              style: TextStyle(
+                                  fontSize: 20, fontWeight: FontWeight.bold),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                context.router.push(AllRestaurantsRoute());
+                              },
+                              child: Text("Voir tout"),
+                              style: TextButton.styleFrom(
+                                foregroundColor: Colors.grey,
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 16),
+                        restaurantState.isLoading
+                            ? Center(child: CircularProgressIndicator())
+                            : restaurantState.error != null
+                                ? Center(child: Text(restaurantState.error!))
+                                : restaurantState.restaurants == null ||
+                                        restaurantState.restaurants!.isEmpty
+                                    ? Center(
+                                        child:
+                                            Text("Aucun restaurant disponible"))
+                                    : SizedBox(
+                                        height:
+                                            200, // Hauteur fixe pour la section
+                                        child: ListView.builder(
+                                          scrollDirection: Axis.horizontal,
+                                          itemCount: restaurantState
+                                              .restaurants!.length,
+                                          itemBuilder: (context, index) {
+                                            return Padding(
+                                              padding: const EdgeInsets.only(
+                                                  right: 16),
+                                              child: Container(
+                                                width: 300,
+                                                child: RestaurantCard(
                                                   width: 300.0,
                                                   restaurant: restaurantState
-                                                      .restaurants![i],
+                                                      .restaurants![index],
                                                   onTap: () {
                                                     Navigator.push(
                                                       context,
                                                       MaterialPageRoute(
                                                         builder: (context) =>
                                                             RestaurantDetailPage(
-                                                              coverImage: restaurantState.restaurants![i]
-                                                              .coverImage,
+                                                          coverImage:
+                                                              restaurantState
+                                                                  .restaurants![
+                                                                      index]
+                                                                  .coverImage,
                                                           id: restaurantState
-                                                              .restaurants![i]
+                                                              .restaurants![
+                                                                  index]
                                                               .id,
                                                           name: restaurantState
-                                                              .restaurants![i]
+                                                              .restaurants![
+                                                                  index]
                                                               .name,
                                                           description: restaurantState
                                                                   .restaurants![
-                                                                      i]
+                                                                      index]
                                                                   .description ??
                                                               '',
                                                         ),
@@ -309,59 +396,22 @@ class HomeRestaurantPage extends ConsumerWidget {
                                                     );
                                                   },
                                                 ),
-                                                if (i + 1 <
-                                                    restaurantState
-                                                        .restaurants!.length)
-                                                  Padding(
-                                                    padding:
-                                                        const EdgeInsets.only(
-                                                            left: 8),
-                                                    child: RestaurantCard(
-                                                      width: 300.0,
-                                                      restaurant:
-                                                          restaurantState
-                                                                  .restaurants![
-                                                              i + 1],
-                                                      onTap: () {
-                                                        Navigator.push(
-                                                          context,
-                                                          MaterialPageRoute(
-                                                            builder: (context) =>
-                                                                RestaurantDetailPage(
-                                                                  coverImage: restaurantState.restaurants![i]
-                                                                      .coverImage,
-                                                              id: restaurantState
-                                                                  .restaurants![
-                                                                      i + 1]
-                                                                  .id, // Correction : i + 1
-                                                              name: restaurantState
-                                                                  .restaurants![
-                                                                      i + 1]
-                                                                  .name, // Correction : i + 1
-                                                              description: restaurantState
-                                                                      .restaurants![
-                                                                          i + 1]
-                                                                      .description ??
-                                                                  '', // Correction : i + 1
-                                                            ),
-                                                          ),
-                                                        );
-                                                      },
-                                                    ),
-                                                  ),
-                                              ],
-                                            ),
-                                          ),
-                                      ],
-                                    ),
-                                  ),
-                  ],
-                ),
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 100), // Espace pour le bouton flottant
+                ],
               ),
-              SizedBox(height: 16), // Un petit espace avant le footer
-            ],
+            ),
           ),
-        ),
+          // Bouton flottant de commande moderne
+          const FloatingOrderButton(),
+        ],
       ),
       bottomNavigationBar: NavigationFooter(),
     );
