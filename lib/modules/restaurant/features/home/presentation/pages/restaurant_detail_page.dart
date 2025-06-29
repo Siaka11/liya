@@ -228,7 +228,6 @@ class RestaurantDetailPage extends ConsumerWidget {
                                             imageUrl: dish.imageUrl,
                                             restaurantId: id,
                                             description: dish.description ?? '',
-                                            sodas: dish.sodas,
                                             onTap: () async {
                                               await Navigator.push(
                                                 context,
@@ -243,7 +242,6 @@ class RestaurantDetailPage extends ConsumerWidget {
                                                     rating: '0.0',
                                                     description:
                                                         dish.description ?? '',
-                                                    sodas: dish.sodas,
                                                   ),
                                                 ),
                                               );

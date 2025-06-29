@@ -437,7 +437,6 @@ class _OrderItemTile extends ConsumerWidget {
                       imageUrl: item.imageUrl,
                       restaurantId: item.restaurantId,
                       description: item.description,
-                      sodas: item.sodas,
                     ),
                 icon: const Icon(Icons.add_circle_outline),
                 color: UIColors.orange,

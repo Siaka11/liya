@@ -61,6 +61,7 @@ abstract class _$AppRouter extends RootStackRouter {
       return AutoRoutePage<dynamic>(
         routeData: routeData,
         child: DishDetailPage(
+          key: args.key,
           id: args.id,
           restaurantId: args.restaurantId,
           name: args.name,
@@ -68,7 +69,6 @@ abstract class _$AppRouter extends RootStackRouter {
           imageUrl: args.imageUrl,
           rating: args.rating,
           description: args.description,
-          sodas: args.sodas,
         ),
       );
     },
@@ -147,7 +147,6 @@ abstract class _$AppRouter extends RootStackRouter {
           imageUrl: args.imageUrl,
           rating: args.rating,
           description: args.description,
-          sodas: args.sodas,
         ),
       );
     },
@@ -261,6 +260,12 @@ abstract class _$AppRouter extends RootStackRouter {
       return AutoRoutePage<dynamic>(
         routeData: routeData,
         child: const ShareLocationPage(),
+      );
+    },
+    TestBeveragesRoute.name: (routeData) {
+      return AutoRoutePage<dynamic>(
+        routeData: routeData,
+        child: const TestBeveragesPage(),
       );
     },
   };
@@ -383,6 +388,7 @@ class CheckoutRouteArgs {
 /// [DishDetailPage]
 class DishDetailRoute extends PageRouteInfo<DishDetailRouteArgs> {
   DishDetailRoute({
+    Key? key,
     required String id,
     required String restaurantId,
     required String name,
@@ -390,11 +396,11 @@ class DishDetailRoute extends PageRouteInfo<DishDetailRouteArgs> {
     required String imageUrl,
     required String rating,
     required String description,
-    required bool sodas,
     List<PageRouteInfo>? children,
   }) : super(
           DishDetailRoute.name,
           args: DishDetailRouteArgs(
+            key: key,
             id: id,
             restaurantId: restaurantId,
             name: name,
@@ -402,7 +408,6 @@ class DishDetailRoute extends PageRouteInfo<DishDetailRouteArgs> {
             imageUrl: imageUrl,
             rating: rating,
             description: description,
-            sodas: sodas,
           ),
           initialChildren: children,
         );
@@ -415,6 +420,7 @@ class DishDetailRoute extends PageRouteInfo<DishDetailRouteArgs> {
 
 class DishDetailRouteArgs {
   const DishDetailRouteArgs({
+    this.key,
     required this.id,
     required this.restaurantId,
     required this.name,
@@ -422,8 +428,9 @@ class DishDetailRouteArgs {
     required this.imageUrl,
     required this.rating,
     required this.description,
-    required this.sodas,
   });
+
+  final Key? key;
 
   final String id;
 
@@ -439,11 +446,9 @@ class DishDetailRouteArgs {
 
   final String description;
 
-  final bool sodas;
-
   @override
   String toString() {
-    return 'DishDetailRouteArgs{id: $id, restaurantId: $restaurantId, name: $name, price: $price, imageUrl: $imageUrl, rating: $rating, description: $description, sodas: $sodas}';
+    return 'DishDetailRouteArgs{key: $key, id: $id, restaurantId: $restaurantId, name: $name, price: $price, imageUrl: $imageUrl, rating: $rating, description: $description}';
   }
 }
 
@@ -676,7 +681,6 @@ class ModernDishDetailRoute extends PageRouteInfo<ModernDishDetailRouteArgs> {
     required String imageUrl,
     required String rating,
     required String description,
-    required bool sodas,
     List<PageRouteInfo>? children,
   }) : super(
           ModernDishDetailRoute.name,
@@ -688,7 +692,6 @@ class ModernDishDetailRoute extends PageRouteInfo<ModernDishDetailRouteArgs> {
             imageUrl: imageUrl,
             rating: rating,
             description: description,
-            sodas: sodas,
           ),
           initialChildren: children,
         );
@@ -708,7 +711,6 @@ class ModernDishDetailRouteArgs {
     required this.imageUrl,
     required this.rating,
     required this.description,
-    required this.sodas,
   });
 
   final String id;
@@ -725,11 +727,9 @@ class ModernDishDetailRouteArgs {
 
   final String description;
 
-  final bool sodas;
-
   @override
   String toString() {
-    return 'ModernDishDetailRouteArgs{id: $id, restaurantId: $restaurantId, name: $name, price: $price, imageUrl: $imageUrl, rating: $rating, description: $description, sodas: $sodas}';
+    return 'ModernDishDetailRouteArgs{id: $id, restaurantId: $restaurantId, name: $name, price: $price, imageUrl: $imageUrl, rating: $rating, description: $description}';
   }
 }
 
@@ -1110,6 +1110,20 @@ class ShareLocationRoute extends PageRouteInfo<void> {
         );
 
   static const String name = 'ShareLocationRoute';
+
+  static const PageInfo<void> page = PageInfo<void>(name);
+}
+
+/// generated route for
+/// [TestBeveragesPage]
+class TestBeveragesRoute extends PageRouteInfo<void> {
+  const TestBeveragesRoute({List<PageRouteInfo>? children})
+      : super(
+          TestBeveragesRoute.name,
+          initialChildren: children,
+        );
+
+  static const String name = 'TestBeveragesRoute';
 
   static const PageInfo<void> page = PageInfo<void>(name);
 }

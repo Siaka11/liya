@@ -209,7 +209,6 @@ class ModernRestaurantDetailPage extends ConsumerWidget {
           imageUrl: dish.imageUrl,
           restaurantId: id,
           description: dish.description ?? '',
-          sodas: dish.sodas,
           onTap: () {
             Navigator.push(
               context,
@@ -222,7 +221,6 @@ class ModernRestaurantDetailPage extends ConsumerWidget {
                   imageUrl: dish.imageUrl,
                   rating: '0.0',
                   description: dish.description ?? '',
-                  sodas: dish.sodas,
                 ),
               ),
             );

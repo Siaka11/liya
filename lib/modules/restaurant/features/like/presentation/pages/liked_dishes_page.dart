@@ -40,7 +40,8 @@ class LikedDishesPage extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Mes plats favoris", style: TextStyle(color: UIColors.orange)),
+        title: const Text("Mes plats favoris",
+            style: TextStyle(color: UIColors.orange)),
         leading: SizedBox(),
       ),
       body: likedDishesAsync.when(
@@ -103,7 +104,6 @@ class LikedDishesPage extends ConsumerWidget {
                       imageUrl: dish.imageUrl,
                       rating: dish.rating.toString(),
                       description: dish.description,
-                      sodas: dish.sodas
                     ),
                   );
                 },
@@ -115,7 +115,6 @@ class LikedDishesPage extends ConsumerWidget {
                   description: dish.description,
                   rating: dish.rating,
                   userId: phoneNumber,
-                  sodas: dish.sodas,
                 ),
               );
             },

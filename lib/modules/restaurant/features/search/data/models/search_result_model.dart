@@ -7,15 +7,13 @@ class SearchResultModel extends SearchResult {
     required String imageUrl,
     required double price,
     required String description,
-    required bool sodas,
   }) : super(
-            id: id,
-            name: name,
-            imageUrl: imageUrl,
-            price: price,
-            description: description,
-            sodas: sodas,
-  );
+          id: id,
+          name: name,
+          imageUrl: imageUrl,
+          price: price,
+          description: description,
+        );
 
   factory SearchResultModel.fromJson(Map<String, dynamic> json) {
     return SearchResultModel(
@@ -25,10 +23,6 @@ class SearchResultModel extends SearchResult {
       price:
           double.tryParse(json['price'].toString().replaceAll(',', '.')) ?? 0.0,
       description: json['description'] ?? '',
-      sodas: json["sodas"] == true ||
-          json["sodas"] == 1 ||
-          json["sodas"] == '1' ||
-          json["sodas"] == 'true',
     );
   }
 
@@ -39,7 +33,6 @@ class SearchResultModel extends SearchResult {
       'imageUrl': imageUrl,
       'price': price,
       'description': description,
-      'sodas': sodas,
     };
   }
 }

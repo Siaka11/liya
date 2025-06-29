@@ -4,7 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:liya/core/ui/theme/theme.dart';
 import 'package:liya/modules/restaurant/features/like/presentation/widgets/like_button.dart';
 import 'package:liya/modules/restaurant/features/order/presentation/widgets/floating_order_button.dart';
+import 'package:liya/modules/restaurant/features/order/presentation/widgets/beverage_button.dart';
 import 'package:liya/modules/restaurant/features/order/presentation/providers/modern_order_provider.dart';
+import 'package:liya/modules/restaurant/features/order/domain/entities/beverage.dart';
 import 'package:liya/core/local_storage_factory.dart';
 import 'package:liya/core/singletons.dart';
 import 'dart:convert';
@@ -18,7 +20,6 @@ class ModernDishDetailPage extends ConsumerStatefulWidget {
   final String price;
   final String imageUrl;
   final String rating;
-  final bool sodas;
 
   const ModernDishDetailPage({
     required this.id,
@@ -28,7 +29,6 @@ class ModernDishDetailPage extends ConsumerStatefulWidget {
     required this.imageUrl,
     required this.rating,
     required this.description,
-    required this.sodas,
   });
 
   @override
@@ -37,7 +37,7 @@ class ModernDishDetailPage extends ConsumerStatefulWidget {
 }
 
 class _ModernDishDetailPageState extends ConsumerState<ModernDishDetailPage> {
-  Map<String, int> sodaQuantities = {};
+  List<BeverageSelection> selectedBeverages = [];
 
   @override
   Widget build(BuildContext context) {
@@ -97,7 +97,6 @@ class _ModernDishDetailPageState extends ConsumerState<ModernDishDetailPage> {
                     price: widget.price,
                     imageUrl: widget.imageUrl,
                     description: widget.description,
-                    sodas: widget.sodas,
                   ),
                 ),
               ],
@@ -159,11 +158,16 @@ class _ModernDishDetailPageState extends ConsumerState<ModernDishDetailPage> {
 
                         const SizedBox(height: 24),
 
-                        // Section boissons (si activée)
-                        if (widget.sodas) ...[
-                          _buildSodasSection(),
-                          const SizedBox(height: 24),
-                        ],
+                        // Section boissons (compléments) : toujours affichée
+                        BeverageButton(
+                          selectedBeverages: selectedBeverages,
+                          onBeveragesChanged: (beverages) {
+                            setState(() {
+                              selectedBeverages = beverages;
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 24),
 
                         // Contrôles de quantité
                         _buildQuantityControls(),
@@ -181,113 +185,6 @@ class _ModernDishDetailPageState extends ConsumerState<ModernDishDetailPage> {
           // Bouton flottant de commande
           FloatingOrderButton(
             restaurantName: null, // Pas de nom de restaurant sur cette page
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSodasSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Souhaitez-vous une boisson ?',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 12),
-
-        // Liste des boissons disponibles
-        _buildSodaItem('Coca Cola', '500'),
-        _buildSodaItem('Fanta', '500'),
-        _buildSodaItem('Sprite', '500'),
-        _buildSodaItem('Eau minérale', '300'),
-      ],
-    );
-  }
-
-  Widget _buildSodaItem(String name, String price) {
-    final quantity = sodaQuantities[name] ?? 0;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        children: [
-          // Nom et prix
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                Text(
-                  '+$price FCFA',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Colors.green,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Contrôles de quantité
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.grey[200],
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.remove, size: 20),
-                  onPressed: quantity > 0
-                      ? () {
-                          setState(() {
-                            sodaQuantities[name] = quantity - 1;
-                          });
-                        }
-                      : null,
-                  constraints: const BoxConstraints(
-                    minWidth: 40,
-                    minHeight: 40,
-                  ),
-                ),
-                Container(
-                  width: 30,
-                  alignment: Alignment.center,
-                  child: Text(
-                    '$quantity',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.add, size: 20),
-                  onPressed: () {
-                    setState(() {
-                      sodaQuantities[name] = quantity + 1;
-                    });
-                  },
-                  constraints: const BoxConstraints(
-                    minWidth: 40,
-                    minHeight: 40,
-                  ),
-                ),
-              ],
-            ),
           ),
         ],
       ),
@@ -369,7 +266,6 @@ class _ModernDishDetailPageState extends ConsumerState<ModernDishDetailPage> {
           imageUrl: widget.imageUrl,
           restaurantId: widget.restaurantId,
           description: widget.description,
-          sodas: widget.sodas,
         );
   }
 

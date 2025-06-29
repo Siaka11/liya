@@ -13,7 +13,10 @@ import '../../../card/domain/repositories/cart_repository.dart';
 import '../../../card/domain/usecases/add_to_cart.dart';
 // Import des nouveaux widgets modernes
 import 'package:liya/modules/restaurant/features/order/presentation/widgets/floating_order_button.dart';
+import 'package:liya/modules/restaurant/features/order/presentation/widgets/beverage_button.dart';
 import 'package:liya/modules/restaurant/features/order/presentation/providers/modern_order_provider.dart';
+import 'package:liya/modules/restaurant/features/order/domain/entities/beverage.dart';
+import 'package:liya/modules/restaurant/features/like/presentation/widgets/like_button.dart';
 
 @RoutePage(name: 'DishDetailRoute')
 class DishDetailPage extends ConsumerStatefulWidget {
@@ -24,7 +27,6 @@ class DishDetailPage extends ConsumerStatefulWidget {
   final String price;
   final String imageUrl;
   final String rating;
-  final bool sodas;
 
   const DishDetailPage({
     super.key,
@@ -35,7 +37,6 @@ class DishDetailPage extends ConsumerStatefulWidget {
     required this.imageUrl,
     required this.rating,
     required this.description,
-    required this.sodas,
   });
 
   @override
@@ -44,17 +45,56 @@ class DishDetailPage extends ConsumerStatefulWidget {
 
 class _DishDetailPageState extends ConsumerState<DishDetailPage> {
   bool isLoading = true;
-  Map<String, int> sodaQuantities = {};
+  List<BeverageSelection> selectedBeverages = [];
+  List<Beverage> beverages = [];
+  bool isBeveragesLoading = true;
 
   @override
   void initState() {
     super.initState();
+    _fetchBeverages();
     // Simuler un chargement
     Future.delayed(const Duration(milliseconds: 500), () {
       if (mounted) {
         setState(() {
           isLoading = false;
         });
+      }
+    });
+  }
+
+  Future<void> _fetchBeverages() async {
+    final snapshot = await FirebaseFirestore.instance
+        .collection('beverages')
+        .where('isAvailable', isEqualTo: true)
+        .get();
+    setState(() {
+      beverages =
+          snapshot.docs.map((doc) => Beverage.fromJson(doc.data())).toList();
+      isBeveragesLoading = false;
+    });
+  }
+
+  void _addBeverage(Beverage beverage) {
+    setState(() {
+      // Ajoute la boisson avec la première taille dispo ou 'default' si vide
+      final size = beverage.sizes.keys.isNotEmpty
+          ? beverage.sizes.keys.first
+          : 'default';
+      final existing = selectedBeverages.indexWhere(
+          (b) => b.beverage.id == beverage.id && b.selectedSize == size);
+      if (existing >= 0) {
+        selectedBeverages[existing] = BeverageSelection(
+          beverage: beverage,
+          selectedSize: size,
+          quantity: selectedBeverages[existing].quantity + 1,
+        );
+      } else {
+        selectedBeverages.add(BeverageSelection(
+          beverage: beverage,
+          selectedSize: size,
+          quantity: 1,
+        ));
       }
     });
   }
@@ -86,28 +126,29 @@ class _DishDetailPageState extends ConsumerState<DishDetailPage> {
                                 child: Image.network(
                                   widget.imageUrl,
                                   width: double.infinity,
-                                  height: MediaQuery.of(context).size.height * 0.5,
+                                  height:
+                                      MediaQuery.of(context).size.height * 0.5,
                                   fit: BoxFit.cover,
                                   errorBuilder: (context, error, stackTrace) =>
                                       Icon(Icons.error, size: 300),
                                 ),
                               ),
-                                 Positioned(
-                                  top: 50,
-                                  left: 16,
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      color: Colors.black.withOpacity(0.5),
-                                      borderRadius: BorderRadius.circular(40),
-                                    ),
-                                    child: IconButton(
-                                      color: Colors.white,
-                                      icon: Icon(Icons.arrow_back, color: Colors.white),
-                                      onPressed: () => Navigator.pop(context),
-                                    ),
+                              Positioned(
+                                top: 50,
+                                left: 16,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withOpacity(0.5),
+                                    borderRadius: BorderRadius.circular(40),
+                                  ),
+                                  child: IconButton(
+                                    color: Colors.white,
+                                    icon: Icon(Icons.arrow_back,
+                                        color: Colors.white),
+                                    onPressed: () => Navigator.pop(context),
                                   ),
                                 ),
-
+                              ),
                             ],
                           ),
                         ),
@@ -115,10 +156,10 @@ class _DishDetailPageState extends ConsumerState<DishDetailPage> {
                           child: Container(
                             decoration: BoxDecoration(
                               color: Colors.white,
-                              borderRadius:
-                                  BorderRadius.vertical(top: Radius.circular(20)),
+                              borderRadius: BorderRadius.vertical(
+                                  top: Radius.circular(20)),
                             ),
-                            padding: EdgeInsets.all(16),
+                            padding: EdgeInsets.symmetric(horizontal: 16),
                             child: SingleChildScrollView(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -126,9 +167,9 @@ class _DishDetailPageState extends ConsumerState<DishDetailPage> {
                                   Text(
                                     widget.name,
                                     style: TextStyle(
-                                        fontSize: 24, fontWeight: FontWeight.bold),
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.bold),
                                   ),
-                                  SizedBox(height: 8),
                                   Row(
                                     children: [
                                       Text('${widget.price} CFA',
@@ -143,128 +184,160 @@ class _DishDetailPageState extends ConsumerState<DishDetailPage> {
                                     style: TextStyle(
                                         fontSize: 16, color: Colors.grey[700]),
                                   ),
-                                  // SECTION BOISSONS AUTOMATIQUE
-                                  if (widget.sodas == true) ...[
-                                    const SizedBox(height: 24),
-                                    const Text(
-                                      'Souhaitez vous une boisson ?',
-                                      style: TextStyle(fontWeight: FontWeight.bold),
+                                  // Section accompagnements (boissons)
+                                  SizedBox(height: 24),
+                                  Text(
+                                    'Accompagnements',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
                                     ),
-                                    Consumer(
-                                      builder: (context, ref, _) {
-                                        final sodasAsync = ref.watch(sodasProvider);
-                                        return sodasAsync.when(
-                                          loading: () => const Padding(
-                                            padding:
-                                                EdgeInsets.symmetric(vertical: 16),
-                                            child: Center(
-                                                child: CircularProgressIndicator()),
-                                          ),
-                                          error: (e, _) => const Text(
-                                              'Erreur de chargement des boissons'),
-                                          data: (sodas) => Column(
-                                            children: sodas.map((soda) {
-                                              final firstSize =
-                                                  soda.sizes.entries.first;
-                                              final qty =
-                                                  sodaQuantities[soda.name] ?? 0;
-                                              return Padding(
-                                                padding: const EdgeInsets.symmetric(
-                                                    vertical: 6),
-                                                child: Row(
-                                                  children: [
-                                                    // Nom du soda
-                                                    Expanded(
-                                                      child: Text(
-                                                        soda.name,
-                                                        style: const TextStyle(
-                                                            fontSize: 15),
-                                                      ),
-                                                    ),
-                                                    // Prix
-                                                    Text(
-                                                      '+${firstSize.value}',
-                                                      style: const TextStyle(
-                                                        color: Colors.green,
-                                                        fontSize: 15,
-                                                        fontWeight: FontWeight.w500,
-                                                      ),
-                                                    ),
-                                                    const SizedBox(width: 12),
-                                                    // Contrôles de quantité
-                                                    Container(
-                                                      decoration: BoxDecoration(
-                                                        color: Colors.grey[200],
+                                  ),
+                                  isBeveragesLoading
+                                      ? Center(
+                                          child: CircularProgressIndicator())
+                                      : ListView.separated(
+                                          shrinkWrap: true,
+                                          physics:
+                                              NeverScrollableScrollPhysics(),
+                                          padding: EdgeInsets.zero,
+                                          itemCount: beverages.length,
+                                          separatorBuilder: (context, i) =>
+                                              SizedBox(height: 8),
+                                          itemBuilder: (context, i) {
+                                            final beverage = beverages[i];
+                                            final size =
+                                                beverage.sizes.keys.isNotEmpty
+                                                    ? beverage.sizes.keys.first
+                                                    : 'default';
+                                            final price =
+                                                beverage.sizes[size] ?? 0.0;
+                                            final selected =
+                                                selectedBeverages.firstWhere(
+                                              (b) =>
+                                                  b.beverage.id ==
+                                                      beverage.id &&
+                                                  b.selectedSize == size,
+                                              orElse: () => BeverageSelection(
+                                                  beverage: beverage,
+                                                  selectedSize: size,
+                                                  quantity: 0),
+                                            );
+                                            return Container(
+                                              decoration: BoxDecoration(
+                                                color: Colors.white,
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                                border: Border.all(
+                                                  color: Colors.grey[200]!,
+                                                ),
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: Colors.black
+                                                        .withOpacity(0.03),
+                                                    blurRadius: 4,
+                                                    offset: Offset(0, 2),
+                                                  ),
+                                                ],
+                                              ),
+                                              child: ListTile(
+                                                leading: beverage
+                                                        .imageUrl.isNotEmpty
+                                                    ? ClipRRect(
                                                         borderRadius:
-                                                            BorderRadius.circular(
-                                                                18),
+                                                            BorderRadius
+                                                                .circular(8),
+                                                        child: Image.network(
+                                                          beverage.imageUrl,
+                                                          width: 40,
+                                                          height: 40,
+                                                          fit: BoxFit.cover,
+                                                        ),
+                                                      )
+                                                    : Icon(Icons.local_drink,
+                                                        color: Colors.orange,
+                                                        size: 32),
+                                                title: Text(
+                                                  beverage.name +
+                                                      (size != 'default'
+                                                          ? ' $size'
+                                                          : ''),
+                                                  style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold),
+                                                ),
+                                                subtitle: Text(
+                                                  '+${price.toStringAsFixed(2)} FCFA',
+                                                  style: TextStyle(
+                                                      color: Colors.grey[600]),
+                                                ),
+                                                trailing: Row(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: [
+                                                    if (selected.quantity >
+                                                        0) ...[
+                                                      IconButton(
+                                                        icon: Icon(
+                                                            Icons
+                                                                .remove_circle_outline,
+                                                            color:
+                                                                Colors.orange),
+                                                        onPressed: () {
+                                                          setState(() {
+                                                            if (selected
+                                                                    .quantity >
+                                                                1) {
+                                                              selectedBeverages[selectedBeverages.indexWhere((b) =>
+                                                                  b.beverage
+                                                                          .id ==
+                                                                      beverage
+                                                                          .id &&
+                                                                  b.selectedSize ==
+                                                                      size)] = BeverageSelection(
+                                                                beverage:
+                                                                    beverage,
+                                                                selectedSize:
+                                                                    size,
+                                                                quantity: selected
+                                                                        .quantity -
+                                                                    1,
+                                                              );
+                                                            } else {
+                                                              selectedBeverages.removeWhere((b) =>
+                                                                  b.beverage
+                                                                          .id ==
+                                                                      beverage
+                                                                          .id &&
+                                                                  b.selectedSize ==
+                                                                      size);
+                                                            }
+                                                          });
+                                                        },
                                                       ),
-                                                      child: Row(
-                                                        children: [
-                                                          IconButton(
-                                                            icon: const Icon(
-                                                                Icons.remove,
-                                                                size: 16),
-                                                            splashRadius: 18,
-                                                            padding:
-                                                                EdgeInsets.zero,
-                                                            constraints:
-                                                                const BoxConstraints(),
-                                                            onPressed: qty > 0
-                                                                ? () {
-                                                                    setState(() {
-                                                                      sodaQuantities[
-                                                                              soda.name] =
-                                                                          qty - 1;
-                                                                    });
-                                                                  }
-                                                                : null,
-                                                          ),
-                                                          Container(
-                                                            width: 24,
-                                                            alignment:
-                                                                Alignment.center,
-                                                            child: Text(
-                                                              qty
-                                                                  .toString()
-                                                                  .padLeft(2, '0'),
-                                                              style:
-                                                                  const TextStyle(
-                                                                fontWeight:
-                                                                    FontWeight.bold,
-                                                                fontSize: 14,
-                                                              ),
-                                                            ),
-                                                          ),
-                                                          IconButton(
-                                                            icon: const Icon(
-                                                                Icons.add,
-                                                                size: 16),
-                                                            splashRadius: 18,
-                                                            padding:
-                                                                EdgeInsets.zero,
-                                                            constraints:
-                                                                const BoxConstraints(),
-                                                            onPressed: () {
-                                                              setState(() {
-                                                                sodaQuantities[
-                                                                        soda.name] =
-                                                                    qty + 1;
-                                                              });
-                                                            },
-                                                          ),
-                                                        ],
-                                                      ),
+                                                      Text(
+                                                          '${selected.quantity}',
+                                                          style: TextStyle(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                              color: Colors
+                                                                  .orange)),
+                                                    ],
+                                                    IconButton(
+                                                      icon: Icon(
+                                                          Icons.add_circle,
+                                                          color: Colors.orange),
+                                                      onPressed: () =>
+                                                          _addBeverage(
+                                                              beverage),
                                                     ),
                                                   ],
                                                 ),
-                                              );
-                                            }).toList(),
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                  ],
+                                              ),
+                                            );
+                                          },
+                                        ),
                                 ],
                               ),
                             ),
@@ -313,7 +386,8 @@ class _DishDetailPageState extends ConsumerState<DishDetailPage> {
                             ],
                           ),
                         ),
-                        const SizedBox(height: 100), // Espace pour le bouton flottant
+                        const SizedBox(
+                            height: 100), // Espace pour le bouton flottant
                       ],
                     ),
 
@@ -328,14 +402,13 @@ class _DishDetailPageState extends ConsumerState<DishDetailPage> {
 
   void _addItem(WidgetRef ref) {
     ref.read(modernOrderProvider.notifier).addItem(
-      id: widget.id,
-      name: widget.name,
-      price: widget.price,
-      imageUrl: widget.imageUrl,
-      restaurantId: widget.restaurantId,
-      description: widget.description,
-      sodas: widget.sodas,
-    );
+          id: widget.id,
+          name: widget.name,
+          price: widget.price,
+          imageUrl: widget.imageUrl,
+          restaurantId: widget.restaurantId,
+          description: widget.description,
+        );
   }
 
   void _removeItem(WidgetRef ref) {
@@ -376,4 +449,4 @@ final sodasProvider = FutureProvider<List<SodaSupplement>>((ref) async {
       .map((e) => SodaSupplement.fromJson(Map<String, dynamic>.from(e)))
       .where((soda) => soda.active)
       .toList();
-}); 
+});

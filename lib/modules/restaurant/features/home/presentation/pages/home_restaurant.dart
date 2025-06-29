@@ -168,9 +168,6 @@ class HomeRestaurantPage extends ConsumerWidget {
                                                                   .popularDishes![
                                                                       i]
                                                                   .description,
-                                                          sodas: popularDishState
-                                                              .popularDishes![i]
-                                                              .sodas,
                                                           onTap: () {
                                                             // Navigation vers la page de détail du plat
                                                             Navigator.push(
@@ -206,10 +203,6 @@ class HomeRestaurantPage extends ConsumerWidget {
                                                                           .popularDishes![
                                                                               i]
                                                                           .description,
-                                                                  sodas: popularDishState
-                                                                      .popularDishes![
-                                                                          i]
-                                                                      .sodas,
                                                                 ),
                                                               ),
                                                             );
@@ -256,10 +249,6 @@ class HomeRestaurantPage extends ConsumerWidget {
                                                                       .popularDishes![
                                                                           i + 1]
                                                                       .description,
-                                                              sodas: popularDishState
-                                                                  .popularDishes![
-                                                                      i + 1]
-                                                                  .sodas,
                                                               onTap: () {
                                                                 Navigator.push(
                                                                   context,
@@ -293,10 +282,6 @@ class HomeRestaurantPage extends ConsumerWidget {
                                                                           .popularDishes![i +
                                                                               1]
                                                                           .description,
-                                                                      sodas: popularDishState
-                                                                          .popularDishes![i +
-                                                                              1]
-                                                                          .sodas,
                                                                     ),
                                                                   ),
                                                                 );

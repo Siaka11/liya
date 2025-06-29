@@ -73,7 +73,6 @@ class ModernOrderExample extends ConsumerWidget {
                       imageUrl: dish['imageUrl']!,
                       restaurantId: dish['restaurantId']!,
                       description: dish['description']!,
-                      sodas: dish['sodas']!,
                       onTap: () {
                         _showDishDetails(context, dish);
                       },
@@ -375,7 +374,6 @@ class ModernOrderTester extends ConsumerWidget {
           imageUrl: 'https://via.placeholder.com/150',
           restaurantId: 'test_restaurant',
           description: 'Article de test',
-          sodas: false,
         );
   }
 }

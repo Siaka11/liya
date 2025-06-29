@@ -43,7 +43,6 @@ class AllDishesPage extends ConsumerWidget {
                   imageUrl: dish.imageUrl,
                   rating: '0.0',
                   description: dish.description,
-                  sodas: dish.sodas,
                 ));
               },
               child: DishCardSimple(

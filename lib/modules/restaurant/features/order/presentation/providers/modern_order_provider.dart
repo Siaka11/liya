@@ -9,7 +9,6 @@ class OrderItemState {
   final String restaurantId;
   final String description;
   final int quantity;
-  final bool sodas;
 
   OrderItemState({
     required this.id,
@@ -19,7 +18,6 @@ class OrderItemState {
     required this.restaurantId,
     required this.description,
     required this.quantity,
-    required this.sodas,
   });
 
   OrderItemState copyWith({
@@ -30,7 +28,6 @@ class OrderItemState {
     String? restaurantId,
     String? description,
     int? quantity,
-    bool? sodas,
   }) {
     return OrderItemState(
       id: id ?? this.id,
@@ -40,7 +37,6 @@ class OrderItemState {
       restaurantId: restaurantId ?? this.restaurantId,
       description: description ?? this.description,
       quantity: quantity ?? this.quantity,
-      sodas: sodas ?? this.sodas,
     );
   }
 
@@ -172,19 +168,10 @@ class ModernOrderNotifier extends StateNotifier<ModernOrderState> {
     required String imageUrl,
     required String restaurantId,
     required String description,
-    required bool sodas,
   }) {
     // Normaliser et mapper les restaurantId pour éviter les problèmes de synchronisation
     final normalizedRestaurantId = _normalizeRestaurantId(restaurantId);
     final mappedRestaurantId = _mapRestaurantId(normalizedRestaurantId);
-
-    // TEMPORAIRE: Désactiver la restriction de restaurant unique pour permettre la synchronisation
-    // TODO: Implémenter une vraie solution de mapping des restaurantId
-    /*
-    if (state.isNotEmpty && !state.restaurantIds.contains(mappedRestaurantId)) {
-      state = ModernOrderState(items: {});
-    }
-    */
 
     final currentItems = Map<String, OrderItemState>.from(state.items);
 
@@ -204,7 +191,6 @@ class ModernOrderNotifier extends StateNotifier<ModernOrderState> {
         restaurantId: mappedRestaurantId,
         description: description,
         quantity: 1,
-        sodas: sodas,
       );
     }
 

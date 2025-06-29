@@ -29,7 +29,6 @@ class DishCardSimple extends StatelessWidget {
               imageUrl: dish.imageUrl,
               rating: '0.0',
               description: dish.description,
-              sodas: dish.sodas,
             ),
           ),
         );
@@ -103,7 +102,6 @@ class DishCardSimple extends StatelessWidget {
                   price: dish.price,
                   imageUrl: dish.imageUrl,
                   description: dish.description,
-                  sodas: dish.sodas,
                 ),
               ),
             ],

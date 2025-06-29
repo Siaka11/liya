@@ -41,7 +41,6 @@ class DishesByCategoryPage extends ConsumerWidget {
                       imageUrl: dish.imageUrl,
                       rating: '0.0', // Pas dispo côté catégorie
                       description: dish.description,
-                      sodas: dish.sodas,
                     ),
                   ),
                 );

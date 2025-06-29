@@ -5,6 +5,7 @@ import 'package:liya/modules/admin/features/dishes/presentation/pages/restaurant
 import 'package:liya/modules/home/presentation/pages/utils/top_menu.dart';
 import 'package:liya/modules/home/presentation/pages/widget/home_card_widget.dart';
 import 'package:liya/core/test_modern_system.dart';
+import 'package:liya/core/test_beverages.dart';
 
 import '../../../../core/routes/app_router.dart';
 import '../../application/home_provider.dart';
@@ -115,7 +116,7 @@ class HomePage extends ConsumerWidget {
                   ))),
           // Bouton de test pour le système moderne
           Positioned(
-            bottom: 20,
+            bottom: 80,
             left: 20,
             right: 20,
             child: ElevatedButton(
@@ -137,6 +138,37 @@ class HomePage extends ConsumerWidget {
               ),
               child: const Text(
                 '🧪 Tester le Système Moderne',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+          // Bouton de test pour les boissons
+          Positioned(
+            bottom: 20,
+            left: 20,
+            right: 20,
+            child: ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const TestBeveragesPage(),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text(
+                '🥤 Tester les Boissons',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,

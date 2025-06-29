@@ -8,7 +8,6 @@ class LikedDish {
   final double rating;
   final String userId;
   final DateTime likedAt;
-  final bool sodas;
 
   const LikedDish({
     required this.id,
@@ -20,7 +19,6 @@ class LikedDish {
     required this.rating,
     required this.userId,
     required this.likedAt,
-    required this.sodas,
   });
 
   Map<String, dynamic> toJson() {
@@ -34,7 +32,6 @@ class LikedDish {
       'rating': rating,
       'userId': userId,
       'likedAt': likedAt.toIso8601String(),
-      'sodas': sodas,
     };
   }
 
@@ -48,10 +45,6 @@ class LikedDish {
       description: json['description'] as String,
       rating: (json['rating'] as num).toDouble(),
       userId: json['userId'] as String,
-      sodas: json['sodas'] == true ||
-          json['sodas'] == 1 ||
-          json['sodas'] == '1' ||
-          json['sodas'] == 'true',
       likedAt: DateTime.parse(json['likedAt'] as String),
     );
   }

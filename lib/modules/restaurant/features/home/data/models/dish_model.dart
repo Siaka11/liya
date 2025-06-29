@@ -8,15 +8,13 @@ class DishModel extends Dish {
     required String imageUrl,
     required String restaurantId,
     required String description,
-    required bool sodas,
   }) : super(
             id: id,
             name: name,
             price: price,
             imageUrl: imageUrl,
             restaurantId: restaurantId,
-            description: description,
-            sodas: sodas);
+            description: description);
 
   factory DishModel.fromJson(Map<String, dynamic> json) {
     return DishModel(
@@ -26,10 +24,6 @@ class DishModel extends Dish {
       imageUrl: json['image_url'],
       restaurantId: json['restaurant_id'].toString(),
       description: json['description'].toString(),
-      sodas: json['sodas'] == true ||
-          json['sodas'] == 1 ||
-          json['sodas'] == '1' ||
-          json['sodas'] == 'true',
     );
   }
 

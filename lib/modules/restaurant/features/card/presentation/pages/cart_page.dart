@@ -143,8 +143,7 @@ class CartPage extends ConsumerWidget {
                                   price: item.price,
                                   imageUrl: item.imageUrl,
                                   rating: '0.0',
-                                  description: item.description ?? '',
-                                  sodas: item.sodas),
+                                  description: item.description ?? ''),
                             );
                             // Rafraîchir la page après le retour
                             ref.read(refreshKey.notifier).state++;

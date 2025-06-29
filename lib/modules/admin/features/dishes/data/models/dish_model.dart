@@ -8,7 +8,6 @@ class DishModel {
   final double rating;
   final String categorie;
   final String preparationTime;
-  final int sodas;
 
   DishModel({
     required this.id,
@@ -20,7 +19,6 @@ class DishModel {
     required this.rating,
     required this.categorie,
     required this.preparationTime,
-    required this.sodas,
   });
 
   factory DishModel.fromJson(Map<String, dynamic> json) {
@@ -34,7 +32,6 @@ class DishModel {
       rating: double.tryParse(json['rating'].toString()) ?? 0.0,
       categorie: json['categorie'] ?? '',
       preparationTime: json['preparation_time'] ?? '',
-      sodas: int.tryParse(json['sodas'].toString()) ?? 0,
     );
   }
 
@@ -49,7 +46,6 @@ class DishModel {
       'rating': rating,
       'categorie': categorie,
       'preparation_time': preparationTime,
-      'sodas': sodas,
     };
   }
 }

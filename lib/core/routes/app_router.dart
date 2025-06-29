@@ -34,6 +34,7 @@ import '../../modules/restaurant/features/order/presentation/pages/order_list_pa
 import '../../modules/restaurant/features/profile/presentation/pages/profile_page.dart';
 import '../../modules/restaurant/features/search/presentation/pages/search_page.dart';
 import '../../modules/share_location_page.dart';
+import '../test_beverages.dart';
 
 part 'app_router.gr.dart';
 
