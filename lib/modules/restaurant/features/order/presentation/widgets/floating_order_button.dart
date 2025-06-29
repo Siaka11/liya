@@ -347,6 +347,14 @@ class OrderDetailsSheet extends ConsumerWidget {
                 'price': item.price,
                 'description': item.description,
                 'quantity': item.quantity,
+                'accompaniments': item.accompaniments
+                    .map((acc) => {
+                          'name': acc.beverage.name,
+                          'size': acc.selectedSize,
+                          'quantity': acc.quantity,
+                          'price': acc.totalPrice,
+                        })
+                    .toList(),
               })
           .toList();
 

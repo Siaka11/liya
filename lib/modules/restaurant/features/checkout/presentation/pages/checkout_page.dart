@@ -649,7 +649,18 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
     return widget.cartItems.fold(0.0, (sum, item) {
       final price = double.tryParse(item['price'].toString()) ?? 0.0;
       final quantity = item['quantity'] as int? ?? 1;
-      return sum + (price * quantity);
+      final accompaniments = item['accompaniments'] as List<dynamic>? ?? [];
+
+      // Prix du plat
+      final itemPrice = price * quantity;
+
+      // Prix des accompagnements
+      final accompanimentsPrice = accompaniments.fold(0.0, (accSum, acc) {
+        final accPrice = (acc['price'] as num?)?.toDouble() ?? 0.0;
+        return accSum + accPrice;
+      });
+
+      return sum + itemPrice + accompanimentsPrice;
     });
   }
 

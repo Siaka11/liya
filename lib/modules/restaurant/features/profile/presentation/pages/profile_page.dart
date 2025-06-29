@@ -311,7 +311,7 @@ class ProfilePage extends ConsumerWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    SizedBox(
+                    /*SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
                         icon: Icon(Icons.home),
@@ -332,7 +332,7 @@ class ProfilePage extends ConsumerWidget {
                           }
                         },
                       ),
-                    ),
+                    ),*/
                     SizedBox(height: 12),
                     SizedBox(
                       width: double.infinity,
