@@ -19,9 +19,10 @@ import '../../../../../home/domain/entities/home_option.dart';
 import 'package:liya/modules/restaurant/features/card/data/datasources/cart_remote_data_source.dart';
 import 'package:liya/modules/restaurant/features/card/data/repositories/cart_repository_impl.dart';
 import 'package:geocoding/geocoding.dart';
+import 'package:liya/modules/restaurant/features/order/presentation/providers/modern_order_provider.dart';
 
 @RoutePage()
-class CheckoutPage extends StatefulWidget {
+class CheckoutPage extends ConsumerStatefulWidget {
   final String restaurantName;
   final List<Map<String, dynamic>> cartItems;
 
@@ -32,10 +33,10 @@ class CheckoutPage extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<CheckoutPage> createState() => _CheckoutPageState();
+  ConsumerState<CheckoutPage> createState() => _CheckoutPageState();
 }
 
-class _CheckoutPageState extends State<CheckoutPage> {
+class _CheckoutPageState extends ConsumerState<CheckoutPage> {
   String? phoneInput;
   String? deliveryInstructions;
   double? selectedLat;
@@ -575,6 +576,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
                 final cartRepo = CartRepositoryImpl(
                     remoteDataSource: CartRemoteDataSourceImpl());
                 await cartRepo.clearCart(phoneNumber);
+
+                // Vider la commande moderne (modernOrderProvider)
+                ref.read(modernOrderProvider.notifier).clearOrder();
 
                 if (!context.mounted) return;
 

@@ -17,6 +17,9 @@ import '../../application/selected_quantity_provider.dart';
 import '../widget/dish_card.dart';
 import 'dish_detail_page.dart';
 import 'package:liya/modules/restaurant/features/card/presentation/pages/cart_page.dart';
+// Import des nouveaux widgets modernes
+import 'package:liya/modules/restaurant/features/order/presentation/widgets/floating_order_button.dart';
+import 'package:liya/modules/restaurant/features/order/presentation/widgets/modern_dish_card.dart';
 
 final addToCartProvider = Provider<AddToCart>((ref) {
   return AddToCart(
@@ -203,138 +206,51 @@ class RestaurantDetailPage extends ConsumerWidget {
                                     ? Center(
                                         child: Text(
                                             "Aucun plat disponible pour ce restaurant"))
-                                    : ListView.builder(
+                                    : GridView.builder(
                                         key: ValueKey(refreshCount),
                                         shrinkWrap: true,
                                         padding: EdgeInsets.zero,
                                         physics: NeverScrollableScrollPhysics(),
+                                        gridDelegate:
+                                            const SliverGridDelegateWithFixedCrossAxisCount(
+                                          crossAxisCount: 2,
+                                          childAspectRatio: 0.75,
+                                          crossAxisSpacing: 16,
+                                          mainAxisSpacing: 16,
+                                        ),
                                         itemCount: dishState.dishes!.length,
                                         itemBuilder: (context, index) {
                                           final dish = dishState.dishes![index];
-                                          print(
-                                              'DEBUG: Construction DishCard pour le plat: "${dish.name}"');
-                                          print(
-                                              'DEBUG: Données du plat - ID: ${dish.id}, Nom: ${dish.name}, Prix: ${dish.price}');
-
-                                          return FutureBuilder<int>(
-                                            key: ValueKey(
-                                                '${dish.name}_$refreshCount'),
-                                            future: getCartItemQuantity(dish
-                                                .name), // Utiliser le nom au lieu de l'ID
-                                            builder: (context, snapshot) {
-                                              if (snapshot.connectionState ==
-                                                  ConnectionState.waiting) {
-                                                return DishCard(
-                                                  name: dish.name,
-                                                  price: dish.price,
-                                                  imageUrl: dish.imageUrl,
-                                                  description:
-                                                      dish.description ?? '',
-                                                  quantity: 0,
-                                                  onTap: () async {
-                                                    await Navigator.push(
-                                                      context,
-                                                      MaterialPageRoute(
-                                                        builder: (context) =>
-                                                            DishDetailPage(
-                                                          id: dish.id ?? '',
-                                                          restaurantId: id,
-                                                          name: dish.name,
-                                                          price: dish.price,
-                                                          imageUrl:
-                                                              dish.imageUrl,
-                                                          rating: '0.0',
-                                                          description:
-                                                              dish.description ??
-                                                                  '',
-                                                          sodas: dish.sodas,
-                                                        ),
-                                                      ),
-                                                    );
-                                                    // Forcer le rafraîchissement après le retour
-                                                    ref
-                                                        .read(
-                                                            refreshKey.notifier)
-                                                        .state++;
-                                                  },
-                                                );
-                                              }
-
-                                              final quantity =
-                                                  snapshot.data ?? 0;
-                                              print(
-                                                  'DEBUG: Quantité finale pour "${dish.name}": $quantity');
-
-                                              return DishCard(
-                                                name: dish.name,
-                                                price: dish.price,
-                                                imageUrl: dish.imageUrl,
-                                                description:
-                                                    dish.description ?? '',
-                                                quantity: quantity,
-                                                onDelete: quantity > 0
-                                                    ? () async {
-                                                        try {
-                                                          final userId =
-                                                              phoneNumber; // À remplacer par l'ID réel de l'utilisateur
-                                                          await cartRepository
-                                                              .removeFromCart(
-                                                                  userId,
-                                                                  dish.name);
-                                                          // Forcer le rafraîchissement après la suppression
-                                                          ref
-                                                              .read(refreshKey
-                                                                  .notifier)
-                                                              .state++;
-                                                          ScaffoldMessenger.of(
-                                                                  context)
-                                                              .showSnackBar(
-                                                            SnackBar(
-                                                              content: Text(
-                                                                  'Article supprimé du panier'),
-                                                              backgroundColor:
-                                                                  Colors.green,
-                                                            ),
-                                                          );
-                                                        } catch (e) {
-                                                          ScaffoldMessenger.of(
-                                                                  context)
-                                                              .showSnackBar(
-                                                            SnackBar(
-                                                              content: Text(
-                                                                  'Erreur lors de la suppression: ${e.toString()}'),
-                                                              backgroundColor:
-                                                                  Colors.red,
-                                                            ),
-                                                          );
-                                                        }
-                                                      }
-                                                    : null,
-                                                onTap: () async {
-                                                  await Navigator.push(
-                                                    context,
-                                                    MaterialPageRoute(
-                                                      builder: (context) =>
-                                                          DishDetailPage(
-                                                        id: dish.id ?? '',
-                                                        restaurantId: id,
-                                                        name: dish.name,
-                                                        price: dish.price,
-                                                        imageUrl: dish.imageUrl,
-                                                        rating: '0.0',
-                                                        description:
-                                                            dish.description ??
-                                                                '',
-                                                        sodas: dish.sodas,
-                                                      ),
-                                                    ),
-                                                  );
-                                                  // Forcer le rafraîchissement après le retour
-                                                  ref
-                                                      .read(refreshKey.notifier)
-                                                      .state++;
-                                                },
+                                          return ModernDishCard(
+                                            id: dish.id ?? '',
+                                            name: dish.name,
+                                            price: dish.price,
+                                            imageUrl: dish.imageUrl,
+                                            restaurantId: id,
+                                            description: dish.description ?? '',
+                                            sodas: dish.sodas,
+                                            onTap: () async {
+                                              await Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      DishDetailPage(
+                                                    id: dish.id ?? '',
+                                                    restaurantId: id,
+                                                    name: dish.name,
+                                                    price: dish.price,
+                                                    imageUrl: dish.imageUrl,
+                                                    rating: '0.0',
+                                                    description:
+                                                        dish.description ?? '',
+                                                    sodas: dish.sodas,
+                                                  ),
+                                                ),
                                               );
+                                              // Forcer le rafraîchissement après le retour
+                                              ref
+                                                  .read(refreshKey.notifier)
+                                                  .state++;
                                             },
                                           );
                                         },
@@ -357,6 +273,10 @@ class RestaurantDetailPage extends ConsumerWidget {
                 ),
               ),
             ),
+          ),
+          // Bouton flottant de commande moderne
+          FloatingOrderButton(
+            restaurantName: name,
           ),
         ],
       ),
