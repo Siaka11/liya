@@ -224,7 +224,7 @@ class HomeRestaurantPage extends ConsumerWidget {
                                                           padding:
                                                               const EdgeInsets
                                                                   .only(
-                                                                  left: 4),
+                                                                  left: 10),
                                                           child: Container(
                                                             width: 160,
                                                             child:
@@ -341,7 +341,6 @@ class HomeRestaurantPage extends ConsumerWidget {
                             ),
                           ],
                         ),
-                        SizedBox(height: 16),
                         restaurantState.isLoading
                             ? Center(child: CircularProgressIndicator())
                             : restaurantState.error != null
