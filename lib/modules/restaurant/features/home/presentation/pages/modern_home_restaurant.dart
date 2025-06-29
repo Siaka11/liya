@@ -211,7 +211,7 @@ class ModernHomeRestaurantPage extends ConsumerWidget {
                 itemBuilder: (context, index) {
                   final dish = popularDishState.popularDishes![index];
                   return Container(
-                    width: 200,
+                    width: 180,
                     margin: const EdgeInsets.only(right: 16),
                     child: ModernDishCard(
                       id: dish.id,

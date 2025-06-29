@@ -30,7 +30,7 @@ class ModernDishCard extends ConsumerWidget {
     final quantity = ref.watch(itemQuantityProvider(id));
 
     return Container(
-      width: 120,
+      width: 100,
       height: 200,
       child: Card(
         elevation: 0.5,

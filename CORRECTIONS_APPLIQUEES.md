@@ -270,4 +270,33 @@ Après confirmation de commande :
 - ✅ Le bouton "voir ma commande" disparaît automatiquement
 - ✅ Tous les plats sélectionnés sont vidés
 - ✅ L'utilisateur est redirigé vers la liste des commandes
-- ✅ L'expérience utilisateur est fluide sans action manuelle requise 
+- ✅ L'expérience utilisateur est fluide sans action manuelle requise
+
+## Réduction de la largeur des cartes de plats
+
+### Problème
+Les cartes de plats étaient trop larges, prenant trop d'espace sur l'écran et limitant le nombre de plats visibles simultanément.
+
+### Solution appliquée
+Réduction de la largeur des cartes de plats dans toute l'application pour optimiser l'affichage et permettre de voir plus de plats à l'écran.
+
+### Modifications apportées
+
+#### 1. ModernDishCard
+- **Largeur réduite** : de 120 pixels à **100 pixels**
+- **Fichier modifié** : `lib/modules/restaurant/features/order/presentation/widgets/modern_dish_card.dart`
+
+#### 2. PopularDishCard
+- **Largeur réduite** : de 240 pixels à **200 pixels**
+- **Image ajustée** : largeur de l'image réduite de 240 à 200 pixels
+- **Fichier modifié** : `lib/modules/restaurant/features/home/presentation/widget/popular_dish_card.dart`
+
+#### 3. Containers dans les pages d'accueil
+- **home_restaurant.dart** : largeur des containers de ModernDishCard réduite de 200 à **180 pixels**
+- **modern_home_restaurant.dart** : largeur des containers de ModernDishCard réduite de 200 à **180 pixels**
+
+### Résultat
+- ✅ Plus de plats visibles simultanément sur l'écran
+- ✅ Interface plus compacte et optimisée
+- ✅ Meilleure utilisation de l'espace disponible
+- ✅ Expérience utilisateur améliorée avec plus de choix visibles 
