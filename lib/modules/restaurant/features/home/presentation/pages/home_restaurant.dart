@@ -112,7 +112,6 @@ class HomeRestaurantPage extends ConsumerWidget {
                           ],
                         ),
                         SizedBox(
-                          // Hauteur fixe pour la section populaire
                           child: popularDishState.isLoading
                               ? Center(child: CircularProgressIndicator())
                               : popularDishState.error != null
@@ -316,8 +315,9 @@ class HomeRestaurantPage extends ConsumerWidget {
                     ),
                   ),
                   // Section Restaurants
+                  const SizedBox(height: 10), // Espace pour le bouton flottant
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
