@@ -409,6 +409,33 @@ class _OrderItemTile extends ConsumerWidget {
                     color: Colors.grey[600],
                   ),
                 ),
+                // Affichage des accompagnements
+                if (item.accompaniments.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: item.accompaniments
+                        .map((acc) => Row(
+                              children: [
+                                const Icon(Icons.local_drink,
+                                    size: 16, color: Colors.orange),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '${acc.beverage.name} (${acc.selectedSize}) x${acc.quantity}',
+                                  style: const TextStyle(
+                                      fontSize: 13, color: Colors.black87),
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '+${acc.totalPrice.toStringAsFixed(0)} FCFA',
+                                  style: const TextStyle(
+                                      fontSize: 12, color: Colors.grey),
+                                ),
+                              ],
+                            ))
+                        .toList(),
+                  ),
+                ],
               ],
             ),
           ),
@@ -437,6 +464,7 @@ class _OrderItemTile extends ConsumerWidget {
                       imageUrl: item.imageUrl,
                       restaurantId: item.restaurantId,
                       description: item.description,
+                      accompaniments: item.accompaniments,
                     ),
                 icon: const Icon(Icons.add_circle_outline),
                 color: UIColors.orange,

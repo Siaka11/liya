@@ -75,9 +75,29 @@ class _DishDetailPageState extends ConsumerState<DishDetailPage> {
     });
   }
 
-  void _addBeverage(Beverage beverage) {
+  String _generateItemKey() {
+    if (selectedBeverages.isEmpty) return widget.id;
+    final accompKey = selectedBeverages
+        .map((a) => '${a.beverage.id}_${a.selectedSize}_${a.quantity}')
+        .join('-');
+    return '${widget.id}-$accompKey';
+  }
+
+  int _getCurrentQuantity(WidgetRef ref) {
+    final orderState = ref.watch(modernOrderProvider);
+    final item = orderState.items[widget.id];
+    return item?.quantity ?? 0;
+  }
+
+  void _syncAccompaniments(WidgetRef ref) {
+    ref.read(modernOrderProvider.notifier).updateAccompaniments(
+          id: widget.id,
+          accompaniments: List<BeverageSelection>.from(selectedBeverages),
+        );
+  }
+
+  void _addBeverage(Beverage beverage, WidgetRef ref) {
     setState(() {
-      // Ajoute la boisson avec la première taille dispo ou 'default' si vide
       final size = beverage.sizes.keys.isNotEmpty
           ? beverage.sizes.keys.first
           : 'default';
@@ -97,14 +117,62 @@ class _DishDetailPageState extends ConsumerState<DishDetailPage> {
         ));
       }
     });
+    _syncAccompaniments(ref);
   }
+
+  void _removeBeverage(Beverage beverage, WidgetRef ref) {
+    setState(() {
+      final size = beverage.sizes.keys.isNotEmpty
+          ? beverage.sizes.keys.first
+          : 'default';
+      final existing = selectedBeverages.indexWhere(
+          (b) => b.beverage.id == beverage.id && b.selectedSize == size);
+      if (existing >= 0) {
+        if (selectedBeverages[existing].quantity > 1) {
+          selectedBeverages[existing] = BeverageSelection(
+            beverage: beverage,
+            selectedSize: size,
+            quantity: selectedBeverages[existing].quantity - 1,
+          );
+        } else {
+          selectedBeverages.removeAt(existing);
+        }
+      }
+    });
+    _syncAccompaniments(ref);
+  }
+
+  void _onAccompanimentChanged(
+      WidgetRef ref, List<BeverageSelection> newSelection) {
+    setState(() {
+      selectedBeverages = List<BeverageSelection>.from(newSelection);
+    });
+    _syncAccompaniments(ref);
+  }
+
+  void _addCurrent(WidgetRef ref) {
+    ref.read(modernOrderProvider.notifier).addItem(
+          id: widget.id,
+          name: widget.name,
+          price: widget.price,
+          imageUrl: widget.imageUrl,
+          restaurantId: widget.restaurantId,
+          description: widget.description,
+          accompaniments: selectedBeverages,
+        );
+  }
+
+  void _removeCurrent(WidgetRef ref) {
+    ref.read(modernOrderProvider.notifier).removeItem(widget.id);
+  }
+
+  bool canModifyAccompaniments(WidgetRef ref) => _getCurrentQuantity(ref) > 0;
 
   @override
   Widget build(BuildContext context) {
     return Consumer(
       builder: (context, ref, child) {
-        // Utiliser le nouveau système de commande
-        final modernQuantity = ref.watch(itemQuantityProvider(widget.id));
+        final modernQuantity = _getCurrentQuantity(ref);
 
         return Scaffold(
           body: Stack(
@@ -283,37 +351,14 @@ class _DishDetailPageState extends ConsumerState<DishDetailPage> {
                                                                 .remove_circle_outline,
                                                             color:
                                                                 Colors.orange),
-                                                        onPressed: () {
-                                                          setState(() {
-                                                            if (selected
-                                                                    .quantity >
-                                                                1) {
-                                                              selectedBeverages[selectedBeverages.indexWhere((b) =>
-                                                                  b.beverage
-                                                                          .id ==
-                                                                      beverage
-                                                                          .id &&
-                                                                  b.selectedSize ==
-                                                                      size)] = BeverageSelection(
-                                                                beverage:
-                                                                    beverage,
-                                                                selectedSize:
-                                                                    size,
-                                                                quantity: selected
-                                                                        .quantity -
-                                                                    1,
-                                                              );
-                                                            } else {
-                                                              selectedBeverages.removeWhere((b) =>
-                                                                  b.beverage
-                                                                          .id ==
-                                                                      beverage
-                                                                          .id &&
-                                                                  b.selectedSize ==
-                                                                      size);
-                                                            }
-                                                          });
-                                                        },
+                                                        onPressed:
+                                                            canModifyAccompaniments(
+                                                                    ref)
+                                                                ? () =>
+                                                                    _removeBeverage(
+                                                                        beverage,
+                                                                        ref)
+                                                                : null,
                                                       ),
                                                       Text(
                                                           '${selected.quantity}',
@@ -328,9 +373,14 @@ class _DishDetailPageState extends ConsumerState<DishDetailPage> {
                                                       icon: Icon(
                                                           Icons.add_circle,
                                                           color: Colors.orange),
-                                                      onPressed: () =>
-                                                          _addBeverage(
-                                                              beverage),
+                                                      onPressed:
+                                                          canModifyAccompaniments(
+                                                                  ref)
+                                                              ? () =>
+                                                                  _addBeverage(
+                                                                      beverage,
+                                                                      ref)
+                                                              : null,
                                                     ),
                                                   ],
                                                 ),
@@ -364,7 +414,7 @@ class _DishDetailPageState extends ConsumerState<DishDetailPage> {
                                           IconButton(
                                             icon: Icon(Icons.remove),
                                             onPressed: modernQuantity > 0
-                                                ? () => _removeItem(ref)
+                                                ? () => _removeCurrent(ref)
                                                 : null,
                                           ),
                                           Text(
@@ -375,7 +425,7 @@ class _DishDetailPageState extends ConsumerState<DishDetailPage> {
                                           ),
                                           IconButton(
                                             icon: Icon(Icons.add),
-                                            onPressed: () => _addItem(ref),
+                                            onPressed: () => _addCurrent(ref),
                                           ),
                                         ],
                                       ),
@@ -398,21 +448,6 @@ class _DishDetailPageState extends ConsumerState<DishDetailPage> {
         );
       },
     );
-  }
-
-  void _addItem(WidgetRef ref) {
-    ref.read(modernOrderProvider.notifier).addItem(
-          id: widget.id,
-          name: widget.name,
-          price: widget.price,
-          imageUrl: widget.imageUrl,
-          restaurantId: widget.restaurantId,
-          description: widget.description,
-        );
-  }
-
-  void _removeItem(WidgetRef ref) {
-    ref.read(modernOrderProvider.notifier).removeItem(widget.id);
   }
 }
 

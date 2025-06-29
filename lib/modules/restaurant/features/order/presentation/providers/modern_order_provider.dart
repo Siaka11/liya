@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:liya/modules/restaurant/features/order/domain/entities/beverage.dart';
 
 // État d'un article de commande
 class OrderItemState {
@@ -9,6 +10,7 @@ class OrderItemState {
   final String restaurantId;
   final String description;
   final int quantity;
+  final List<BeverageSelection> accompaniments;
 
   OrderItemState({
     required this.id,
@@ -18,6 +20,7 @@ class OrderItemState {
     required this.restaurantId,
     required this.description,
     required this.quantity,
+    this.accompaniments = const [],
   });
 
   OrderItemState copyWith({
@@ -28,6 +31,7 @@ class OrderItemState {
     String? restaurantId,
     String? description,
     int? quantity,
+    List<BeverageSelection>? accompaniments,
   }) {
     return OrderItemState(
       id: id ?? this.id,
@@ -37,23 +41,28 @@ class OrderItemState {
       restaurantId: restaurantId ?? this.restaurantId,
       description: description ?? this.description,
       quantity: quantity ?? this.quantity,
+      accompaniments: accompaniments ?? this.accompaniments,
     );
   }
 
   double get totalPrice {
     final priceValue =
         double.tryParse(price.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
-    return priceValue * quantity;
+    final accompanimentsTotal =
+        accompaniments.fold(0.0, (sum, acc) => sum + (acc.totalPrice));
+    return (priceValue * quantity) + accompanimentsTotal;
   }
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is OrderItemState && other.id == id;
+    return other is OrderItemState &&
+        other.id == id &&
+        other.accompaniments == accompaniments;
   }
 
   @override
-  int get hashCode => id.hashCode;
+  int get hashCode => id.hashCode ^ accompaniments.hashCode;
 }
 
 // État global de la commande
@@ -160,7 +169,56 @@ class ModernOrderState {
 class ModernOrderNotifier extends StateNotifier<ModernOrderState> {
   ModernOrderNotifier() : super(ModernOrderState(items: {}));
 
-  // Ajouter un article à la commande
+  String generateItemKey(
+      String dishId, List<BeverageSelection> accompaniments) {
+    if (accompaniments.isEmpty) return dishId;
+    final accompKey = accompaniments
+        .map((a) => '${a.beverage.id}_${a.selectedSize}_${a.quantity}')
+        .join('-');
+    return '$dishId-$accompKey';
+  }
+
+  void addOrUpdateConfig({
+    required String key,
+    required String id,
+    required String name,
+    required String price,
+    required String imageUrl,
+    required String restaurantId,
+    required String description,
+    required List<BeverageSelection> accompaniments,
+    required int quantity,
+  }) {
+    final currentItems = Map<String, OrderItemState>.from(state.items);
+    if (quantity > 0) {
+      currentItems[key] = OrderItemState(
+        id: id,
+        name: name,
+        price: price,
+        imageUrl: imageUrl,
+        restaurantId: restaurantId,
+        description: description,
+        quantity: quantity,
+        accompaniments: accompaniments,
+      );
+    } else {
+      currentItems.remove(key);
+    }
+    state = state.copyWith(items: currentItems);
+  }
+
+  void updateAccompaniments({
+    required String id,
+    required List<BeverageSelection> accompaniments,
+  }) {
+    final currentItems = Map<String, OrderItemState>.from(state.items);
+    if (currentItems.containsKey(id)) {
+      final existing = currentItems[id]!;
+      currentItems[id] = existing.copyWith(accompaniments: accompaniments);
+      state = state.copyWith(items: currentItems);
+    }
+  }
+
   void addItem({
     required String id,
     required String name,
@@ -168,21 +226,18 @@ class ModernOrderNotifier extends StateNotifier<ModernOrderState> {
     required String imageUrl,
     required String restaurantId,
     required String description,
+    List<BeverageSelection> accompaniments = const [],
   }) {
-    // Normaliser et mapper les restaurantId pour éviter les problèmes de synchronisation
     final normalizedRestaurantId = _normalizeRestaurantId(restaurantId);
     final mappedRestaurantId = _mapRestaurantId(normalizedRestaurantId);
-
     final currentItems = Map<String, OrderItemState>.from(state.items);
 
     if (currentItems.containsKey(id)) {
-      // Incrémenter la quantité si l'article existe déjà
       final existingItem = currentItems[id]!;
       currentItems[id] = existingItem.copyWith(
         quantity: existingItem.quantity + 1,
       );
     } else {
-      // Ajouter un nouvel article
       currentItems[id] = OrderItemState(
         id: id,
         name: name,
@@ -191,9 +246,9 @@ class ModernOrderNotifier extends StateNotifier<ModernOrderState> {
         restaurantId: mappedRestaurantId,
         description: description,
         quantity: 1,
+        accompaniments: accompaniments,
       );
     }
-
     state = state.copyWith(items: currentItems);
   }
 
@@ -230,22 +285,16 @@ class ModernOrderNotifier extends StateNotifier<ModernOrderState> {
   // Retirer un article de la commande
   void removeItem(String id) {
     final currentItems = Map<String, OrderItemState>.from(state.items);
-
     if (currentItems.containsKey(id)) {
       final existingItem = currentItems[id]!;
-
       if (existingItem.quantity > 1) {
-        // Décrémenter la quantité
-        currentItems[id] = existingItem.copyWith(
-          quantity: existingItem.quantity - 1,
-        );
+        currentItems[id] =
+            existingItem.copyWith(quantity: existingItem.quantity - 1);
       } else {
-        // Supprimer l'article si la quantité devient 0
         currentItems.remove(id);
       }
+      state = state.copyWith(items: currentItems);
     }
-
-    state = state.copyWith(items: currentItems);
   }
 
   // Supprimer complètement un article
@@ -287,6 +336,26 @@ class ModernOrderNotifier extends StateNotifier<ModernOrderState> {
         isLoading: false,
         error: e.toString(),
       );
+    }
+  }
+
+  void removeAllVariants(String id) {
+    final currentItems = Map<String, OrderItemState>.from(state.items);
+    currentItems.removeWhere((key, item) => item.id == id);
+    state = state.copyWith(items: currentItems);
+  }
+
+  void removeItemByKey(String key) {
+    final currentItems = Map<String, OrderItemState>.from(state.items);
+    if (currentItems.containsKey(key)) {
+      final existingItem = currentItems[key]!;
+      if (existingItem.quantity > 1) {
+        currentItems[key] =
+            existingItem.copyWith(quantity: existingItem.quantity - 1);
+      } else {
+        currentItems.remove(key);
+      }
+      state = state.copyWith(items: currentItems);
     }
   }
 }
