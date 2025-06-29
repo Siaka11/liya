@@ -50,7 +50,7 @@ class PopularDishCard extends StatelessWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         color: Colors.grey,
         child: Container(
-          width: 240,
+          width: 200,
           height: 180,
           child: Stack(
             children: [
@@ -59,7 +59,7 @@ class PopularDishCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
                 child: Image.network(
                   imageUrl,
-                  width: 240,
+                  width: 200,
                   height: 250,
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) => Icon(

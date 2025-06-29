@@ -112,7 +112,6 @@ class HomeRestaurantPage extends ConsumerWidget {
                           ],
                         ),
                         SizedBox(
-                          // Hauteur fixe pour la section populaire
                           child: popularDishState.isLoading
                               ? Center(child: CircularProgressIndicator())
                               : popularDishState.error != null
@@ -143,7 +142,7 @@ class HomeRestaurantPage extends ConsumerWidget {
                                                     children: [
                                                       // Utiliser ModernDishCard au lieu de PopularDishCard
                                                       Container(
-                                                        width: 200,
+                                                        width: 160,
                                                         child: ModernDishCard(
                                                           id: popularDishState
                                                               .popularDishes![i]
@@ -225,9 +224,9 @@ class HomeRestaurantPage extends ConsumerWidget {
                                                           padding:
                                                               const EdgeInsets
                                                                   .only(
-                                                                  left: 4),
+                                                                  left: 10),
                                                           child: Container(
-                                                            width: 200,
+                                                            width: 160,
                                                             child:
                                                                 ModernDishCard(
                                                               id: popularDishState
@@ -316,8 +315,10 @@ class HomeRestaurantPage extends ConsumerWidget {
                     ),
                   ),
                   // Section Restaurants
+                  const SizedBox(height: 10),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -340,7 +341,6 @@ class HomeRestaurantPage extends ConsumerWidget {
                             ),
                           ],
                         ),
-                        SizedBox(height: 16),
                         restaurantState.isLoading
                             ? Center(child: CircularProgressIndicator())
                             : restaurantState.error != null

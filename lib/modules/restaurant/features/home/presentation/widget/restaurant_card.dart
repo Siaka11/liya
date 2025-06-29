@@ -14,7 +14,7 @@ class RestaurantCard extends StatelessWidget {
     return GestureDetector(
         onTap: onTap,
         child: Card(
-          elevation: 0.1,
+          elevation: 0.05,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           child: Container(
@@ -27,16 +27,6 @@ class RestaurantCard extends StatelessWidget {
                 // Image
                 ClipRRect(
                   borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-                  /*child: Image.asset(
-                  'assets/basi.jpg',
-                  width: 300,
-                  height: 130,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Icon(
-                    Icons.error,
-                    size: 150,
-                  ),
-                ),*/
                   child: Image.network(
                     restaurant.coverImage,
                     width: width,
