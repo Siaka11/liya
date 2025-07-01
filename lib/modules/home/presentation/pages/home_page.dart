@@ -6,8 +6,9 @@ import 'package:liya/modules/home/presentation/pages/utils/top_menu.dart';
 import 'package:liya/modules/home/presentation/pages/widget/home_card_widget.dart';
 import 'package:liya/core/test_modern_system.dart';
 import 'package:liya/core/test_beverages.dart';
+import 'package:liya/modules/home/domain/entities/home_option.dart';
 
-import '../../../../core/routes/app_router.dart';
+import '../../../../routes/app_router.gr.dart';
 import '../../application/home_provider.dart';
 
 @RoutePage()
@@ -17,7 +18,28 @@ class HomePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final homeState = ref.watch(homeProvider);
-    print('HomePage build - User: ${homeState.user.name}');
+
+    // Map pour associer les titres aux routes
+    final _routeMap = {
+      'Je veux commander un plat': (context, option) =>
+          AutoRouter.of(context).push(HomeRestaurantRoute(option: option)),
+      'Je veux expédier un colis': (context, option) =>
+          AutoRouter.of(context).push(const ParcelHomeRoute()),
+      'Je veux livrer': (context, option) =>
+          AutoRouter.of(context).push(const HomeDeliveryRoute()),
+      // 'Faire des courses': (context, option) => AutoRouter.of(context).push(const ShoppingRoute()),
+      // 'Administrateur': (context, option) => AutoRouter.of(context).push(const AdminRoute()),
+    };
+
+    void onOptionSelected(BuildContext context, HomeOption option) {
+      final navigate = _routeMap[option.title];
+      if (navigate != null) {
+        print('Navigating to ${option.title}');
+        navigate(context, option);
+      } else {
+        print('Unknown module: ${option.title}');
+      }
+    }
 
     return Scaffold(
       body: SafeArea(
@@ -72,10 +94,7 @@ class HomePage extends ConsumerWidget {
                                 return HomeOptionCard(
                                   option: option,
                                   onTap: () {
-                                    // La logique de navigation sera gérée par un provider ou un controller
-                                    ref
-                                        .read(homeProvider.notifier)
-                                        .onOptionSelected(context, option);
+                                    onOptionSelected(context, option);
                                   },
                                 );
                               },

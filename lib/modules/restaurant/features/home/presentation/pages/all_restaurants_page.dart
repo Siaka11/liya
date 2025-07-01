@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:liya/modules/restaurant/features/home/presentation/pages/restaurant_detail_page.dart';
 import '../../application/all_restaurants_provider.dart';
 import '../widget/restaurant_card.dart';
-import '../../../../../../core/routes/app_router.dart';
 
 @RoutePage()
 class AllRestaurantsPage extends ConsumerWidget {

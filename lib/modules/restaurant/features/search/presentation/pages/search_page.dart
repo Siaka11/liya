@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../home/presentation/widget/dish_card.dart';
 import '../../../home/presentation/widget/navigation_footer.dart';
 import '../providers/search_provider.dart';
-import '../../../../../../routes/app_router.gr.dart';
+import 'package:liya/routes/app_router.gr.dart';
 // TODO: adapte le chemin selon ton projet
 
 @RoutePage(name: 'SearchRoute')

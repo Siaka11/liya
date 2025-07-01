@@ -32,11 +32,12 @@ class HomeLocalDataSourceImpl implements HomeLocalDataSource {
         title: 'Je veux expédier un colis',
         icon: 'local_shipping',
       ),
-      /*const HomeOptionModel(
+      if(role == 'admin' || role == 'livreur')
+      const HomeOptionModel(
         title: 'Je veux livrer',
         icon: 'delivery_dining',
       ),
-      const HomeOptionModel(
+      /*const HomeOptionModel(
         title: 'Faire des courses',
         icon: 'shopping_cart',
       ),*/

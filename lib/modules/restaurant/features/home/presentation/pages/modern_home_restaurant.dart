@@ -11,7 +11,7 @@ import 'package:liya/modules/restaurant/features/home/presentation/widget/naviga
 import 'package:liya/modules/restaurant/features/home/presentation/pages/modern_restaurant_detail_page.dart';
 import 'package:liya/modules/restaurant/features/home/presentation/pages/modern_dish_detail_page.dart';
 
-import '../../../../../../core/routes/app_router.dart';
+import '../../../../../../routes/app_router.gr.dart';
 import '../../../../../home/domain/entities/home_option.dart';
 import '../../application/pupular_dish_controller_provider.dart';
 import '../../application/restaurant_controller_provider.dart';

@@ -34,11 +34,15 @@ class _ColisInfoPageState extends State<ColisInfoPage> {
   }
 
   void _onConfirm() {
-    if (_descController.text.isEmpty || colisList.any((c) => !c.isValid)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Veuillez remplir tous les champs')));
+    if (_descController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Veuillez remplir le champs description')));
       return;
     }
+
+    // Convertir les objets _ColisBox en Map<String, dynamic>
+    final colisListMap = colisList.map((colis) => colis.toMap()).toList();
+
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -47,7 +51,7 @@ class _ColisInfoPageState extends State<ColisInfoPage> {
           typeProduit: 'Colis',
           isReception: widget.isReception,
           colisDescription: _descController.text,
-          colisList: colisList,
+          colisList: colisListMap,
         ),
       ),
     );
@@ -112,29 +116,10 @@ class _ColisInfoPageState extends State<ColisInfoPage> {
                               Row(
                                 children: [
                                   _ColisField(
-                                      label: 'Long.(en cm)',
-                                      value:
-                                          colisList[i].longueur?.toString() ??
-                                              '',
-                                      onChanged: (v) => setState(() =>
-                                          colisList[i].longueur =
-                                              int.tryParse(v))),
-                                  const SizedBox(width: 8),
-                                  _ColisField(
-                                      label: 'Larg.(en cm)',
-                                      value: colisList[i].largeur?.toString() ??
-                                          '',
-                                      onChanged: (v) => setState(() =>
-                                          colisList[i].largeur =
-                                              int.tryParse(v))),
-                                  const SizedBox(width: 8),
-                                  _ColisField(
-                                      label: 'Haut.(en cm)',
-                                      value: colisList[i].hauteur?.toString() ??
-                                          '',
-                                      onChanged: (v) => setState(() =>
-                                          colisList[i].hauteur =
-                                              int.tryParse(v))),
+                                      label: 'Qualité du colis',
+                                      value: colisList[i].quality ?? '',
+                                      onChanged: (v) => setState(
+                                          () => colisList[i].quality = v)),
                                 ],
                               ),
                               const SizedBox(height: 8),
@@ -211,18 +196,19 @@ class _ColisInfoPageState extends State<ColisInfoPage> {
 }
 
 class _ColisBox {
-  int? longueur;
-  int? largeur;
-  int? hauteur;
+  String? quality;
   int? nombre;
   int? poids;
 
-  bool get isValid =>
-      longueur != null &&
-      largeur != null &&
-      hauteur != null &&
-      nombre != null &&
-      poids != null;
+  bool get isValid => quality != null && nombre != null && poids != null;
+
+  Map<String, dynamic> toMap() {
+    return {
+      'quality': quality,
+      'nombre': nombre,
+      'poids': poids,
+    };
+  }
 }
 
 class _ColisField extends StatefulWidget {

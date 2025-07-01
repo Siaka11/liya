@@ -2,7 +2,7 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:liya/core/ui/theme/theme.dart';
-import '../../../../../../routes/app_router.gr.dart';
+import 'package:liya/routes/app_router.gr.dart';
 import '../../domain/entities/delivery_info.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:cloud_firestore/cloud_firestore.dart' as cf;

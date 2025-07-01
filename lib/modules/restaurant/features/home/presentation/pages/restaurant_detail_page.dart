@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:liya/core/ui/theme/theme.dart';
 
 import '../../../../../../core/local_storage_factory.dart';
-import '../../../../../../core/routes/app_router.dart';
 import '../../../../../../core/singletons.dart';
 import '../../../card/data/datasources/cart_remote_data_source.dart';
 import '../../../card/domain/repositories/cart_repository.dart';

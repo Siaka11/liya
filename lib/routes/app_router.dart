@@ -8,9 +8,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../config/app_information.dart';
 import '../core/singletons.dart';
 import '../modules/auth/auth_provider.dart';
-import '../modules/auth/info_user_page.dart';
-import '../modules/home/domain/entities/home_option.dart';
-import 'package:liya/core/test_beverages.dart';
 
 @AutoRouterConfig()
 class AppRouter extends $AppRouter implements AutoRouteGuard {
@@ -66,5 +63,12 @@ class AppRouter extends $AppRouter implements AutoRouteGuard {
         AutoRoute(page: ModernRestaurantDetailRoute.page),
         AutoRoute(page: ModernDishDetailRoute.page),
         AutoRoute(page: TestBeveragesRoute.page),
+        AutoRoute(page: SplashDeliveryRoute.page),
+        AutoRoute(page: HomeDeliveryRoute.page),
+        AutoRoute(page: DeliveryListRoute.page),
+        AutoRoute(page: DeliveryDetailRoute.page),
+        AutoRoute(page: EarningsRoute.page),
+        AutoRoute(page: DeliveryProfileRoute.page),
+        AutoRoute(page: StatusRoute.page),
       ];
 }

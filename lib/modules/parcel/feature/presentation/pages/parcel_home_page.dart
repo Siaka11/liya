@@ -1,6 +1,8 @@
 import 'package:auto_route/annotations.dart';
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../home/presentation/pages/home_page.dart';
 import '../providers/parcel_provider.dart';
 import '../../domain/entities/parcel.dart';
 import '../../domain/entities/parcel_status.dart';
@@ -10,6 +12,7 @@ import 'package:liya/modules/restaurant/features/profile/presentation/pages/prof
 import 'package:liya/core/local_storage_factory.dart';
 import 'dart:convert';
 import 'parcel_search_page.dart';
+import 'package:liya/routes/app_router.gr.dart';
 
 @RoutePage()
 class ParcelHomePage extends ConsumerWidget {
@@ -144,23 +147,6 @@ class ParcelHomePage extends ConsumerWidget {
                         },
                       ),
                       const SizedBox(height: 24),
-                      const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 16.0),
-                        child: Text('Livraison en cours',
-                            style: TextStyle(fontWeight: FontWeight.bold)),
-                      ),
-                      _ActionButton(
-                        label: 'Voir les livraisons en cours',
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  ParcelStatusListPage(status: 'EN ROUTE'),
-                            ),
-                          );
-                        },
-                      ),
                     ],
                   );
                 },
@@ -290,21 +276,16 @@ class _ParcelBottomNavBar extends StatelessWidget {
       items: const [
         BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
         BottomNavigationBarItem(icon: Icon(Icons.local_shipping), label: ''),
-        BottomNavigationBarItem(icon: Icon(Icons.person), label: ''),
+        BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: ''),
       ],
       currentIndex: 0,
       onTap: (index) {
         if (index == 0) {
-          Navigator.pushReplacement(context,
-              MaterialPageRoute(builder: (_) => const ParcelHomePage()));
+          AutoRouter.of(context).replace(const ParcelHomeRoute());
         } else if (index == 1) {
-          Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                  builder: (_) => ParcelStatusListPage(status: 'ALL')));
+          AutoRouter.of(context).replace(const ParcelListRoute());
         } else if (index == 2) {
-          Navigator.pushReplacement(
-              context, MaterialPageRoute(builder: (_) => const ProfilePage()));
+          AutoRouter.of(context).replace(const HomeRoute());
         }
       },
     );

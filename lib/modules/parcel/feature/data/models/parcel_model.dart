@@ -14,6 +14,8 @@ class ParcelModel extends Parcel {
     String? instructions,
     String? ville,
     double? prix,
+    String? colisDescription,
+    List<Map<String, dynamic>>? colisList,
   }) : super(
           id: id,
           senderName: senderName,
@@ -26,6 +28,8 @@ class ParcelModel extends Parcel {
           instructions: instructions,
           ville: ville,
           prix: prix,
+          colisDescription: colisDescription,
+          colisList: colisList,
         );
 
   factory ParcelModel.fromMap(Map<String, dynamic> map, String id) {
@@ -41,11 +45,15 @@ class ParcelModel extends Parcel {
       instructions: map['instructions'],
       ville: map['ville'],
       prix: map['prix'] != null ? (map['prix'] as num).toDouble() : null,
+      colisDescription: map['colisDescription'],
+      colisList: map['colisList'] != null
+          ? List<Map<String, dynamic>>.from(map['colisList'])
+          : null,
     );
   }
 
   Map<String, dynamic> toMap() {
-    return {
+    final Map<String, dynamic> map = {
       'id': id,
       'senderName': senderName,
       'receiverName': receiverName,
@@ -57,6 +65,19 @@ class ParcelModel extends Parcel {
       'instructions': instructions,
       'ville': ville ?? '',
       'prix': prix,
+      'colisDescription': colisDescription,
+      'colisList': colisList,
     };
+
+    // S'assurer que tous les champs sont présents dans Firestore
+    if (address == null) map['address'] = null;
+    if (phone == null) map['phone'] = null;
+    if (instructions == null) map['instructions'] = null;
+    if (ville == null) map['ville'] = null;
+    if (prix == null) map['prix'] = null;
+    if (colisDescription == null) map['colisDescription'] = null;
+    if (colisList == null) map['colisList'] = null;
+
+    return map;
   }
 }

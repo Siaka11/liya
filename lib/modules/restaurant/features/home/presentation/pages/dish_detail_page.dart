@@ -17,6 +17,7 @@ import 'package:liya/modules/restaurant/features/order/presentation/widgets/beve
 import 'package:liya/modules/restaurant/features/order/presentation/providers/modern_order_provider.dart';
 import 'package:liya/modules/restaurant/features/order/domain/entities/beverage.dart';
 import 'package:liya/modules/restaurant/features/like/presentation/widgets/like_button.dart';
+import 'package:liya/routes/app_router.gr.dart';
 
 @RoutePage(name: 'DishDetailRoute')
 class DishDetailPage extends ConsumerStatefulWidget {

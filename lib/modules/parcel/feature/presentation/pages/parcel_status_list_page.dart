@@ -7,6 +7,9 @@ import 'package:liya/modules/restaurant/features/profile/presentation/pages/prof
 import 'parcel_detail_page.dart';
 import 'package:liya/core/local_storage_factory.dart';
 import 'dart:convert';
+import 'package:liya/modules/home/presentation/pages/home_page.dart';
+import 'package:auto_route/auto_route.dart';
+import 'package:liya/routes/app_router.gr.dart';
 
 class ParcelStatusListPage extends ConsumerWidget {
   final String status;
@@ -134,13 +137,10 @@ class _ParcelCardList extends StatelessWidget {
                         Text(parcel.instructions ?? '',
                             style:
                                 const TextStyle(fontWeight: FontWeight.bold)),
-
                         const SizedBox(height: 4),
                         Text('ID: ${parcel.id}',
                             style: const TextStyle(
-                                color: Colors.blue,
-                                fontSize: 13
-                            )),
+                                color: Colors.blue, fontSize: 13)),
                       ],
                     ),
                   ),
@@ -195,16 +195,11 @@ class _ParcelBottomNavBar extends StatelessWidget {
       currentIndex: 1,
       onTap: (index) {
         if (index == 0) {
-          Navigator.pushReplacement(context,
-              MaterialPageRoute(builder: (_) => const ParcelHomePage()));
+          AutoRouter.of(context).replace(const HomeRoute());
         } else if (index == 1) {
-          Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                  builder: (_) => ParcelStatusListPage(status: 'ALL')));
+          AutoRouter.of(context).replace(const ParcelHomeRoute());
         } else if (index == 2) {
-          Navigator.pushReplacement(
-              context, MaterialPageRoute(builder: (_) => const ProfilePage()));
+          AutoRouter.of(context).replace(const ProfileRoute());
         }
       },
     );

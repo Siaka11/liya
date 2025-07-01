@@ -10,6 +10,8 @@ class Parcel {
   final String? instructions;
   final String? ville;
   final double? prix;
+  final String? colisDescription;
+  final List<Map<String, dynamic>>? colisList;
 
   Parcel({
     required this.id,
@@ -23,5 +25,7 @@ class Parcel {
     this.instructions,
     this.ville,
     this.prix,
+    this.colisDescription,
+    this.colisList,
   });
 }

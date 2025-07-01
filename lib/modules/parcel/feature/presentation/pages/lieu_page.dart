@@ -2,12 +2,15 @@ import 'package:auto_route/annotations.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../../core/routes/app_router.dart';
+import '../../../../../routes/app_router.gr.dart';
 import '../providers/parcel_action_provider.dart';
 import '../../domain/entities/parcel.dart';
 import 'package:liya/core/local_storage_factory.dart';
 import 'dart:convert';
 import 'parcel_home_page.dart';
+
+import 'package:liya/modules/home/presentation/pages/home_page.dart';
+import 'package:liya/modules/restaurant/features/profile/presentation/pages/profile_page.dart';
 
 @RoutePage()
 class LieuPage extends ConsumerStatefulWidget {
@@ -16,7 +19,7 @@ class LieuPage extends ConsumerStatefulWidget {
   final bool isReception;
   final String ville;
   final String? colisDescription;
-  final List? colisList;
+  final List<dynamic>? colisList;
   const LieuPage(
       {Key? key,
       required this.phoneNumber,
@@ -33,10 +36,16 @@ class LieuPage extends ConsumerStatefulWidget {
 
 class _LieuPageState extends ConsumerState<LieuPage> {
   final _formKey = GlobalKey<FormState>();
+  String phone = '';
   String commune = '';
   String quartier = '';
   String secteur = '';
-  String phone = '';
+  String description = '';
+  final _communeController = TextEditingController();
+  final _quartierController = TextEditingController();
+  final _secteurController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _descriptionController = TextEditingController();
 
   void _showConfirmDialog() {
     showDialog(
@@ -104,18 +113,56 @@ class _LieuPageState extends ConsumerState<LieuPage> {
     final phoneNumber = (userDetails['phoneNumber'] ?? '').toString();
     final ville = (userDetails['ville'] ?? widget.ville).toString();
     final action = ref.read(parcelActionProvider);
+
+    // Récupérer les valeurs des contrôleurs
+    commune = _communeController.text;
+    quartier = _quartierController.text;
+    secteur = _secteurController.text;
+    phone = _phoneController.text;
+    description = _descriptionController.text;
+
+    // Créer l'adresse complète
+    final address = 'Commune: $commune, Quartier: $quartier, Secteur: $secteur';
+
+    // Créer les instructions avec description si disponible
+    String instructions = widget.typeProduit;
+    if (widget.colisDescription != null &&
+        widget.colisDescription!.isNotEmpty) {
+      instructions += ' - ${widget.colisDescription}';
+    }
+    if (description.isNotEmpty) {
+      instructions += ' - $description';
+    }
+
     final parcel = Parcel(
       id: _generateColisId(),
       senderName: widget.isReception ? '' : 'Expéditeur',
       receiverName: widget.isReception ? 'Destinataire' : '',
       status: 'RECEPTION',
       createdAt: DateTime.now(),
-      address: 'Commune: $commune, Quartier: $quartier, Secteur: $secteur',
+      address: address,
       phone: phone,
       phoneNumber: phoneNumber,
-      instructions: widget.typeProduit,
+      instructions: instructions,
       ville: widget.ville,
+      colisDescription: widget.colisDescription,
+      colisList: widget.colisList != null
+          ? List<Map<String, dynamic>>.from(widget.colisList!)
+          : null,
     );
+
+    print('DEBUG - Parcel data to save:');
+    print('id: ${parcel.id}');
+    print('senderName: ${parcel.senderName}');
+    print('receiverName: ${parcel.receiverName}');
+    print('address: ${parcel.address}');
+    print('phone: ${parcel.phone}');
+    print('phoneNumber: ${parcel.phoneNumber}');
+    print('instructions: ${parcel.instructions}');
+    print('ville: ${parcel.ville}');
+    print('colisDescription: ${parcel.colisDescription}');
+    print('colisList: ${parcel.colisList}');
+
     await action.addParcel.call(parcel);
     if (mounted) {
       Navigator.pop(context); // Ferme le pop-up
@@ -280,10 +327,18 @@ class _ParcelBottomNavBar extends StatelessWidget {
       items: const [
         BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
         BottomNavigationBarItem(icon: Icon(Icons.local_shipping), label: ''),
-        BottomNavigationBarItem(icon: Icon(Icons.person), label: ''),
+        BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: ''),
       ],
       currentIndex: 1,
-      onTap: (index) {},
+      onTap: (index) {
+        if (index == 0) {
+          AutoRouter.of(context).replace(const HomeRoute());
+        } else if (index == 1) {
+          AutoRouter.of(context).replace(const ParcelHomeRoute());
+        } else if (index == 2) {
+          AutoRouter.of(context).replace(const ProfileRoute());
+        }
+      },
     );
   }
 }

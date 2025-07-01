@@ -13,7 +13,7 @@ import 'package:liya/core/singletons.dart';
 import 'package:liya/modules/restaurant/features/order/presentation/widgets/floating_order_button.dart';
 import 'package:liya/modules/restaurant/features/order/presentation/widgets/modern_dish_card.dart';
 
-import '../../../../../../core/routes/app_router.dart';
+import '../../../../../../routes/app_router.gr.dart';
 import '../../../../../home/domain/entities/home_option.dart';
 import '../../application/pupular_dish_controller_provider.dart';
 import '../../application/restaurant_controller_provider.dart';
