@@ -4,6 +4,7 @@ class OrderModel extends Order {
   OrderModel({
     required String id,
     required String phoneNumber,
+    String? phone,
     required List<OrderItem> items,
     required double total,
     required double subtotal,
@@ -19,6 +20,7 @@ class OrderModel extends Order {
   }) : super(
           id: id,
           phoneNumber: phoneNumber,
+          phone: phone,
           items: items,
           total: total,
           subtotal: subtotal,
@@ -37,6 +39,7 @@ class OrderModel extends Order {
     return OrderModel(
       id: json['id'],
       phoneNumber: json['phoneNumber'],
+      phone: json['phone'],
       items: (json['items'] as List)
           .map((item) => OrderItemModel.fromJson(item))
           .toList(),
@@ -61,9 +64,10 @@ class OrderModel extends Order {
   }
 
   Map<String, dynamic> toJson() {
-    return {
+    final Map<String, dynamic> json = {
       'id': id,
       'phoneNumber': phoneNumber,
+      'phone': phone,
       'items': items.map((e) {
         if (e is OrderItemModel) {
           return e.toJson();
@@ -87,6 +91,12 @@ class OrderModel extends Order {
       'deliveryTime': deliveryTime,
       'address': address,
     };
+
+    if (phone == null) {
+      json['phone'] = null;
+    }
+
+    return json;
   }
 
   static OrderStatus _statusFromString(String status) {

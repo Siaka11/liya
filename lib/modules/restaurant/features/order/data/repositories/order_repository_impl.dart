@@ -19,6 +19,7 @@ class OrderRepositoryImpl implements OrderRepository {
     final orderWithId = Order(
       id: orderId,
       phoneNumber: order.phoneNumber,
+      phone: order.phone,
       items: order.items,
       total: order.total,
       subtotal: order.subtotal,
@@ -35,6 +36,7 @@ class OrderRepositoryImpl implements OrderRepository {
     return remoteDataSource.createOrder(OrderModel(
       id: orderWithId.id,
       phoneNumber: orderWithId.phoneNumber,
+      phone: orderWithId.phone,
       items: orderWithId.items,
       total: orderWithId.total,
       subtotal: orderWithId.subtotal,

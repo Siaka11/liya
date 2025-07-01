@@ -3,6 +3,7 @@ enum OrderStatus { reception, enRoute, livre, nonLivre }
 class Order {
   final String id;
   final String phoneNumber;
+  final String? phone;
   final List<OrderItem> items;
   final double total;
   final double subtotal;
@@ -19,6 +20,7 @@ class Order {
   Order({
     required this.id,
     required this.phoneNumber,
+    this.phone,
     required this.items,
     required this.total,
     required this.subtotal,
