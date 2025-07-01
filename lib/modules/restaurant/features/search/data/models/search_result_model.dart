@@ -7,12 +7,14 @@ class SearchResultModel extends SearchResult {
     required String imageUrl,
     required double price,
     required String description,
+    required String restaurantId,
   }) : super(
           id: id,
           name: name,
           imageUrl: imageUrl,
           price: price,
           description: description,
+          restaurantId: restaurantId,
         );
 
   factory SearchResultModel.fromJson(Map<String, dynamic> json) {
@@ -23,6 +25,7 @@ class SearchResultModel extends SearchResult {
       price:
           double.tryParse(json['price'].toString().replaceAll(',', '.')) ?? 0.0,
       description: json['description'] ?? '',
+      restaurantId: json['restaurant_id'] ?? '',
     );
   }
 
@@ -33,6 +36,7 @@ class SearchResultModel extends SearchResult {
       'imageUrl': imageUrl,
       'price': price,
       'description': description,
+      'restaurantId': restaurantId,
     };
   }
 }
