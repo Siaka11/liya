@@ -81,49 +81,49 @@ class ParcelHomePage extends ConsumerWidget {
                               context,
                               MaterialPageRoute(
                                 builder: (_) =>
-                                    ParcelStatusListPage(status: 'RECEPTION'),
+                                    ParcelStatusListPage(status: 'reception'),
                               ));
                         },
                       ),
                       _StatusRow(
                         icon: Icons.local_shipping,
                         label: 'EN ROUTE',
-                        count: statusCounts['EN ROUTE'] ?? 0,
+                        count: statusCounts['enRoute'] ?? 0,
                         color: Colors.blue,
                         onTap: () {
                           Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder: (_) =>
-                                    ParcelStatusListPage(status: 'EN ROUTE'),
+                                    ParcelStatusListPage(status: 'enRoute'),
                               ));
                         },
                       ),
                       _StatusRow(
                         icon: Icons.block,
                         label: 'NON LIVRÉ',
-                        count: statusCounts['NON LIVRÉ'] ?? 0,
+                        count: statusCounts['nonLivre'] ?? 0,
                         color: Colors.red,
                         onTap: () {
                           Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder: (_) =>
-                                    ParcelStatusListPage(status: 'NON LIVRÉ'),
+                                    ParcelStatusListPage(status: 'nonLivre'),
                               ));
                         },
                       ),
                       _StatusRow(
                         icon: Icons.check_circle,
                         label: 'LIVRÉ',
-                        count: statusCounts['LIVRÉ'] ?? 0,
+                        count: statusCounts['livre'] ?? 0,
                         color: Colors.green,
                         onTap: () {
                           Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder: (_) =>
-                                    ParcelStatusListPage(status: 'LIVRÉ'),
+                                    ParcelStatusListPage(status: 'livre'),
                               ));
                         },
                       ),
@@ -170,10 +170,10 @@ class ParcelHomePage extends ConsumerWidget {
     final userParcels =
         parcels.where((p) => p.phoneNumber == phoneNumber).toList();
     final Map<String, int> counts = {
-      'RECEPTION': 0,
-      'EN ROUTE': 0,
-      'NON LIVRÉ': 0,
-      'LIVRÉ': 0,
+      'reception': 0,
+      'enRoute': 0,
+      'nonLivre': 0,
+      'livre': 0,
     };
     for (final parcel in userParcels) {
       counts[parcel.status] = (counts[parcel.status] ?? 0) + 1;

@@ -66,15 +66,15 @@ class _ParcelCardList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final statusColor = parcel.status == 'LIVRÉ'
+    final statusColor = parcel.status == 'livre'
         ? Colors.green
-        : parcel.status == 'EN ROUTE'
+        : parcel.status == 'enRoute'
             ? Colors.green
-            : parcel.status == 'NON LIVRÉ'
+            : parcel.status == 'nonLivre'
                 ? Colors.red
                 : Colors.pink.shade100;
     final statusTextColor =
-        parcel.status == 'EN ROUTE' ? Colors.white : Colors.black;
+        parcel.status == 'enRoute' ? Colors.white : Colors.black;
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       margin: EdgeInsets.zero,

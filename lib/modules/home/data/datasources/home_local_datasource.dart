@@ -19,7 +19,10 @@ class HomeLocalDataSourceImpl implements HomeLocalDataSource {
         ? jsonDecode(userDetailsJson)
         : userDetailsJson;
     role = userDetails['role'];
+    print('Role de l\'utilisateur : $role');
   }
+
+
 
   @override
   Future<List<HomeOptionModel>> getHomeOptions() async {
