@@ -36,7 +36,7 @@ class NavigationFooter extends ConsumerWidget {
           case 0: // Accueil
             // Crée une instance HomeOption avec des valeurs par défaut
             const homeOption = HomeOption(
-              title: 'Je veux commander un plat',
+              title: 'Je commande un plat',
               icon: 'fastfood',
             );
             context.router.push(HomeRestaurantRoute(option: homeOption));

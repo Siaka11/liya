@@ -93,11 +93,11 @@ class HomeNotifier extends StateNotifier<HomeState> {
 
   // Map pour associer les titres aux routes
   final _routeMap = {
-    'Je veux commander un plat': (context, option) =>
+    'Je commande un plat': (context, option) =>
         AutoRouter.of(context).push(HomeRestaurantRoute(option: option)),
-    'Je veux expédier un colis': (context, option) => Navigator.of(context)
+    "J'expédie un colis": (context, option) => Navigator.of(context)
         .push(MaterialPageRoute(builder: (_) => const ParcelHomePage())),
-    'Je veux livrer': (context, option) =>
+    'Je livrer': (context, option) =>
         AutoRouter.of(context).push(const SplashDeliveryRoute()),
     //'Faire des courses': (context, option) => singleton<AppRouter>().push(const ShoppingRoute()),
     //'Administrateur': (context, option) => singleton<AppRouter>().push(const AdminRoute()),

@@ -25,11 +25,11 @@ class HomePage extends ConsumerWidget {
 
     // Map pour associer les titres aux routes
     final _routeMap = {
-      'Je veux commander un plat': (context, option) =>
+      'Je commande un plat': (context, option) =>
           AutoRouter.of(context).push(HomeRestaurantRoute(option: option)),
-      'Je veux expédier un colis': (context, option) =>
+      "J'expédie un colis": (context, option) =>
           AutoRouter.of(context).push(const ParcelHomeRoute()),
-      'Je veux livrer': (context, option) =>
+      'Je livre': (context, option) =>
           AutoRouter.of(context).push(const HomeDeliveryRoute()),
       // 'Faire des courses': (context, option) => AutoRouter.of(context).push(const ShoppingRoute()),
       // 'Administrateur': (context, option) => AutoRouter.of(context).push(const AdminRoute()),

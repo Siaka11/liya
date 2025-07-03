@@ -19,25 +19,25 @@ class _FilterSectionState extends State<FilterSection> {
 
   final List<FilterItem> filters = [
     FilterItem(
+        label: "Ivoirien",
+        imageUrl:
+        "http://api-restaurant.toptelsig.com/uploads/section/ivoire.svg"),
+    FilterItem(
         label: "Europe",
         imageUrl:
             "http://api-restaurant.toptelsig.com/uploads/section/europeen.svg"),
-    FilterItem(
-        label: "Ivoirien",
-        imageUrl:
-            "http://api-restaurant.toptelsig.com/uploads/section/ivoire.svg"),
-    FilterItem(
+/*    FilterItem(
         label: "Pizza",
         imageUrl:
-            "http://api-restaurant.toptelsig.com/uploads/section/pizza.svg"),
+            "http://api-restaurant.toptelsig.com/uploads/section/pizza.svg"),*/
     FilterItem(
         label: "Afrique",
         imageUrl:
             "http://api-restaurant.toptelsig.com/uploads/section/europeen.svg"),
-    FilterItem(
+/*    FilterItem(
         label: "Hamburger",
         imageUrl:
-            "http://api-restaurant.toptelsig.com/uploads/section/europeen.svg"),
+            "http://api-restaurant.toptelsig.com/uploads/section/europeen.svg"),*/
   ];
 
   @override

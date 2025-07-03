@@ -28,18 +28,19 @@ class HomeLocalDataSourceImpl implements HomeLocalDataSource {
   Future<List<HomeOptionModel>> getHomeOptions() async {
     return [
       const HomeOptionModel(
-        title: 'Je veux commander un plat',
+        title: 'Je commande un plat',
         icon: 'fastfood',
       ),
       const HomeOptionModel(
-        title: 'Je veux expédier un colis',
+        title: "J'expédie un colis",
         icon: 'local_shipping',
       ),
-      if(role == 'admin' || role == 'livreur')
+      if(role == 'admin' || role == 'livreur')...[
       const HomeOptionModel(
-        title: 'Je veux livrer',
+        title: 'Je livre',
         icon: 'delivery_dining',
       ),
+      ],
       /*const HomeOptionModel(
         title: 'Faire des courses',
         icon: 'shopping_cart',

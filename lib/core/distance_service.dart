@@ -2,8 +2,8 @@ import 'dart:math';
 
 class DistanceService {
   // Coordonnées du restaurant (Yamoussoukro)
-  static const double restaurantLatitude = 6.812874913445291;
-  static const double restaurantLongitude = -5.2320368359093345;
+  static const double restaurantLatitude = 6.813533;
+  static const double restaurantLongitude = -5.251962;
 
   /// Calcule la distance entre deux points GPS en utilisant la formule de Haversine
   /// Retourne la distance en kilomètres
