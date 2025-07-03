@@ -100,7 +100,7 @@ class HomeNotifier extends StateNotifier<HomeState> {
     'Je livrer': (context, option) =>
         AutoRouter.of(context).push(const SplashDeliveryRoute()),
     //'Faire des courses': (context, option) => singleton<AppRouter>().push(const ShoppingRoute()),
-    //'Administrateur': (context, option) => singleton<AppRouter>().push(const AdminRoute()),
+    'Administrateur': (context, option) => AutoRouter.of(context).push(const AdminDashboardRoute()),
   };
 
   void onOptionSelected(BuildContext context, HomeOption option) {

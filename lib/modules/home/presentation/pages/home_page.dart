@@ -11,6 +11,8 @@ import 'package:liya/core/test_users_management.dart';
 import 'package:liya/modules/delivery/presentation/pages/delivery_assignment_page.dart';
 import 'package:liya/modules/delivery/presentation/pages/delivery_dashboard_page.dart';
 import 'package:liya/core/init_delivery_data.dart';
+import 'package:liya/core/local_storage_factory.dart';
+import 'package:liya/core/singletons.dart';
 
 import 'package:liya/routes/app_router.gr.dart';
 import '../../application/home_provider.dart';
@@ -31,8 +33,8 @@ class HomePage extends ConsumerWidget {
           AutoRouter.of(context).push(const ParcelHomeRoute()),
       'Je livre': (context, option) =>
           AutoRouter.of(context).push(const HomeDeliveryRoute()),
-      // 'Faire des courses': (context, option) => AutoRouter.of(context).push(const ShoppingRoute()),
-      // 'Administrateur': (context, option) => AutoRouter.of(context).push(const AdminRoute()),
+      'Administrateur': (context, option) =>
+          AutoRouter.of(context).push(const AdminDashboardRoute()),
     };
 
     void onOptionSelected(BuildContext context, HomeOption option) {
@@ -279,6 +281,78 @@ class HomePage extends ConsumerWidget {
               ),
               child: const Text(
                 '🚚 Interface Livreur (Dynamique)',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+
+          // Bouton pour accéder au dashboard admin
+          Positioned(
+            bottom: 80,
+            left: 20,
+            right: 20,
+            child: ElevatedButton(
+              onPressed: () {
+                AutoRouter.of(context).push(const AdminDashboardRoute());
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFF24E1E),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text(
+                '👨‍💼 Dashboard Admin',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+
+          // Bouton pour définir le rôle admin
+          Positioned(
+            bottom: 20,
+            left: 20,
+            right: 20,
+            child: ElevatedButton(
+              onPressed: () {
+                // Définir le rôle admin temporairement
+                final userDetails = {
+                  'name': homeState.user.name,
+                  'phoneNumber': homeState.user.phoneNumber,
+                  'email': homeState.user.email,
+                  'role': 'admin',
+                };
+                singleton<LocalStorageFactory>().setUserDetails(userDetails);
+
+                // Recharger la page pour voir les changements
+                ref.refresh(homeProvider);
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content:
+                        Text('✅ Rôle défini comme admin! Rechargez la page.'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.purple,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text(
+                '🔧 Définir Rôle Admin',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,

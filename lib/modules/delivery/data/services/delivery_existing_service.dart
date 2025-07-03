@@ -14,7 +14,7 @@ class DeliveryExistingService {
       final doc = await _firestore.collection('users').doc(phoneNumber).get();
       if (doc.exists) {
         final data = doc.data()!;
-        if (data['role'] == 'livreur' && data['active'] == true) {
+        if (data['role'] == 'livreur') {
           return DeliveryUser.fromMap(data);
         }
       }
