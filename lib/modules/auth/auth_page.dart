@@ -7,8 +7,7 @@ import 'package:liya/core/ui/components/custom_field.dart';
 import 'package:liya/modules/auth/login_provider.dart';
 
 import '../../core/ui/theme/theme.dart';
-import '../../routes/app_router.gr.dart';
-
+import 'package:liya/routes/app_router.gr.dart';
 
 @RoutePage()
 class AuthPage extends ConsumerStatefulWidget {
@@ -198,4 +197,3 @@ class _AuthPageState extends ConsumerState<AuthPage>
     );
   }
 }
-

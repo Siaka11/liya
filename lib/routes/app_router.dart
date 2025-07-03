@@ -2,14 +2,16 @@ import 'package:auto_route/auto_route.dart';
 import 'package:liya/modules/parcel/feature/presentation/pages/parcel_home_page.dart';
 import 'package:liya/modules/restaurant/features/order/presentation/pages/order_detail_page.dart';
 import 'package:liya/modules/restaurant/features/profile/presentation/pages/profile_page.dart';
+import 'package:liya/modules/delivery/presentation/pages/delivery_admin_dashboard_page.dart';
+import 'package:liya/modules/admin/presentation/pages/restaurant_management_page.dart';
+import 'package:liya/modules/admin/presentation/pages/dish_management_page.dart';
+import 'package:liya/modules/admin/presentation/pages/delivery_user_management_page.dart';
 import 'package:liya/routes/app_router.gr.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../config/app_information.dart';
 import '../core/singletons.dart';
 import '../modules/auth/auth_provider.dart';
-import '../modules/auth/info_user_page.dart';
-import '../modules/home/domain/entities/home_option.dart';
 
 @AutoRouterConfig()
 class AppRouter extends $AppRouter implements AutoRouteGuard {
@@ -64,5 +66,18 @@ class AppRouter extends $AppRouter implements AutoRouteGuard {
         AutoRoute(page: ModernHomeRestaurantRoute.page),
         AutoRoute(page: ModernRestaurantDetailRoute.page),
         AutoRoute(page: ModernDishDetailRoute.page),
+        AutoRoute(page: TestBeveragesRoute.page),
+        AutoRoute(page: SplashDeliveryRoute.page),
+        AutoRoute(page: HomeDeliveryRoute.page),
+        AutoRoute(page: DeliveryListRoute.page),
+        AutoRoute(page: DeliveryDetailRoute.page),
+        AutoRoute(page: EarningsRoute.page),
+        AutoRoute(page: DeliveryProfileRoute.page),
+        AutoRoute(page: StatusRoute.page),
+        AutoRoute(page: DeliveryAdminDashboardRoute.page),
+        AutoRoute(page: AdminDashboardRoute.page),
+        AutoRoute(page: RestaurantManagementRoute.page),
+        AutoRoute(page: DishManagementRoute.page),
+        AutoRoute(page: DeliveryUserManagementRoute.page),
       ];
 }

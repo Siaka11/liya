@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
 import 'lieu_page.dart';
+import 'package:liya/modules/home/presentation/pages/home_page.dart';
+import 'package:liya/modules/parcel/feature/presentation/pages/parcel_home_page.dart';
+import 'package:liya/modules/restaurant/features/profile/presentation/pages/profile_page.dart';
+import 'package:auto_route/auto_route.dart';
+import 'package:liya/routes/app_router.gr.dart';
 
 class VillePage extends StatelessWidget {
   final String phoneNumber;
   final String typeProduit;
   final bool isReception;
   final String? colisDescription;
-  final List? colisList;
+  final List<dynamic>? colisList;
   const VillePage(
       {Key? key,
       required this.phoneNumber,
@@ -119,7 +124,15 @@ class _ParcelBottomNavBar extends StatelessWidget {
         BottomNavigationBarItem(icon: Icon(Icons.person), label: ''),
       ],
       currentIndex: 1,
-      onTap: (index) {},
+      onTap: (index) {
+        if (index == 0) {
+          AutoRouter.of(context).replace(const HomeRoute());
+        } else if (index == 1) {
+          AutoRouter.of(context).replace(const ParcelHomeRoute());
+        } else if (index == 2) {
+          AutoRouter.of(context).replace(const ProfileRoute());
+        }
+      },
     );
   }
 }

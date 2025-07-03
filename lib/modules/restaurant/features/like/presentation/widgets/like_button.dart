@@ -13,7 +13,6 @@ class LikeButton extends ConsumerStatefulWidget {
   final String price;
   final String imageUrl;
   final String description;
-  final bool sodas;
 
   const LikeButton({
     Key? key,
@@ -23,7 +22,6 @@ class LikeButton extends ConsumerStatefulWidget {
     required this.price,
     required this.imageUrl,
     required this.description,
-    required this.sodas,
   }) : super(key: key);
 
   @override
@@ -134,7 +132,6 @@ class _LikeButtonState extends ConsumerState<LikeButton>
                   price: double.parse(widget.price),
                   imageUrl: widget.imageUrl,
                   description: widget.description,
-                  sodas: widget.sodas,
                   rating: 0.0,
                   likedAt: DateTime.now(),
                 );

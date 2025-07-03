@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:liya/core/local_storage_factory.dart';
 import 'package:liya/core/singletons.dart';
 import 'dart:convert';
-import '../../../../../../routes/app_router.gr.dart';
+import 'package:liya/routes/app_router.gr.dart';
 import '../../../order/presentation/pages/order_list_page.dart';
 import 'package:liya/modules/home/domain/entities/home_option.dart';
 
@@ -36,7 +36,7 @@ class NavigationFooter extends ConsumerWidget {
           case 0: // Accueil
             // Crée une instance HomeOption avec des valeurs par défaut
             const homeOption = HomeOption(
-              title: 'Je veux commander un plat',
+              title: 'Je commande un plat',
               icon: 'fastfood',
             );
             context.router.push(HomeRestaurantRoute(option: homeOption));

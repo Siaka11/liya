@@ -7,6 +7,9 @@ import 'package:liya/modules/restaurant/features/profile/presentation/pages/prof
 import 'parcel_detail_page.dart';
 import 'package:liya/core/local_storage_factory.dart';
 import 'dart:convert';
+import 'package:liya/modules/home/presentation/pages/home_page.dart';
+import 'package:auto_route/auto_route.dart';
+import 'package:liya/routes/app_router.gr.dart';
 
 class ParcelStatusListPage extends ConsumerWidget {
   final String status;
@@ -63,15 +66,15 @@ class _ParcelCardList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final statusColor = parcel.status == 'LIVRÉ'
+    final statusColor = parcel.status == 'livre'
         ? Colors.green
-        : parcel.status == 'EN ROUTE'
+        : parcel.status == 'enRoute'
             ? Colors.green
-            : parcel.status == 'NON LIVRÉ'
+            : parcel.status == 'nonLivre'
                 ? Colors.red
                 : Colors.pink.shade100;
     final statusTextColor =
-        parcel.status == 'EN ROUTE' ? Colors.white : Colors.black;
+        parcel.status == 'enRoute' ? Colors.white : Colors.black;
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       margin: EdgeInsets.zero,
@@ -134,13 +137,10 @@ class _ParcelCardList extends StatelessWidget {
                         Text(parcel.instructions ?? '',
                             style:
                                 const TextStyle(fontWeight: FontWeight.bold)),
-
                         const SizedBox(height: 4),
                         Text('ID: ${parcel.id}',
                             style: const TextStyle(
-                                color: Colors.blue,
-                                fontSize: 13
-                            )),
+                                color: Colors.blue, fontSize: 13)),
                       ],
                     ),
                   ),
@@ -195,16 +195,11 @@ class _ParcelBottomNavBar extends StatelessWidget {
       currentIndex: 1,
       onTap: (index) {
         if (index == 0) {
-          Navigator.pushReplacement(context,
-              MaterialPageRoute(builder: (_) => const ParcelHomePage()));
+          AutoRouter.of(context).replace(const HomeRoute());
         } else if (index == 1) {
-          Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                  builder: (_) => ParcelStatusListPage(status: 'ALL')));
+          AutoRouter.of(context).replace(const ParcelHomeRoute());
         } else if (index == 2) {
-          Navigator.pushReplacement(
-              context, MaterialPageRoute(builder: (_) => const ProfilePage()));
+          AutoRouter.of(context).replace(const ProfileRoute());
         }
       },
     );

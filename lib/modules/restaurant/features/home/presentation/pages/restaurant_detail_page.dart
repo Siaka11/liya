@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:liya/core/ui/theme/theme.dart';
 
 import '../../../../../../core/local_storage_factory.dart';
-import '../../../../../../core/routes/app_router.dart';
 import '../../../../../../core/singletons.dart';
 import '../../../card/data/datasources/cart_remote_data_source.dart';
 import '../../../card/domain/repositories/cart_repository.dart';
@@ -101,15 +100,36 @@ class RestaurantDetailPage extends ConsumerWidget {
         children: [
           Container(
             height: 300,
-            decoration: BoxDecoration(
-              image: DecorationImage(
-                image: NetworkImage(coverImage),
-                fit: BoxFit.cover,
-                colorFilter: ColorFilter.mode(
-                  Colors.black.withOpacity(0.3),
-                  BlendMode.darken,
+            child: Stack(
+              children: [
+                // Image de fond
+                Positioned.fill(
+                  child: ClipRect(
+                    child: Image.network(
+                      coverImage,
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      height: double.infinity,
+                      errorBuilder: (context, error, stackTrace) => Container(
+                        color: Colors.grey[300],
+                        child: Icon(
+                          Icons.restaurant,
+                          size: 100,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
-              ),
+                // Overlay sombre
+                Positioned.fill(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.3),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           SingleChildScrollView(
@@ -228,7 +248,6 @@ class RestaurantDetailPage extends ConsumerWidget {
                                             imageUrl: dish.imageUrl,
                                             restaurantId: id,
                                             description: dish.description ?? '',
-                                            sodas: dish.sodas,
                                             onTap: () async {
                                               await Navigator.push(
                                                 context,
@@ -243,7 +262,6 @@ class RestaurantDetailPage extends ConsumerWidget {
                                                     rating: '0.0',
                                                     description:
                                                         dish.description ?? '',
-                                                    sodas: dish.sodas,
                                                   ),
                                                 ),
                                               );

@@ -2,11 +2,12 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:liya/core/ui/theme/theme.dart';
-import '../../../../../../routes/app_router.gr.dart';
+import 'package:liya/routes/app_router.gr.dart';
 import '../../domain/entities/delivery_info.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:cloud_firestore/cloud_firestore.dart' as cf;
 import '../../../order/domain/entities/order.dart';
+import '../../../order/data/models/order_model.dart';
 import '../../../order/data/datasources/order_remote_data_source.dart';
 import '../../../order/data/repositories/order_repository_impl.dart';
 import 'package:liya/core/local_storage_factory.dart';
@@ -38,6 +39,7 @@ class CheckoutPage extends ConsumerStatefulWidget {
 
 class _CheckoutPageState extends ConsumerState<CheckoutPage> {
   String? phoneInput;
+  String? phone;
   String? deliveryInstructions;
   double? selectedLat;
   double? selectedLng;
@@ -46,7 +48,9 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
   int? deliveryTime;
   int? deliveryFee;
   final phoneController = TextEditingController();
+  final additionalPhoneController = TextEditingController();
   final instructionsController = TextEditingController();
+  GoogleMapController? mapController;
 
   @override
   void initState() {
@@ -63,7 +67,12 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
         final userLng = userLocation['longitude'] as double?;
 
         if (userLat != null && userLng != null) {
+          setState(() {
+            selectedLat = userLat;
+            selectedLng = userLng;
+          });
           _calculateDistance(userLat, userLng);
+          _updateAddressFromLatLng(userLat, userLng);
         }
       }
     }
@@ -72,7 +81,9 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
   @override
   void dispose() {
     phoneController.dispose();
+    additionalPhoneController.dispose();
     instructionsController.dispose();
+    mapController?.dispose();
     super.dispose();
   }
 
@@ -93,6 +104,13 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
       });
     }
 
+    // Centrer la carte sur la nouvelle position
+    if (mapController != null) {
+      await mapController!.animateCamera(
+        CameraUpdate.newLatLng(LatLng(lat, lng)),
+      );
+    }
+
     // Calculer la distance
     _calculateDistance(lat, lng);
   }
@@ -110,15 +128,38 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
   }
 
   Future<void> _showPhoneDialog() async {
-    final controller = TextEditingController(text: phoneInput ?? '');
+    final userDetailsJson = singleton<LocalStorageFactory>().getUserDetails();
+    final userDetails = userDetailsJson is String
+        ? jsonDecode(userDetailsJson)
+        : userDetailsJson;
+    final phoneNumber = userDetails['phoneNumber'] ?? '';
+
+    final controller = TextEditingController(text: phone ?? '');
     final result = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Numéro de téléphone'),
-        content: TextField(
-          controller: controller,
-          keyboardType: TextInputType.phone,
-          decoration: InputDecoration(hintText: 'Entrez votre numéro'),
+        title: Text('Contact supplémentaire'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextField(
+              controller: controller,
+              keyboardType: TextInputType.phone,
+              decoration: InputDecoration(
+                hintText: 'Entrez un numéro de contact supplémentaire',
+                helperText: 'Laissez vide pour utiliser le numéro principal',
+              ),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Numéro principal: $phoneNumber',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[600],
+              ),
+            ),
+          ],
         ),
         actions: [
           TextButton(
@@ -129,8 +170,10 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
         ],
       ),
     );
-    if (result != null && result.isNotEmpty) {
-      setState(() => phoneInput = result);
+    if (result != null) {
+      print('DEBUG - _showPhoneDialog result: "$result"');
+      setState(() => phone = result.isEmpty ? null : result);
+      print('DEBUG - phone after setState: $phone');
     }
   }
 
@@ -190,14 +233,14 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                 fontWeight: FontWeight.w500,
               ),
             ),
-            Text(
+            /*Text(
               widget.restaurantName,
               style: TextStyle(
                 color: Colors.black,
                 fontSize: 14,
                 fontWeight: FontWeight.w400,
               ),
-            ),
+            ),*/
           ],
         ),
         centerTitle: true,
@@ -210,10 +253,12 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
               height: 200,
               child: GoogleMap(
                 initialCameraPosition: CameraPosition(
-                  target:
-                      LatLng(6.8276, -5.2893), // Coordonnées de Yamoussoukro
+                  target: LatLng(selectedLat ?? 6.8276, selectedLng ?? -5.2893),
                   zoom: 15,
                 ),
+                onMapCreated: (GoogleMapController controller) {
+                  mapController = controller;
+                },
                 onTap: (LatLng pos) async {
                   setState(() {
                     selectedLat = pos.latitude;
@@ -221,6 +266,20 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                   });
                   await _updateAddressFromLatLng(pos.latitude, pos.longitude);
                 },
+                markers: selectedLat != null && selectedLng != null
+                    ? {
+                        Marker(
+                          markerId: MarkerId('delivery_location'),
+                          position: LatLng(selectedLat!, selectedLng!),
+                          infoWindow: InfoWindow(
+                            title: 'Adresse de livraison',
+                            snippet: selectedAddress ?? 'Adresse sélectionnée',
+                          ),
+                          icon: BitmapDescriptor.defaultMarkerWithHue(
+                              BitmapDescriptor.hueOrange),
+                        ),
+                      }
+                    : {},
                 myLocationEnabled: true,
                 myLocationButtonEnabled: true,
                 mapType: MapType.normal,
@@ -362,7 +421,15 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
             ListTile(
               leading: Icon(Icons.location_on_outlined),
               title: Text('Adresse de livraison'),
-              subtitle: Text(userAddress ?? 'Sélectionnez sur la carte'),
+              subtitle: Text(
+                selectedAddress ?? 'Sélectionnez sur la carte',
+                style: TextStyle(
+                  color: selectedAddress != null ? Colors.black87 : Colors.grey,
+                ),
+              ),
+              trailing: selectedAddress != null
+                  ? Icon(Icons.check_circle, color: UIColors.orange)
+                  : Icon(Icons.edit_location, color: Colors.grey),
             ),
 
             // Delivery Instructions
@@ -374,11 +441,24 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                   : 'Non sélectionnées'),
             ),*/
 
-            // Phone Number
+            // Phone Number (invariable)
             ListTile(
               leading: Icon(Icons.phone_outlined),
               title: Text('Numéro de téléphone'),
-              subtitle: Text(phoneInput ?? phoneNumber),
+              subtitle: Text(phoneNumber),
+              trailing: Icon(Icons.lock, size: 16, color: Colors.grey),
+            ),
+
+            // Contact supplémentaire (modifiable)
+            ListTile(
+              leading: Icon(Icons.contact_phone_outlined),
+              title: Text('Contact supplémentaire'),
+              subtitle: Text(
+                phone ?? 'Utilisera le numéro principal',
+                style: TextStyle(
+                  color: phone != null ? Colors.black87 : Colors.grey,
+                ),
+              ),
               trailing: Icon(Icons.edit),
               onTap: _showPhoneDialog,
             ),
@@ -521,12 +601,26 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
           padding: const EdgeInsets.all(16.0),
           child: ElevatedButton(
             onPressed: () async {
+              // Vérifier qu'une adresse est sélectionnée
+              if (selectedLat == null ||
+                  selectedLng == null ||
+                  selectedAddress == null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                        'Veuillez sélectionner une adresse de livraison sur la carte'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+                return;
+              }
+
               // Vérifier que la distance est calculée
               if (calculatedDistance == null || deliveryFee == null) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content:
-                        Text('Veuillez sélectionner une adresse de livraison'),
+                    content: Text(
+                        'Erreur lors du calcul de la distance. Veuillez réessayer.'),
                     backgroundColor: Colors.red,
                   ),
                 );
@@ -535,7 +629,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
 
               // Crée la liste des OrderItem
               final items = widget.cartItems
-                  .map((item) => OrderItem(
+                  .map((item) => OrderItemModel(
                         name: item['name'],
                         quantity: item['quantity'],
                         price: double.tryParse(item['price'].toString()) ?? 0.0,
@@ -547,9 +641,11 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
               final total = _calculateTotal();
 
               // Crée l'objet Order avec les informations de livraison
-              final order = Order(
+              final order = OrderModel(
                 id: '', // Laisse vide, le repo s'en charge
-                phoneNumber: phoneInput ?? phoneNumber,
+                phoneNumber: phoneNumber, // Numéro principal (invariable)
+                phone: phone ??
+                    phoneNumber, // Contact supplémentaire ou phoneNumber par défaut
                 items: items,
                 total: total, // Total incluant les frais de livraison
                 subtotal: subtotal,
@@ -563,6 +659,14 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                 deliveryTime: deliveryTime,
                 address: selectedAddress,
               );
+
+              // Debug: Afficher les données de la commande
+              print('DEBUG - Order data:');
+              print('phoneNumber: ${order.phoneNumber}');
+              print('phone: ${order.phone}');
+              print('phone variable: $phone');
+              print('toJson: ${order.toJson()}');
+              print('phone in toJson: ${order.toJson()['phone']}');
 
               // Enregistre la commande sur Firestore avec les détails de livraison
               final dataSource = OrderRemoteDataSourceImpl(
@@ -649,7 +753,18 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
     return widget.cartItems.fold(0.0, (sum, item) {
       final price = double.tryParse(item['price'].toString()) ?? 0.0;
       final quantity = item['quantity'] as int? ?? 1;
-      return sum + (price * quantity);
+      final accompaniments = item['accompaniments'] as List<dynamic>? ?? [];
+
+      // Prix du plat
+      final itemPrice = price * quantity;
+
+      // Prix des accompagnements
+      final accompanimentsPrice = accompaniments.fold(0.0, (accSum, acc) {
+        final accPrice = (acc['price'] as num?)?.toDouble() ?? 0.0;
+        return accSum + accPrice;
+      });
+
+      return sum + itemPrice + accompanimentsPrice;
     });
   }
 

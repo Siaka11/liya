@@ -8,118 +8,205 @@
 // coverage:ignore-file
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:auto_route/auto_route.dart' as _i29;
-import 'package:flutter/material.dart' as _i30;
+import 'package:auto_route/auto_route.dart' as _i46;
+import 'package:flutter/material.dart' as _i47;
+import 'package:liya/core/test_beverages.dart' as _i44;
+import 'package:liya/core/test_users_management.dart' as _i45;
 import 'package:liya/modules/admin/features/dishes/data/models/dish_model.dart'
-    as _i31;
+    as _i49;
 import 'package:liya/modules/admin/features/dishes/presentation/pages/dish_image_editor_page.dart'
-    as _i8;
+    as _i16;
 import 'package:liya/modules/admin/features/dishes/presentation/pages/dish_list_page.dart'
-    as _i9;
+    as _i17;
 import 'package:liya/modules/admin/features/dishes/presentation/pages/restaurant_select_page.dart'
-    as _i26;
-import 'package:liya/modules/auth/auth_page.dart' as _i4;
-import 'package:liya/modules/auth/info_user_page.dart' as _i12;
-import 'package:liya/modules/auth/otp_page.dart' as _i20;
-import 'package:liya/modules/home/domain/entities/home_option.dart' as _i32;
-import 'package:liya/modules/home/presentation/pages/home_page.dart' as _i10;
+    as _i39;
+import 'package:liya/modules/admin/presentation/pages/admin_dashboard_page.dart'
+    as _i2;
+import 'package:liya/modules/admin/presentation/pages/delivery_user_management_page.dart'
+    as _i14;
+import 'package:liya/modules/admin/presentation/pages/dish_management_page.dart'
+    as _i18;
+import 'package:liya/modules/admin/presentation/pages/order_management_page.dart'
+    as _i31;
+import 'package:liya/modules/admin/presentation/pages/restaurant_management_page.dart'
+    as _i38;
+import 'package:liya/modules/auth/auth_page.dart' as _i5;
+import 'package:liya/modules/auth/info_user_page.dart' as _i23;
+import 'package:liya/modules/auth/otp_page.dart' as _i32;
+import 'package:liya/modules/delivery/domain/entities/delivery_order.dart'
+    as _i48;
+import 'package:liya/modules/delivery/presentation/pages/delivery_admin_dashboard_page.dart'
+    as _i8;
+import 'package:liya/modules/delivery/presentation/pages/delivery_assignment_page.dart'
+    as _i9;
+import 'package:liya/modules/delivery/presentation/pages/delivery_dashboard_page.dart'
+    as _i10;
+import 'package:liya/modules/delivery/presentation/pages/delivery_detail_page.dart'
+    as _i11;
+import 'package:liya/modules/delivery/presentation/pages/delivery_list_page.dart'
+    as _i12;
+import 'package:liya/modules/delivery/presentation/pages/delivery_profile_page.dart'
+    as _i13;
+import 'package:liya/modules/delivery/presentation/pages/earnings_page.dart'
+    as _i19;
+import 'package:liya/modules/delivery/presentation/pages/home_delivery_page.dart'
+    as _i20;
+import 'package:liya/modules/delivery/presentation/pages/splash_delivery_page.dart'
+    as _i42;
+import 'package:liya/modules/delivery/presentation/pages/status_page.dart'
+    as _i43;
+import 'package:liya/modules/home/domain/entities/home_option.dart' as _i50;
+import 'package:liya/modules/home/presentation/pages/home_page.dart' as _i21;
 import 'package:liya/modules/parcel/feature/domain/entities/parcel.dart'
-    as _i34;
+    as _i52;
 import 'package:liya/modules/parcel/feature/presentation/pages/add_parcel_page.dart'
     as _i1;
 import 'package:liya/modules/parcel/feature/presentation/pages/lieu_page.dart'
-    as _i13;
-import 'package:liya/modules/parcel/feature/presentation/pages/parcel_detail_page.dart'
-    as _i21;
-import 'package:liya/modules/parcel/feature/presentation/pages/parcel_home_page.dart'
-    as _i22;
-import 'package:liya/modules/parcel/feature/presentation/pages/parcel_list_page.dart'
-    as _i23;
-import 'package:liya/modules/restaurant/features/card/presentation/pages/cart_page.dart'
-    as _i5;
-import 'package:liya/modules/restaurant/features/checkout/presentation/pages/checkout_page.dart'
-    as _i6;
-import 'package:liya/modules/restaurant/features/home/presentation/pages/all_dishes_page.dart'
-    as _i2;
-import 'package:liya/modules/restaurant/features/home/presentation/pages/all_restaurants_page.dart'
-    as _i3;
-import 'package:liya/modules/restaurant/features/home/presentation/pages/dish_detail_page.dart'
-    as _i7;
-import 'package:liya/modules/restaurant/features/home/presentation/pages/home_restaurant.dart'
-    as _i11;
-import 'package:liya/modules/restaurant/features/home/presentation/pages/modern_dish_detail_page.dart'
-    as _i15;
-import 'package:liya/modules/restaurant/features/home/presentation/pages/modern_home_restaurant.dart'
-    as _i16;
-import 'package:liya/modules/restaurant/features/home/presentation/pages/modern_restaurant_detail_page.dart'
-    as _i17;
-import 'package:liya/modules/restaurant/features/home/presentation/pages/restaurant_detail_page.dart'
-    as _i25;
-import 'package:liya/modules/restaurant/features/like/presentation/pages/liked_dishes_page.dart'
-    as _i14;
-import 'package:liya/modules/restaurant/features/order/domain/entities/order.dart'
-    as _i33;
-import 'package:liya/modules/restaurant/features/order/presentation/pages/order_detail_page.dart'
-    as _i18;
-import 'package:liya/modules/restaurant/features/order/presentation/pages/order_list_page.dart'
-    as _i19;
-import 'package:liya/modules/restaurant/features/profile/presentation/pages/profile_page.dart'
     as _i24;
-import 'package:liya/modules/restaurant/features/search/presentation/pages/search_page.dart'
+import 'package:liya/modules/parcel/feature/presentation/pages/parcel_detail_page.dart'
+    as _i33;
+import 'package:liya/modules/parcel/feature/presentation/pages/parcel_home_page.dart'
+    as _i34;
+import 'package:liya/modules/parcel/feature/presentation/pages/parcel_list_page.dart'
+    as _i35;
+import 'package:liya/modules/restaurant/features/card/presentation/pages/cart_page.dart'
+    as _i6;
+import 'package:liya/modules/restaurant/features/checkout/presentation/pages/checkout_page.dart'
+    as _i7;
+import 'package:liya/modules/restaurant/features/home/presentation/pages/all_dishes_page.dart'
+    as _i3;
+import 'package:liya/modules/restaurant/features/home/presentation/pages/all_restaurants_page.dart'
+    as _i4;
+import 'package:liya/modules/restaurant/features/home/presentation/pages/dish_detail_page.dart'
+    as _i15;
+import 'package:liya/modules/restaurant/features/home/presentation/pages/home_restaurant.dart'
+    as _i22;
+import 'package:liya/modules/restaurant/features/home/presentation/pages/modern_dish_detail_page.dart'
+    as _i26;
+import 'package:liya/modules/restaurant/features/home/presentation/pages/modern_home_restaurant.dart'
     as _i27;
-import 'package:liya/modules/share_location_page.dart' as _i28;
+import 'package:liya/modules/restaurant/features/home/presentation/pages/modern_restaurant_detail_page.dart'
+    as _i28;
+import 'package:liya/modules/restaurant/features/home/presentation/pages/restaurant_detail_page.dart'
+    as _i37;
+import 'package:liya/modules/restaurant/features/like/presentation/pages/liked_dishes_page.dart'
+    as _i25;
+import 'package:liya/modules/restaurant/features/order/domain/entities/order.dart'
+    as _i51;
+import 'package:liya/modules/restaurant/features/order/presentation/pages/order_detail_page.dart'
+    as _i29;
+import 'package:liya/modules/restaurant/features/order/presentation/pages/order_list_page.dart'
+    as _i30;
+import 'package:liya/modules/restaurant/features/profile/presentation/pages/profile_page.dart'
+    as _i36;
+import 'package:liya/modules/restaurant/features/search/presentation/pages/search_page.dart'
+    as _i40;
+import 'package:liya/modules/share_location_page.dart' as _i41;
 
-abstract class $AppRouter extends _i29.RootStackRouter {
+abstract class $AppRouter extends _i46.RootStackRouter {
   $AppRouter({super.navigatorKey});
 
   @override
-  final Map<String, _i29.PageFactory> pagesMap = {
+  final Map<String, _i46.PageFactory> pagesMap = {
     AddParcelRoute.name: (routeData) {
-      return _i29.AutoRoutePage<dynamic>(
+      return _i46.AutoRoutePage<dynamic>(
         routeData: routeData,
         child: const _i1.AddParcelPage(),
       );
     },
-    AllDishesRoute.name: (routeData) {
-      return _i29.AutoRoutePage<dynamic>(
+    AdminDashboardRoute.name: (routeData) {
+      return _i46.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: const _i2.AllDishesPage(),
+        child: const _i2.AdminDashboardPage(),
+      );
+    },
+    AllDishesRoute.name: (routeData) {
+      return _i46.AutoRoutePage<dynamic>(
+        routeData: routeData,
+        child: const _i3.AllDishesPage(),
       );
     },
     AllRestaurantsRoute.name: (routeData) {
-      return _i29.AutoRoutePage<dynamic>(
+      return _i46.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: const _i3.AllRestaurantsPage(),
+        child: const _i4.AllRestaurantsPage(),
       );
     },
     AuthRoute.name: (routeData) {
-      return _i29.AutoRoutePage<dynamic>(
+      return _i46.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: const _i4.AuthPage(),
+        child: const _i5.AuthPage(),
       );
     },
     CartRoute.name: (routeData) {
-      return _i29.AutoRoutePage<dynamic>(
+      return _i46.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: const _i5.CartPage(),
+        child: const _i6.CartPage(),
       );
     },
     CheckoutRoute.name: (routeData) {
       final args = routeData.argsAs<CheckoutRouteArgs>();
-      return _i29.AutoRoutePage<dynamic>(
+      return _i46.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: _i6.CheckoutPage(
+        child: _i7.CheckoutPage(
           key: args.key,
           restaurantName: args.restaurantName,
           cartItems: args.cartItems,
         ),
       );
     },
+    DeliveryAdminDashboardRoute.name: (routeData) {
+      return _i46.AutoRoutePage<dynamic>(
+        routeData: routeData,
+        child: const _i8.DeliveryAdminDashboardPage(),
+      );
+    },
+    DeliveryAssignmentRoute.name: (routeData) {
+      return _i46.AutoRoutePage<dynamic>(
+        routeData: routeData,
+        child: const _i9.DeliveryAssignmentPage(),
+      );
+    },
+    DeliveryDashboardRoute.name: (routeData) {
+      return _i46.AutoRoutePage<dynamic>(
+        routeData: routeData,
+        child: const _i10.DeliveryDashboardPage(),
+      );
+    },
+    DeliveryDetailRoute.name: (routeData) {
+      final args = routeData.argsAs<DeliveryDetailRouteArgs>();
+      return _i46.AutoRoutePage<dynamic>(
+        routeData: routeData,
+        child: _i11.DeliveryDetailPage(
+          key: args.key,
+          order: args.order,
+        ),
+      );
+    },
+    DeliveryListRoute.name: (routeData) {
+      return _i46.AutoRoutePage<dynamic>(
+        routeData: routeData,
+        child: const _i12.DeliveryListPage(),
+      );
+    },
+    DeliveryProfileRoute.name: (routeData) {
+      return _i46.AutoRoutePage<dynamic>(
+        routeData: routeData,
+        child: const _i13.DeliveryProfilePage(),
+      );
+    },
+    DeliveryUserManagementRoute.name: (routeData) {
+      return _i46.AutoRoutePage<dynamic>(
+        routeData: routeData,
+        child: const _i14.DeliveryUserManagementPage(),
+      );
+    },
     DishDetailRoute.name: (routeData) {
       final args = routeData.argsAs<DishDetailRouteArgs>();
-      return _i29.AutoRoutePage<dynamic>(
+      return _i46.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: _i7.DishDetailPage(
+        child: _i15.DishDetailPage(
+          key: args.key,
           id: args.id,
           restaurantId: args.restaurantId,
           name: args.name,
@@ -127,15 +214,14 @@ abstract class $AppRouter extends _i29.RootStackRouter {
           imageUrl: args.imageUrl,
           rating: args.rating,
           description: args.description,
-          sodas: args.sodas,
         ),
       );
     },
     DishImageEditorRoute.name: (routeData) {
       final args = routeData.argsAs<DishImageEditorRouteArgs>();
-      return _i29.AutoRoutePage<dynamic>(
+      return _i46.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: _i8.DishImageEditorPage(
+        child: _i16.DishImageEditorPage(
           key: args.key,
           dish: args.dish,
         ),
@@ -143,41 +229,59 @@ abstract class $AppRouter extends _i29.RootStackRouter {
     },
     DishListRoute.name: (routeData) {
       final args = routeData.argsAs<DishListRouteArgs>();
-      return _i29.AutoRoutePage<dynamic>(
+      return _i46.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: _i9.DishListPage(
+        child: _i17.DishListPage(
           key: args.key,
           restaurantId: args.restaurantId,
         ),
       );
     },
-    HomeRoute.name: (routeData) {
-      return _i29.AutoRoutePage<dynamic>(
+    DishManagementRoute.name: (routeData) {
+      return _i46.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: const _i10.HomePage(),
+        child: const _i18.DishManagementPage(),
+      );
+    },
+    EarningsRoute.name: (routeData) {
+      return _i46.AutoRoutePage<dynamic>(
+        routeData: routeData,
+        child: const _i19.EarningsPage(),
+      );
+    },
+    HomeDeliveryRoute.name: (routeData) {
+      return _i46.AutoRoutePage<dynamic>(
+        routeData: routeData,
+        child: const _i20.HomeDeliveryPage(),
+      );
+    },
+    HomeRoute.name: (routeData) {
+      return _i46.AutoRoutePage<dynamic>(
+        routeData: routeData,
+        child: const _i21.HomePage(),
       );
     },
     HomeRestaurantRoute.name: (routeData) {
       final args = routeData.argsAs<HomeRestaurantRouteArgs>();
-      return _i29.AutoRoutePage<dynamic>(
+      return _i46.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: _i11.HomeRestaurantPage(
+        child: _i22.HomeRestaurantPage(
           key: args.key,
           option: args.option,
         ),
       );
     },
     InfoUserRoute.name: (routeData) {
-      return _i29.AutoRoutePage<dynamic>(
+      return _i46.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: const _i12.InfoUserPage(),
+        child: const _i23.InfoUserPage(),
       );
     },
     LieuRoute.name: (routeData) {
       final args = routeData.argsAs<LieuRouteArgs>();
-      return _i29.AutoRoutePage<dynamic>(
+      return _i46.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: _i13.LieuPage(
+        child: _i24.LieuPage(
           key: args.key,
           phoneNumber: args.phoneNumber,
           typeProduit: args.typeProduit,
@@ -189,16 +293,16 @@ abstract class $AppRouter extends _i29.RootStackRouter {
       );
     },
     LikedDishesRoute.name: (routeData) {
-      return _i29.AutoRoutePage<dynamic>(
+      return _i46.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: const _i14.LikedDishesPage(),
+        child: const _i25.LikedDishesPage(),
       );
     },
     ModernDishDetailRoute.name: (routeData) {
       final args = routeData.argsAs<ModernDishDetailRouteArgs>();
-      return _i29.AutoRoutePage<dynamic>(
+      return _i46.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: _i15.ModernDishDetailPage(
+        child: _i26.ModernDishDetailPage(
           id: args.id,
           restaurantId: args.restaurantId,
           name: args.name,
@@ -206,15 +310,14 @@ abstract class $AppRouter extends _i29.RootStackRouter {
           imageUrl: args.imageUrl,
           rating: args.rating,
           description: args.description,
-          sodas: args.sodas,
         ),
       );
     },
     ModernHomeRestaurantRoute.name: (routeData) {
       final args = routeData.argsAs<ModernHomeRestaurantRouteArgs>();
-      return _i29.AutoRoutePage<dynamic>(
+      return _i46.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: _i16.ModernHomeRestaurantPage(
+        child: _i27.ModernHomeRestaurantPage(
           key: args.key,
           option: args.option,
         ),
@@ -222,9 +325,9 @@ abstract class $AppRouter extends _i29.RootStackRouter {
     },
     ModernRestaurantDetailRoute.name: (routeData) {
       final args = routeData.argsAs<ModernRestaurantDetailRouteArgs>();
-      return _i29.AutoRoutePage<dynamic>(
+      return _i46.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: _i17.ModernRestaurantDetailPage(
+        child: _i28.ModernRestaurantDetailPage(
           key: args.key,
           id: args.id,
           name: args.name,
@@ -235,9 +338,9 @@ abstract class $AppRouter extends _i29.RootStackRouter {
     },
     OrderDetailRoute.name: (routeData) {
       final args = routeData.argsAs<OrderDetailRouteArgs>();
-      return _i29.AutoRoutePage<dynamic>(
+      return _i46.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: _i18.OrderDetailPage(
+        child: _i29.OrderDetailPage(
           key: args.key,
           order: args.order,
         ),
@@ -245,19 +348,25 @@ abstract class $AppRouter extends _i29.RootStackRouter {
     },
     OrderListRoute.name: (routeData) {
       final args = routeData.argsAs<OrderListRouteArgs>();
-      return _i29.AutoRoutePage<dynamic>(
+      return _i46.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: _i19.OrderListPage(
+        child: _i30.OrderListPage(
           key: args.key,
           phoneNumber: args.phoneNumber,
         ),
       );
     },
+    OrderManagementRoute.name: (routeData) {
+      return _i46.AutoRoutePage<dynamic>(
+        routeData: routeData,
+        child: const _i31.OrderManagementPage(),
+      );
+    },
     OtpRoute.name: (routeData) {
       final args = routeData.argsAs<OtpRouteArgs>();
-      return _i29.AutoRoutePage<dynamic>(
+      return _i46.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: _i20.OtpPage(
+        child: _i32.OtpPage(
           args.verificationId,
           key: args.key,
         ),
@@ -265,37 +374,37 @@ abstract class $AppRouter extends _i29.RootStackRouter {
     },
     ParcelDetailRoute.name: (routeData) {
       final args = routeData.argsAs<ParcelDetailRouteArgs>();
-      return _i29.AutoRoutePage<dynamic>(
+      return _i46.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: _i21.ParcelDetailPage(
+        child: _i33.ParcelDetailPage(
           key: args.key,
           parcel: args.parcel,
         ),
       );
     },
     ParcelHomeRoute.name: (routeData) {
-      return _i29.AutoRoutePage<dynamic>(
+      return _i46.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: const _i22.ParcelHomePage(),
+        child: const _i34.ParcelHomePage(),
       );
     },
     ParcelListRoute.name: (routeData) {
-      return _i29.AutoRoutePage<dynamic>(
+      return _i46.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: const _i23.ParcelListPage(),
+        child: const _i35.ParcelListPage(),
       );
     },
     ProfileRoute.name: (routeData) {
-      return _i29.AutoRoutePage<dynamic>(
+      return _i46.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: const _i24.ProfilePage(),
+        child: const _i36.ProfilePage(),
       );
     },
     RestaurantDetailRoute.name: (routeData) {
       final args = routeData.argsAs<RestaurantDetailRouteArgs>();
-      return _i29.AutoRoutePage<dynamic>(
+      return _i46.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: _i25.RestaurantDetailPage(
+        child: _i37.RestaurantDetailPage(
           key: args.key,
           id: args.id,
           name: args.name,
@@ -304,22 +413,52 @@ abstract class $AppRouter extends _i29.RootStackRouter {
         ),
       );
     },
-    RestaurantSelectRoute.name: (routeData) {
-      return _i29.AutoRoutePage<dynamic>(
+    RestaurantManagementRoute.name: (routeData) {
+      return _i46.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: const _i26.RestaurantSelectPage(),
+        child: const _i38.RestaurantManagementPage(),
+      );
+    },
+    RestaurantSelectRoute.name: (routeData) {
+      return _i46.AutoRoutePage<dynamic>(
+        routeData: routeData,
+        child: const _i39.RestaurantSelectPage(),
       );
     },
     SearchRoute.name: (routeData) {
-      return _i29.AutoRoutePage<dynamic>(
+      return _i46.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: const _i27.SearchPage(),
+        child: const _i40.SearchPage(),
       );
     },
     ShareLocationRoute.name: (routeData) {
-      return _i29.AutoRoutePage<dynamic>(
+      return _i46.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: const _i28.ShareLocationPage(),
+        child: const _i41.ShareLocationPage(),
+      );
+    },
+    SplashDeliveryRoute.name: (routeData) {
+      return _i46.AutoRoutePage<dynamic>(
+        routeData: routeData,
+        child: const _i42.SplashDeliveryPage(),
+      );
+    },
+    StatusRoute.name: (routeData) {
+      return _i46.AutoRoutePage<dynamic>(
+        routeData: routeData,
+        child: const _i43.StatusPage(),
+      );
+    },
+    TestBeveragesRoute.name: (routeData) {
+      return _i46.AutoRoutePage<dynamic>(
+        routeData: routeData,
+        child: const _i44.TestBeveragesPage(),
+      );
+    },
+    TestUsersManagementRoute.name: (routeData) {
+      return _i46.AutoRoutePage<dynamic>(
+        routeData: routeData,
+        child: const _i45.TestUsersManagementPage(),
       );
     },
   };
@@ -327,8 +466,8 @@ abstract class $AppRouter extends _i29.RootStackRouter {
 
 /// generated route for
 /// [_i1.AddParcelPage]
-class AddParcelRoute extends _i29.PageRouteInfo<void> {
-  const AddParcelRoute({List<_i29.PageRouteInfo>? children})
+class AddParcelRoute extends _i46.PageRouteInfo<void> {
+  const AddParcelRoute({List<_i46.PageRouteInfo>? children})
       : super(
           AddParcelRoute.name,
           initialChildren: children,
@@ -336,13 +475,27 @@ class AddParcelRoute extends _i29.PageRouteInfo<void> {
 
   static const String name = 'AddParcelRoute';
 
-  static const _i29.PageInfo<void> page = _i29.PageInfo<void>(name);
+  static const _i46.PageInfo<void> page = _i46.PageInfo<void>(name);
 }
 
 /// generated route for
-/// [_i2.AllDishesPage]
-class AllDishesRoute extends _i29.PageRouteInfo<void> {
-  const AllDishesRoute({List<_i29.PageRouteInfo>? children})
+/// [_i2.AdminDashboardPage]
+class AdminDashboardRoute extends _i46.PageRouteInfo<void> {
+  const AdminDashboardRoute({List<_i46.PageRouteInfo>? children})
+      : super(
+          AdminDashboardRoute.name,
+          initialChildren: children,
+        );
+
+  static const String name = 'AdminDashboardRoute';
+
+  static const _i46.PageInfo<void> page = _i46.PageInfo<void>(name);
+}
+
+/// generated route for
+/// [_i3.AllDishesPage]
+class AllDishesRoute extends _i46.PageRouteInfo<void> {
+  const AllDishesRoute({List<_i46.PageRouteInfo>? children})
       : super(
           AllDishesRoute.name,
           initialChildren: children,
@@ -350,13 +503,13 @@ class AllDishesRoute extends _i29.PageRouteInfo<void> {
 
   static const String name = 'AllDishesRoute';
 
-  static const _i29.PageInfo<void> page = _i29.PageInfo<void>(name);
+  static const _i46.PageInfo<void> page = _i46.PageInfo<void>(name);
 }
 
 /// generated route for
-/// [_i3.AllRestaurantsPage]
-class AllRestaurantsRoute extends _i29.PageRouteInfo<void> {
-  const AllRestaurantsRoute({List<_i29.PageRouteInfo>? children})
+/// [_i4.AllRestaurantsPage]
+class AllRestaurantsRoute extends _i46.PageRouteInfo<void> {
+  const AllRestaurantsRoute({List<_i46.PageRouteInfo>? children})
       : super(
           AllRestaurantsRoute.name,
           initialChildren: children,
@@ -364,13 +517,13 @@ class AllRestaurantsRoute extends _i29.PageRouteInfo<void> {
 
   static const String name = 'AllRestaurantsRoute';
 
-  static const _i29.PageInfo<void> page = _i29.PageInfo<void>(name);
+  static const _i46.PageInfo<void> page = _i46.PageInfo<void>(name);
 }
 
 /// generated route for
-/// [_i4.AuthPage]
-class AuthRoute extends _i29.PageRouteInfo<void> {
-  const AuthRoute({List<_i29.PageRouteInfo>? children})
+/// [_i5.AuthPage]
+class AuthRoute extends _i46.PageRouteInfo<void> {
+  const AuthRoute({List<_i46.PageRouteInfo>? children})
       : super(
           AuthRoute.name,
           initialChildren: children,
@@ -378,13 +531,13 @@ class AuthRoute extends _i29.PageRouteInfo<void> {
 
   static const String name = 'AuthRoute';
 
-  static const _i29.PageInfo<void> page = _i29.PageInfo<void>(name);
+  static const _i46.PageInfo<void> page = _i46.PageInfo<void>(name);
 }
 
 /// generated route for
-/// [_i5.CartPage]
-class CartRoute extends _i29.PageRouteInfo<void> {
-  const CartRoute({List<_i29.PageRouteInfo>? children})
+/// [_i6.CartPage]
+class CartRoute extends _i46.PageRouteInfo<void> {
+  const CartRoute({List<_i46.PageRouteInfo>? children})
       : super(
           CartRoute.name,
           initialChildren: children,
@@ -392,17 +545,17 @@ class CartRoute extends _i29.PageRouteInfo<void> {
 
   static const String name = 'CartRoute';
 
-  static const _i29.PageInfo<void> page = _i29.PageInfo<void>(name);
+  static const _i46.PageInfo<void> page = _i46.PageInfo<void>(name);
 }
 
 /// generated route for
-/// [_i6.CheckoutPage]
-class CheckoutRoute extends _i29.PageRouteInfo<CheckoutRouteArgs> {
+/// [_i7.CheckoutPage]
+class CheckoutRoute extends _i46.PageRouteInfo<CheckoutRouteArgs> {
   CheckoutRoute({
-    _i30.Key? key,
+    _i47.Key? key,
     required String restaurantName,
     required List<Map<String, dynamic>> cartItems,
-    List<_i29.PageRouteInfo>? children,
+    List<_i46.PageRouteInfo>? children,
   }) : super(
           CheckoutRoute.name,
           args: CheckoutRouteArgs(
@@ -415,8 +568,8 @@ class CheckoutRoute extends _i29.PageRouteInfo<CheckoutRouteArgs> {
 
   static const String name = 'CheckoutRoute';
 
-  static const _i29.PageInfo<CheckoutRouteArgs> page =
-      _i29.PageInfo<CheckoutRouteArgs>(name);
+  static const _i46.PageInfo<CheckoutRouteArgs> page =
+      _i46.PageInfo<CheckoutRouteArgs>(name);
 }
 
 class CheckoutRouteArgs {
@@ -426,7 +579,7 @@ class CheckoutRouteArgs {
     required this.cartItems,
   });
 
-  final _i30.Key? key;
+  final _i47.Key? key;
 
   final String restaurantName;
 
@@ -439,9 +592,132 @@ class CheckoutRouteArgs {
 }
 
 /// generated route for
-/// [_i7.DishDetailPage]
-class DishDetailRoute extends _i29.PageRouteInfo<DishDetailRouteArgs> {
+/// [_i8.DeliveryAdminDashboardPage]
+class DeliveryAdminDashboardRoute extends _i46.PageRouteInfo<void> {
+  const DeliveryAdminDashboardRoute({List<_i46.PageRouteInfo>? children})
+      : super(
+          DeliveryAdminDashboardRoute.name,
+          initialChildren: children,
+        );
+
+  static const String name = 'DeliveryAdminDashboardRoute';
+
+  static const _i46.PageInfo<void> page = _i46.PageInfo<void>(name);
+}
+
+/// generated route for
+/// [_i9.DeliveryAssignmentPage]
+class DeliveryAssignmentRoute extends _i46.PageRouteInfo<void> {
+  const DeliveryAssignmentRoute({List<_i46.PageRouteInfo>? children})
+      : super(
+          DeliveryAssignmentRoute.name,
+          initialChildren: children,
+        );
+
+  static const String name = 'DeliveryAssignmentRoute';
+
+  static const _i46.PageInfo<void> page = _i46.PageInfo<void>(name);
+}
+
+/// generated route for
+/// [_i10.DeliveryDashboardPage]
+class DeliveryDashboardRoute extends _i46.PageRouteInfo<void> {
+  const DeliveryDashboardRoute({List<_i46.PageRouteInfo>? children})
+      : super(
+          DeliveryDashboardRoute.name,
+          initialChildren: children,
+        );
+
+  static const String name = 'DeliveryDashboardRoute';
+
+  static const _i46.PageInfo<void> page = _i46.PageInfo<void>(name);
+}
+
+/// generated route for
+/// [_i11.DeliveryDetailPage]
+class DeliveryDetailRoute extends _i46.PageRouteInfo<DeliveryDetailRouteArgs> {
+  DeliveryDetailRoute({
+    _i47.Key? key,
+    required _i48.DeliveryOrder order,
+    List<_i46.PageRouteInfo>? children,
+  }) : super(
+          DeliveryDetailRoute.name,
+          args: DeliveryDetailRouteArgs(
+            key: key,
+            order: order,
+          ),
+          initialChildren: children,
+        );
+
+  static const String name = 'DeliveryDetailRoute';
+
+  static const _i46.PageInfo<DeliveryDetailRouteArgs> page =
+      _i46.PageInfo<DeliveryDetailRouteArgs>(name);
+}
+
+class DeliveryDetailRouteArgs {
+  const DeliveryDetailRouteArgs({
+    this.key,
+    required this.order,
+  });
+
+  final _i47.Key? key;
+
+  final _i48.DeliveryOrder order;
+
+  @override
+  String toString() {
+    return 'DeliveryDetailRouteArgs{key: $key, order: $order}';
+  }
+}
+
+/// generated route for
+/// [_i12.DeliveryListPage]
+class DeliveryListRoute extends _i46.PageRouteInfo<void> {
+  const DeliveryListRoute({List<_i46.PageRouteInfo>? children})
+      : super(
+          DeliveryListRoute.name,
+          initialChildren: children,
+        );
+
+  static const String name = 'DeliveryListRoute';
+
+  static const _i46.PageInfo<void> page = _i46.PageInfo<void>(name);
+}
+
+/// generated route for
+/// [_i13.DeliveryProfilePage]
+class DeliveryProfileRoute extends _i46.PageRouteInfo<void> {
+  const DeliveryProfileRoute({List<_i46.PageRouteInfo>? children})
+      : super(
+          DeliveryProfileRoute.name,
+          initialChildren: children,
+        );
+
+  static const String name = 'DeliveryProfileRoute';
+
+  static const _i46.PageInfo<void> page = _i46.PageInfo<void>(name);
+}
+
+/// generated route for
+/// [_i14.DeliveryUserManagementPage]
+class DeliveryUserManagementRoute extends _i46.PageRouteInfo<void> {
+  const DeliveryUserManagementRoute({List<_i46.PageRouteInfo>? children})
+      : super(
+          DeliveryUserManagementRoute.name,
+          initialChildren: children,
+        );
+
+  static const String name = 'DeliveryUserManagementRoute';
+
+  static const _i46.PageInfo<void> page = _i46.PageInfo<void>(name);
+}
+
+/// generated route for
+/// [_i15.DishDetailPage]
+class DishDetailRoute extends _i46.PageRouteInfo<DishDetailRouteArgs> {
   DishDetailRoute({
+    _i47.Key? key,
     required String id,
     required String restaurantId,
     required String name,
@@ -449,11 +725,11 @@ class DishDetailRoute extends _i29.PageRouteInfo<DishDetailRouteArgs> {
     required String imageUrl,
     required String rating,
     required String description,
-    required bool sodas,
-    List<_i29.PageRouteInfo>? children,
+    List<_i46.PageRouteInfo>? children,
   }) : super(
           DishDetailRoute.name,
           args: DishDetailRouteArgs(
+            key: key,
             id: id,
             restaurantId: restaurantId,
             name: name,
@@ -461,19 +737,19 @@ class DishDetailRoute extends _i29.PageRouteInfo<DishDetailRouteArgs> {
             imageUrl: imageUrl,
             rating: rating,
             description: description,
-            sodas: sodas,
           ),
           initialChildren: children,
         );
 
   static const String name = 'DishDetailRoute';
 
-  static const _i29.PageInfo<DishDetailRouteArgs> page =
-      _i29.PageInfo<DishDetailRouteArgs>(name);
+  static const _i46.PageInfo<DishDetailRouteArgs> page =
+      _i46.PageInfo<DishDetailRouteArgs>(name);
 }
 
 class DishDetailRouteArgs {
   const DishDetailRouteArgs({
+    this.key,
     required this.id,
     required this.restaurantId,
     required this.name,
@@ -481,8 +757,9 @@ class DishDetailRouteArgs {
     required this.imageUrl,
     required this.rating,
     required this.description,
-    required this.sodas,
   });
+
+  final _i47.Key? key;
 
   final String id;
 
@@ -498,22 +775,20 @@ class DishDetailRouteArgs {
 
   final String description;
 
-  final bool sodas;
-
   @override
   String toString() {
-    return 'DishDetailRouteArgs{id: $id, restaurantId: $restaurantId, name: $name, price: $price, imageUrl: $imageUrl, rating: $rating, description: $description, sodas: $sodas}';
+    return 'DishDetailRouteArgs{key: $key, id: $id, restaurantId: $restaurantId, name: $name, price: $price, imageUrl: $imageUrl, rating: $rating, description: $description}';
   }
 }
 
 /// generated route for
-/// [_i8.DishImageEditorPage]
+/// [_i16.DishImageEditorPage]
 class DishImageEditorRoute
-    extends _i29.PageRouteInfo<DishImageEditorRouteArgs> {
+    extends _i46.PageRouteInfo<DishImageEditorRouteArgs> {
   DishImageEditorRoute({
-    _i30.Key? key,
-    required _i31.DishModel dish,
-    List<_i29.PageRouteInfo>? children,
+    _i47.Key? key,
+    required _i49.DishModel dish,
+    List<_i46.PageRouteInfo>? children,
   }) : super(
           DishImageEditorRoute.name,
           args: DishImageEditorRouteArgs(
@@ -525,8 +800,8 @@ class DishImageEditorRoute
 
   static const String name = 'DishImageEditorRoute';
 
-  static const _i29.PageInfo<DishImageEditorRouteArgs> page =
-      _i29.PageInfo<DishImageEditorRouteArgs>(name);
+  static const _i46.PageInfo<DishImageEditorRouteArgs> page =
+      _i46.PageInfo<DishImageEditorRouteArgs>(name);
 }
 
 class DishImageEditorRouteArgs {
@@ -535,9 +810,9 @@ class DishImageEditorRouteArgs {
     required this.dish,
   });
 
-  final _i30.Key? key;
+  final _i47.Key? key;
 
-  final _i31.DishModel dish;
+  final _i49.DishModel dish;
 
   @override
   String toString() {
@@ -546,12 +821,12 @@ class DishImageEditorRouteArgs {
 }
 
 /// generated route for
-/// [_i9.DishListPage]
-class DishListRoute extends _i29.PageRouteInfo<DishListRouteArgs> {
+/// [_i17.DishListPage]
+class DishListRoute extends _i46.PageRouteInfo<DishListRouteArgs> {
   DishListRoute({
-    _i30.Key? key,
+    _i47.Key? key,
     required String restaurantId,
-    List<_i29.PageRouteInfo>? children,
+    List<_i46.PageRouteInfo>? children,
   }) : super(
           DishListRoute.name,
           args: DishListRouteArgs(
@@ -563,8 +838,8 @@ class DishListRoute extends _i29.PageRouteInfo<DishListRouteArgs> {
 
   static const String name = 'DishListRoute';
 
-  static const _i29.PageInfo<DishListRouteArgs> page =
-      _i29.PageInfo<DishListRouteArgs>(name);
+  static const _i46.PageInfo<DishListRouteArgs> page =
+      _i46.PageInfo<DishListRouteArgs>(name);
 }
 
 class DishListRouteArgs {
@@ -573,7 +848,7 @@ class DishListRouteArgs {
     required this.restaurantId,
   });
 
-  final _i30.Key? key;
+  final _i47.Key? key;
 
   final String restaurantId;
 
@@ -584,9 +859,51 @@ class DishListRouteArgs {
 }
 
 /// generated route for
-/// [_i10.HomePage]
-class HomeRoute extends _i29.PageRouteInfo<void> {
-  const HomeRoute({List<_i29.PageRouteInfo>? children})
+/// [_i18.DishManagementPage]
+class DishManagementRoute extends _i46.PageRouteInfo<void> {
+  const DishManagementRoute({List<_i46.PageRouteInfo>? children})
+      : super(
+          DishManagementRoute.name,
+          initialChildren: children,
+        );
+
+  static const String name = 'DishManagementRoute';
+
+  static const _i46.PageInfo<void> page = _i46.PageInfo<void>(name);
+}
+
+/// generated route for
+/// [_i19.EarningsPage]
+class EarningsRoute extends _i46.PageRouteInfo<void> {
+  const EarningsRoute({List<_i46.PageRouteInfo>? children})
+      : super(
+          EarningsRoute.name,
+          initialChildren: children,
+        );
+
+  static const String name = 'EarningsRoute';
+
+  static const _i46.PageInfo<void> page = _i46.PageInfo<void>(name);
+}
+
+/// generated route for
+/// [_i20.HomeDeliveryPage]
+class HomeDeliveryRoute extends _i46.PageRouteInfo<void> {
+  const HomeDeliveryRoute({List<_i46.PageRouteInfo>? children})
+      : super(
+          HomeDeliveryRoute.name,
+          initialChildren: children,
+        );
+
+  static const String name = 'HomeDeliveryRoute';
+
+  static const _i46.PageInfo<void> page = _i46.PageInfo<void>(name);
+}
+
+/// generated route for
+/// [_i21.HomePage]
+class HomeRoute extends _i46.PageRouteInfo<void> {
+  const HomeRoute({List<_i46.PageRouteInfo>? children})
       : super(
           HomeRoute.name,
           initialChildren: children,
@@ -594,16 +911,16 @@ class HomeRoute extends _i29.PageRouteInfo<void> {
 
   static const String name = 'HomeRoute';
 
-  static const _i29.PageInfo<void> page = _i29.PageInfo<void>(name);
+  static const _i46.PageInfo<void> page = _i46.PageInfo<void>(name);
 }
 
 /// generated route for
-/// [_i11.HomeRestaurantPage]
-class HomeRestaurantRoute extends _i29.PageRouteInfo<HomeRestaurantRouteArgs> {
+/// [_i22.HomeRestaurantPage]
+class HomeRestaurantRoute extends _i46.PageRouteInfo<HomeRestaurantRouteArgs> {
   HomeRestaurantRoute({
-    _i30.Key? key,
-    required _i32.HomeOption option,
-    List<_i29.PageRouteInfo>? children,
+    _i47.Key? key,
+    required _i50.HomeOption option,
+    List<_i46.PageRouteInfo>? children,
   }) : super(
           HomeRestaurantRoute.name,
           args: HomeRestaurantRouteArgs(
@@ -615,8 +932,8 @@ class HomeRestaurantRoute extends _i29.PageRouteInfo<HomeRestaurantRouteArgs> {
 
   static const String name = 'HomeRestaurantRoute';
 
-  static const _i29.PageInfo<HomeRestaurantRouteArgs> page =
-      _i29.PageInfo<HomeRestaurantRouteArgs>(name);
+  static const _i46.PageInfo<HomeRestaurantRouteArgs> page =
+      _i46.PageInfo<HomeRestaurantRouteArgs>(name);
 }
 
 class HomeRestaurantRouteArgs {
@@ -625,9 +942,9 @@ class HomeRestaurantRouteArgs {
     required this.option,
   });
 
-  final _i30.Key? key;
+  final _i47.Key? key;
 
-  final _i32.HomeOption option;
+  final _i50.HomeOption option;
 
   @override
   String toString() {
@@ -636,9 +953,9 @@ class HomeRestaurantRouteArgs {
 }
 
 /// generated route for
-/// [_i12.InfoUserPage]
-class InfoUserRoute extends _i29.PageRouteInfo<void> {
-  const InfoUserRoute({List<_i29.PageRouteInfo>? children})
+/// [_i23.InfoUserPage]
+class InfoUserRoute extends _i46.PageRouteInfo<void> {
+  const InfoUserRoute({List<_i46.PageRouteInfo>? children})
       : super(
           InfoUserRoute.name,
           initialChildren: children,
@@ -646,21 +963,21 @@ class InfoUserRoute extends _i29.PageRouteInfo<void> {
 
   static const String name = 'InfoUserRoute';
 
-  static const _i29.PageInfo<void> page = _i29.PageInfo<void>(name);
+  static const _i46.PageInfo<void> page = _i46.PageInfo<void>(name);
 }
 
 /// generated route for
-/// [_i13.LieuPage]
-class LieuRoute extends _i29.PageRouteInfo<LieuRouteArgs> {
+/// [_i24.LieuPage]
+class LieuRoute extends _i46.PageRouteInfo<LieuRouteArgs> {
   LieuRoute({
-    _i30.Key? key,
+    _i47.Key? key,
     required String phoneNumber,
     required String typeProduit,
     bool isReception = false,
     required String ville,
     String? colisDescription,
     List<dynamic>? colisList,
-    List<_i29.PageRouteInfo>? children,
+    List<_i46.PageRouteInfo>? children,
   }) : super(
           LieuRoute.name,
           args: LieuRouteArgs(
@@ -677,8 +994,8 @@ class LieuRoute extends _i29.PageRouteInfo<LieuRouteArgs> {
 
   static const String name = 'LieuRoute';
 
-  static const _i29.PageInfo<LieuRouteArgs> page =
-      _i29.PageInfo<LieuRouteArgs>(name);
+  static const _i46.PageInfo<LieuRouteArgs> page =
+      _i46.PageInfo<LieuRouteArgs>(name);
 }
 
 class LieuRouteArgs {
@@ -692,7 +1009,7 @@ class LieuRouteArgs {
     this.colisList,
   });
 
-  final _i30.Key? key;
+  final _i47.Key? key;
 
   final String phoneNumber;
 
@@ -713,9 +1030,9 @@ class LieuRouteArgs {
 }
 
 /// generated route for
-/// [_i14.LikedDishesPage]
-class LikedDishesRoute extends _i29.PageRouteInfo<void> {
-  const LikedDishesRoute({List<_i29.PageRouteInfo>? children})
+/// [_i25.LikedDishesPage]
+class LikedDishesRoute extends _i46.PageRouteInfo<void> {
+  const LikedDishesRoute({List<_i46.PageRouteInfo>? children})
       : super(
           LikedDishesRoute.name,
           initialChildren: children,
@@ -723,13 +1040,13 @@ class LikedDishesRoute extends _i29.PageRouteInfo<void> {
 
   static const String name = 'LikedDishesRoute';
 
-  static const _i29.PageInfo<void> page = _i29.PageInfo<void>(name);
+  static const _i46.PageInfo<void> page = _i46.PageInfo<void>(name);
 }
 
 /// generated route for
-/// [_i15.ModernDishDetailPage]
+/// [_i26.ModernDishDetailPage]
 class ModernDishDetailRoute
-    extends _i29.PageRouteInfo<ModernDishDetailRouteArgs> {
+    extends _i46.PageRouteInfo<ModernDishDetailRouteArgs> {
   ModernDishDetailRoute({
     required String id,
     required String restaurantId,
@@ -738,8 +1055,7 @@ class ModernDishDetailRoute
     required String imageUrl,
     required String rating,
     required String description,
-    required bool sodas,
-    List<_i29.PageRouteInfo>? children,
+    List<_i46.PageRouteInfo>? children,
   }) : super(
           ModernDishDetailRoute.name,
           args: ModernDishDetailRouteArgs(
@@ -750,15 +1066,14 @@ class ModernDishDetailRoute
             imageUrl: imageUrl,
             rating: rating,
             description: description,
-            sodas: sodas,
           ),
           initialChildren: children,
         );
 
   static const String name = 'ModernDishDetailRoute';
 
-  static const _i29.PageInfo<ModernDishDetailRouteArgs> page =
-      _i29.PageInfo<ModernDishDetailRouteArgs>(name);
+  static const _i46.PageInfo<ModernDishDetailRouteArgs> page =
+      _i46.PageInfo<ModernDishDetailRouteArgs>(name);
 }
 
 class ModernDishDetailRouteArgs {
@@ -770,7 +1085,6 @@ class ModernDishDetailRouteArgs {
     required this.imageUrl,
     required this.rating,
     required this.description,
-    required this.sodas,
   });
 
   final String id;
@@ -787,22 +1101,20 @@ class ModernDishDetailRouteArgs {
 
   final String description;
 
-  final bool sodas;
-
   @override
   String toString() {
-    return 'ModernDishDetailRouteArgs{id: $id, restaurantId: $restaurantId, name: $name, price: $price, imageUrl: $imageUrl, rating: $rating, description: $description, sodas: $sodas}';
+    return 'ModernDishDetailRouteArgs{id: $id, restaurantId: $restaurantId, name: $name, price: $price, imageUrl: $imageUrl, rating: $rating, description: $description}';
   }
 }
 
 /// generated route for
-/// [_i16.ModernHomeRestaurantPage]
+/// [_i27.ModernHomeRestaurantPage]
 class ModernHomeRestaurantRoute
-    extends _i29.PageRouteInfo<ModernHomeRestaurantRouteArgs> {
+    extends _i46.PageRouteInfo<ModernHomeRestaurantRouteArgs> {
   ModernHomeRestaurantRoute({
-    _i30.Key? key,
-    required _i32.HomeOption option,
-    List<_i29.PageRouteInfo>? children,
+    _i47.Key? key,
+    required _i50.HomeOption option,
+    List<_i46.PageRouteInfo>? children,
   }) : super(
           ModernHomeRestaurantRoute.name,
           args: ModernHomeRestaurantRouteArgs(
@@ -814,8 +1126,8 @@ class ModernHomeRestaurantRoute
 
   static const String name = 'ModernHomeRestaurantRoute';
 
-  static const _i29.PageInfo<ModernHomeRestaurantRouteArgs> page =
-      _i29.PageInfo<ModernHomeRestaurantRouteArgs>(name);
+  static const _i46.PageInfo<ModernHomeRestaurantRouteArgs> page =
+      _i46.PageInfo<ModernHomeRestaurantRouteArgs>(name);
 }
 
 class ModernHomeRestaurantRouteArgs {
@@ -824,9 +1136,9 @@ class ModernHomeRestaurantRouteArgs {
     required this.option,
   });
 
-  final _i30.Key? key;
+  final _i47.Key? key;
 
-  final _i32.HomeOption option;
+  final _i50.HomeOption option;
 
   @override
   String toString() {
@@ -835,16 +1147,16 @@ class ModernHomeRestaurantRouteArgs {
 }
 
 /// generated route for
-/// [_i17.ModernRestaurantDetailPage]
+/// [_i28.ModernRestaurantDetailPage]
 class ModernRestaurantDetailRoute
-    extends _i29.PageRouteInfo<ModernRestaurantDetailRouteArgs> {
+    extends _i46.PageRouteInfo<ModernRestaurantDetailRouteArgs> {
   ModernRestaurantDetailRoute({
-    _i30.Key? key,
+    _i47.Key? key,
     required String id,
     required String name,
     required String description,
     required String coverImage,
-    List<_i29.PageRouteInfo>? children,
+    List<_i46.PageRouteInfo>? children,
   }) : super(
           ModernRestaurantDetailRoute.name,
           args: ModernRestaurantDetailRouteArgs(
@@ -859,8 +1171,8 @@ class ModernRestaurantDetailRoute
 
   static const String name = 'ModernRestaurantDetailRoute';
 
-  static const _i29.PageInfo<ModernRestaurantDetailRouteArgs> page =
-      _i29.PageInfo<ModernRestaurantDetailRouteArgs>(name);
+  static const _i46.PageInfo<ModernRestaurantDetailRouteArgs> page =
+      _i46.PageInfo<ModernRestaurantDetailRouteArgs>(name);
 }
 
 class ModernRestaurantDetailRouteArgs {
@@ -872,7 +1184,7 @@ class ModernRestaurantDetailRouteArgs {
     required this.coverImage,
   });
 
-  final _i30.Key? key;
+  final _i47.Key? key;
 
   final String id;
 
@@ -889,12 +1201,12 @@ class ModernRestaurantDetailRouteArgs {
 }
 
 /// generated route for
-/// [_i18.OrderDetailPage]
-class OrderDetailRoute extends _i29.PageRouteInfo<OrderDetailRouteArgs> {
+/// [_i29.OrderDetailPage]
+class OrderDetailRoute extends _i46.PageRouteInfo<OrderDetailRouteArgs> {
   OrderDetailRoute({
-    _i30.Key? key,
-    required _i33.Order order,
-    List<_i29.PageRouteInfo>? children,
+    _i47.Key? key,
+    required _i51.Order order,
+    List<_i46.PageRouteInfo>? children,
   }) : super(
           OrderDetailRoute.name,
           args: OrderDetailRouteArgs(
@@ -906,8 +1218,8 @@ class OrderDetailRoute extends _i29.PageRouteInfo<OrderDetailRouteArgs> {
 
   static const String name = 'OrderDetailRoute';
 
-  static const _i29.PageInfo<OrderDetailRouteArgs> page =
-      _i29.PageInfo<OrderDetailRouteArgs>(name);
+  static const _i46.PageInfo<OrderDetailRouteArgs> page =
+      _i46.PageInfo<OrderDetailRouteArgs>(name);
 }
 
 class OrderDetailRouteArgs {
@@ -916,9 +1228,9 @@ class OrderDetailRouteArgs {
     required this.order,
   });
 
-  final _i30.Key? key;
+  final _i47.Key? key;
 
-  final _i33.Order order;
+  final _i51.Order order;
 
   @override
   String toString() {
@@ -927,12 +1239,12 @@ class OrderDetailRouteArgs {
 }
 
 /// generated route for
-/// [_i19.OrderListPage]
-class OrderListRoute extends _i29.PageRouteInfo<OrderListRouteArgs> {
+/// [_i30.OrderListPage]
+class OrderListRoute extends _i46.PageRouteInfo<OrderListRouteArgs> {
   OrderListRoute({
-    _i30.Key? key,
+    _i47.Key? key,
     required String phoneNumber,
-    List<_i29.PageRouteInfo>? children,
+    List<_i46.PageRouteInfo>? children,
   }) : super(
           OrderListRoute.name,
           args: OrderListRouteArgs(
@@ -944,8 +1256,8 @@ class OrderListRoute extends _i29.PageRouteInfo<OrderListRouteArgs> {
 
   static const String name = 'OrderListRoute';
 
-  static const _i29.PageInfo<OrderListRouteArgs> page =
-      _i29.PageInfo<OrderListRouteArgs>(name);
+  static const _i46.PageInfo<OrderListRouteArgs> page =
+      _i46.PageInfo<OrderListRouteArgs>(name);
 }
 
 class OrderListRouteArgs {
@@ -954,7 +1266,7 @@ class OrderListRouteArgs {
     required this.phoneNumber,
   });
 
-  final _i30.Key? key;
+  final _i47.Key? key;
 
   final String phoneNumber;
 
@@ -965,12 +1277,26 @@ class OrderListRouteArgs {
 }
 
 /// generated route for
-/// [_i20.OtpPage]
-class OtpRoute extends _i29.PageRouteInfo<OtpRouteArgs> {
+/// [_i31.OrderManagementPage]
+class OrderManagementRoute extends _i46.PageRouteInfo<void> {
+  const OrderManagementRoute({List<_i46.PageRouteInfo>? children})
+      : super(
+          OrderManagementRoute.name,
+          initialChildren: children,
+        );
+
+  static const String name = 'OrderManagementRoute';
+
+  static const _i46.PageInfo<void> page = _i46.PageInfo<void>(name);
+}
+
+/// generated route for
+/// [_i32.OtpPage]
+class OtpRoute extends _i46.PageRouteInfo<OtpRouteArgs> {
   OtpRoute({
     required String verificationId,
-    _i30.Key? key,
-    List<_i29.PageRouteInfo>? children,
+    _i47.Key? key,
+    List<_i46.PageRouteInfo>? children,
   }) : super(
           OtpRoute.name,
           args: OtpRouteArgs(
@@ -982,8 +1308,8 @@ class OtpRoute extends _i29.PageRouteInfo<OtpRouteArgs> {
 
   static const String name = 'OtpRoute';
 
-  static const _i29.PageInfo<OtpRouteArgs> page =
-      _i29.PageInfo<OtpRouteArgs>(name);
+  static const _i46.PageInfo<OtpRouteArgs> page =
+      _i46.PageInfo<OtpRouteArgs>(name);
 }
 
 class OtpRouteArgs {
@@ -994,7 +1320,7 @@ class OtpRouteArgs {
 
   final String verificationId;
 
-  final _i30.Key? key;
+  final _i47.Key? key;
 
   @override
   String toString() {
@@ -1003,12 +1329,12 @@ class OtpRouteArgs {
 }
 
 /// generated route for
-/// [_i21.ParcelDetailPage]
-class ParcelDetailRoute extends _i29.PageRouteInfo<ParcelDetailRouteArgs> {
+/// [_i33.ParcelDetailPage]
+class ParcelDetailRoute extends _i46.PageRouteInfo<ParcelDetailRouteArgs> {
   ParcelDetailRoute({
-    _i30.Key? key,
-    required _i34.Parcel parcel,
-    List<_i29.PageRouteInfo>? children,
+    _i47.Key? key,
+    required _i52.Parcel parcel,
+    List<_i46.PageRouteInfo>? children,
   }) : super(
           ParcelDetailRoute.name,
           args: ParcelDetailRouteArgs(
@@ -1020,8 +1346,8 @@ class ParcelDetailRoute extends _i29.PageRouteInfo<ParcelDetailRouteArgs> {
 
   static const String name = 'ParcelDetailRoute';
 
-  static const _i29.PageInfo<ParcelDetailRouteArgs> page =
-      _i29.PageInfo<ParcelDetailRouteArgs>(name);
+  static const _i46.PageInfo<ParcelDetailRouteArgs> page =
+      _i46.PageInfo<ParcelDetailRouteArgs>(name);
 }
 
 class ParcelDetailRouteArgs {
@@ -1030,9 +1356,9 @@ class ParcelDetailRouteArgs {
     required this.parcel,
   });
 
-  final _i30.Key? key;
+  final _i47.Key? key;
 
-  final _i34.Parcel parcel;
+  final _i52.Parcel parcel;
 
   @override
   String toString() {
@@ -1041,9 +1367,9 @@ class ParcelDetailRouteArgs {
 }
 
 /// generated route for
-/// [_i22.ParcelHomePage]
-class ParcelHomeRoute extends _i29.PageRouteInfo<void> {
-  const ParcelHomeRoute({List<_i29.PageRouteInfo>? children})
+/// [_i34.ParcelHomePage]
+class ParcelHomeRoute extends _i46.PageRouteInfo<void> {
+  const ParcelHomeRoute({List<_i46.PageRouteInfo>? children})
       : super(
           ParcelHomeRoute.name,
           initialChildren: children,
@@ -1051,13 +1377,13 @@ class ParcelHomeRoute extends _i29.PageRouteInfo<void> {
 
   static const String name = 'ParcelHomeRoute';
 
-  static const _i29.PageInfo<void> page = _i29.PageInfo<void>(name);
+  static const _i46.PageInfo<void> page = _i46.PageInfo<void>(name);
 }
 
 /// generated route for
-/// [_i23.ParcelListPage]
-class ParcelListRoute extends _i29.PageRouteInfo<void> {
-  const ParcelListRoute({List<_i29.PageRouteInfo>? children})
+/// [_i35.ParcelListPage]
+class ParcelListRoute extends _i46.PageRouteInfo<void> {
+  const ParcelListRoute({List<_i46.PageRouteInfo>? children})
       : super(
           ParcelListRoute.name,
           initialChildren: children,
@@ -1065,13 +1391,13 @@ class ParcelListRoute extends _i29.PageRouteInfo<void> {
 
   static const String name = 'ParcelListRoute';
 
-  static const _i29.PageInfo<void> page = _i29.PageInfo<void>(name);
+  static const _i46.PageInfo<void> page = _i46.PageInfo<void>(name);
 }
 
 /// generated route for
-/// [_i24.ProfilePage]
-class ProfileRoute extends _i29.PageRouteInfo<void> {
-  const ProfileRoute({List<_i29.PageRouteInfo>? children})
+/// [_i36.ProfilePage]
+class ProfileRoute extends _i46.PageRouteInfo<void> {
+  const ProfileRoute({List<_i46.PageRouteInfo>? children})
       : super(
           ProfileRoute.name,
           initialChildren: children,
@@ -1079,20 +1405,20 @@ class ProfileRoute extends _i29.PageRouteInfo<void> {
 
   static const String name = 'ProfileRoute';
 
-  static const _i29.PageInfo<void> page = _i29.PageInfo<void>(name);
+  static const _i46.PageInfo<void> page = _i46.PageInfo<void>(name);
 }
 
 /// generated route for
-/// [_i25.RestaurantDetailPage]
+/// [_i37.RestaurantDetailPage]
 class RestaurantDetailRoute
-    extends _i29.PageRouteInfo<RestaurantDetailRouteArgs> {
+    extends _i46.PageRouteInfo<RestaurantDetailRouteArgs> {
   RestaurantDetailRoute({
-    _i30.Key? key,
+    _i47.Key? key,
     required String id,
     required String name,
     required String description,
     required String coverImage,
-    List<_i29.PageRouteInfo>? children,
+    List<_i46.PageRouteInfo>? children,
   }) : super(
           RestaurantDetailRoute.name,
           args: RestaurantDetailRouteArgs(
@@ -1107,8 +1433,8 @@ class RestaurantDetailRoute
 
   static const String name = 'RestaurantDetailRoute';
 
-  static const _i29.PageInfo<RestaurantDetailRouteArgs> page =
-      _i29.PageInfo<RestaurantDetailRouteArgs>(name);
+  static const _i46.PageInfo<RestaurantDetailRouteArgs> page =
+      _i46.PageInfo<RestaurantDetailRouteArgs>(name);
 }
 
 class RestaurantDetailRouteArgs {
@@ -1120,7 +1446,7 @@ class RestaurantDetailRouteArgs {
     required this.coverImage,
   });
 
-  final _i30.Key? key;
+  final _i47.Key? key;
 
   final String id;
 
@@ -1137,9 +1463,23 @@ class RestaurantDetailRouteArgs {
 }
 
 /// generated route for
-/// [_i26.RestaurantSelectPage]
-class RestaurantSelectRoute extends _i29.PageRouteInfo<void> {
-  const RestaurantSelectRoute({List<_i29.PageRouteInfo>? children})
+/// [_i38.RestaurantManagementPage]
+class RestaurantManagementRoute extends _i46.PageRouteInfo<void> {
+  const RestaurantManagementRoute({List<_i46.PageRouteInfo>? children})
+      : super(
+          RestaurantManagementRoute.name,
+          initialChildren: children,
+        );
+
+  static const String name = 'RestaurantManagementRoute';
+
+  static const _i46.PageInfo<void> page = _i46.PageInfo<void>(name);
+}
+
+/// generated route for
+/// [_i39.RestaurantSelectPage]
+class RestaurantSelectRoute extends _i46.PageRouteInfo<void> {
+  const RestaurantSelectRoute({List<_i46.PageRouteInfo>? children})
       : super(
           RestaurantSelectRoute.name,
           initialChildren: children,
@@ -1147,13 +1487,13 @@ class RestaurantSelectRoute extends _i29.PageRouteInfo<void> {
 
   static const String name = 'RestaurantSelectRoute';
 
-  static const _i29.PageInfo<void> page = _i29.PageInfo<void>(name);
+  static const _i46.PageInfo<void> page = _i46.PageInfo<void>(name);
 }
 
 /// generated route for
-/// [_i27.SearchPage]
-class SearchRoute extends _i29.PageRouteInfo<void> {
-  const SearchRoute({List<_i29.PageRouteInfo>? children})
+/// [_i40.SearchPage]
+class SearchRoute extends _i46.PageRouteInfo<void> {
+  const SearchRoute({List<_i46.PageRouteInfo>? children})
       : super(
           SearchRoute.name,
           initialChildren: children,
@@ -1161,13 +1501,13 @@ class SearchRoute extends _i29.PageRouteInfo<void> {
 
   static const String name = 'SearchRoute';
 
-  static const _i29.PageInfo<void> page = _i29.PageInfo<void>(name);
+  static const _i46.PageInfo<void> page = _i46.PageInfo<void>(name);
 }
 
 /// generated route for
-/// [_i28.ShareLocationPage]
-class ShareLocationRoute extends _i29.PageRouteInfo<void> {
-  const ShareLocationRoute({List<_i29.PageRouteInfo>? children})
+/// [_i41.ShareLocationPage]
+class ShareLocationRoute extends _i46.PageRouteInfo<void> {
+  const ShareLocationRoute({List<_i46.PageRouteInfo>? children})
       : super(
           ShareLocationRoute.name,
           initialChildren: children,
@@ -1175,5 +1515,61 @@ class ShareLocationRoute extends _i29.PageRouteInfo<void> {
 
   static const String name = 'ShareLocationRoute';
 
-  static const _i29.PageInfo<void> page = _i29.PageInfo<void>(name);
+  static const _i46.PageInfo<void> page = _i46.PageInfo<void>(name);
+}
+
+/// generated route for
+/// [_i42.SplashDeliveryPage]
+class SplashDeliveryRoute extends _i46.PageRouteInfo<void> {
+  const SplashDeliveryRoute({List<_i46.PageRouteInfo>? children})
+      : super(
+          SplashDeliveryRoute.name,
+          initialChildren: children,
+        );
+
+  static const String name = 'SplashDeliveryRoute';
+
+  static const _i46.PageInfo<void> page = _i46.PageInfo<void>(name);
+}
+
+/// generated route for
+/// [_i43.StatusPage]
+class StatusRoute extends _i46.PageRouteInfo<void> {
+  const StatusRoute({List<_i46.PageRouteInfo>? children})
+      : super(
+          StatusRoute.name,
+          initialChildren: children,
+        );
+
+  static const String name = 'StatusRoute';
+
+  static const _i46.PageInfo<void> page = _i46.PageInfo<void>(name);
+}
+
+/// generated route for
+/// [_i44.TestBeveragesPage]
+class TestBeveragesRoute extends _i46.PageRouteInfo<void> {
+  const TestBeveragesRoute({List<_i46.PageRouteInfo>? children})
+      : super(
+          TestBeveragesRoute.name,
+          initialChildren: children,
+        );
+
+  static const String name = 'TestBeveragesRoute';
+
+  static const _i46.PageInfo<void> page = _i46.PageInfo<void>(name);
+}
+
+/// generated route for
+/// [_i45.TestUsersManagementPage]
+class TestUsersManagementRoute extends _i46.PageRouteInfo<void> {
+  const TestUsersManagementRoute({List<_i46.PageRouteInfo>? children})
+      : super(
+          TestUsersManagementRoute.name,
+          initialChildren: children,
+        );
+
+  static const String name = 'TestUsersManagementRoute';
+
+  static const _i46.PageInfo<void> page = _i46.PageInfo<void>(name);
 }

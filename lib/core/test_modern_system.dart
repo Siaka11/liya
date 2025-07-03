@@ -127,7 +127,6 @@ class TestModernSystemPage extends ConsumerWidget {
                   restaurantId: 'test_restaurant',
                   description:
                       'Pizza traditionnelle avec mozzarella et basilic',
-                  sodas: true,
                   onTap: () {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
@@ -147,7 +146,6 @@ class TestModernSystemPage extends ConsumerWidget {
                       'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400',
                   restaurantId: 'test_restaurant',
                   description: 'Burger avec steak, salade, tomate et fromage',
-                  sodas: true,
                   onTap: () {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
@@ -176,7 +174,6 @@ class TestModernSystemPage extends ConsumerWidget {
           imageUrl: 'https://via.placeholder.com/150',
           restaurantId: 'test_restaurant',
           description: 'Article de test',
-          sodas: false,
         );
   }
 }

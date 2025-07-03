@@ -10,7 +10,6 @@ class ModernDishCard extends ConsumerWidget {
   final String imageUrl;
   final String restaurantId;
   final String description;
-  final bool sodas;
   final VoidCallback? onTap;
 
   const ModernDishCard({
@@ -21,7 +20,6 @@ class ModernDishCard extends ConsumerWidget {
     required this.imageUrl,
     required this.restaurantId,
     required this.description,
-    required this.sodas,
     this.onTap,
   }) : super(key: key);
 
@@ -146,7 +144,6 @@ class ModernDishCard extends ConsumerWidget {
           imageUrl: imageUrl,
           restaurantId: restaurantId,
           description: description,
-          sodas: sodas,
         );
   }
 
@@ -366,7 +363,6 @@ class ModernDishCardSimple extends ConsumerWidget {
           imageUrl: imageUrl,
           restaurantId: restaurantId,
           description: description,
-          sodas: sodas,
         );
   }
 

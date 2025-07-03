@@ -6,8 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:liya/modules/restaurant/features/home/presentation/widget/dish_card_simple.dart';
 import '../../../../../../core/local_storage_factory.dart';
-import '../../../../../../core/routes/app_router.dart';
 import '../../../../../../core/singletons.dart';
+import '../../../../../../routes/app_router.gr.dart';
 import '../../application/all_dishes_provider.dart';
 import '../widget/popular_dish_card.dart';
 
@@ -43,7 +43,6 @@ class AllDishesPage extends ConsumerWidget {
                   imageUrl: dish.imageUrl,
                   rating: '0.0',
                   description: dish.description,
-                  sodas: dish.sodas,
                 ));
               },
               child: DishCardSimple(

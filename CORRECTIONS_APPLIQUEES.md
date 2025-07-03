@@ -299,4 +299,87 @@ Réduction de la largeur des cartes de plats dans toute l'application pour optim
 - ✅ Plus de plats visibles simultanément sur l'écran
 - ✅ Interface plus compacte et optimisée
 - ✅ Meilleure utilisation de l'espace disponible
-- ✅ Expérience utilisateur améliorée avec plus de choix visibles 
+- ✅ Expérience utilisateur améliorée avec plus de choix visibles
+
+## Nouvelle fonctionnalité : Choix de boissons (Sodas, Eau, Jus)
+
+### Problème
+Les utilisateurs ne pouvaient pas choisir des boissons pour accompagner leurs plats, limitant l'expérience de commande.
+
+### Solution appliquée
+Implémentation d'un système moderne de choix de boissons avec un design similaire à Glovo, permettant aux utilisateurs de sélectionner des sodas, de l'eau et des jus avec différentes tailles.
+
+### Fonctionnalités implémentées
+
+#### 1. Système de données Firebase
+- **Collection 'beverages'** : Stockage des boissons avec catégories, tailles et prix
+- **Catégories** : Sodas, Eau, Jus
+- **Tailles** : Small, Medium, Large avec prix différents
+- **Script d'initialisation** : `FirebaseBeveragesInitializer` pour configurer les données
+
+#### 2. Composants UI modernes
+- **BeverageSelector** : Modal bottom sheet avec tabs pour les catégories
+- **BeverageButton** : Bouton d'accès au sélecteur avec affichage des sélections
+- **BeverageCard** : Carte individuelle pour chaque boisson avec contrôles de quantité
+
+#### 3. Design inspiré de Glovo
+- **Interface intuitive** : Tabs pour naviguer entre les catégories
+- **Sélection de taille** : Boutons pour choisir Small/Medium/Large
+- **Contrôles de quantité** : Boutons +/- avec affichage du total
+- **Feedback visuel** : Bordures colorées et badges pour les sélections
+
+#### 4. Intégration dans l'application
+- **Pages de détail des plats** : Bouton "Ajouter des boissons" quand `sodas: true`
+- **Gestion d'état** : Sélections persistantes pendant la session
+- **Calcul automatique** : Prix total mis à jour en temps réel
+
+### Fichiers créés/modifiés
+
+#### Nouveaux fichiers :
+- `lib/modules/restaurant/features/order/domain/entities/beverage.dart`
+- `lib/modules/restaurant/features/order/presentation/providers/beverage_provider.dart`
+- `lib/modules/restaurant/features/order/presentation/widgets/beverage_selector.dart`
+- `lib/modules/restaurant/features/order/presentation/widgets/beverage_button.dart`
+- `lib/core/firebase_beverages_init.dart`
+
+#### Fichiers modifiés :
+- `lib/modules/restaurant/features/home/presentation/pages/modern_dish_detail_page.dart`
+
+### Données de boissons disponibles
+
+#### Sodas :
+- Coca Cola (300/500/800 FCFA)
+- Fanta (300/500/800 FCFA)
+- Sprite (300/500/800 FCFA)
+- Pepsi (300/500/800 FCFA)
+
+#### Eau :
+- Eau minérale (200/400/600 FCFA)
+- Eau gazeuse (250/450/650 FCFA)
+
+#### Jus :
+- Jus d'orange (400/600/900 FCFA)
+- Jus de pomme (400/600/900 FCFA)
+- Jus d'ananas (450/650/950 FCFA)
+- Jus de mangue (450/650/950 FCFA)
+
+### Instructions d'utilisation
+
+#### Pour initialiser les données Firebase :
+```dart
+// Une seule fois pour configurer la collection
+await FirebaseBeveragesInitializer.initializeBeverages();
+```
+
+#### Pour vérifier si les données existent :
+```dart
+final exists = await FirebaseBeveragesInitializer.beveragesExist();
+```
+
+### Résultat
+- ✅ **Interface moderne** : Design similaire à Glovo avec tabs et cartes
+- ✅ **Choix variés** : Sodas, eau et jus avec différentes tailles
+- ✅ **Prix dynamiques** : Calcul automatique selon la taille et quantité
+- ✅ **Expérience fluide** : Sélection intuitive avec feedback visuel
+- ✅ **Intégration native** : Fonctionne avec le système de commande existant
+- ✅ **Données Firebase** : Système scalable et administrable 

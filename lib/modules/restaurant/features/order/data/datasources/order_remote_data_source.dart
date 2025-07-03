@@ -15,7 +15,21 @@ class OrderRemoteDataSourceImpl implements OrderRemoteDataSource {
 
   @override
   Future<void> createOrder(OrderModel order) async {
-    await firestore.collection('orders').doc(order.id).set(order.toJson());
+    print('DEBUG - createOrder called with phone: ${order.phone}');
+
+    final orderData = order.toJson();
+    print('DEBUG - orderData after toJson: ${orderData['phone']}');
+
+    // S'assurer que le champ phone est toujours présent dans Firestore
+    if (!orderData.containsKey('phone')) {
+      orderData['phone'] = order.phone;
+      print('DEBUG - Added phone to orderData: ${orderData['phone']}');
+    }
+
+    print('DEBUG - Final orderData phone: ${orderData['phone']}');
+    print('DEBUG - Saving to Firestore: $orderData');
+
+    await firestore.collection('orders').doc(order.id).set(orderData);
   }
 
   @override

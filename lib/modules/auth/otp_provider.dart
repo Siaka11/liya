@@ -1,6 +1,3 @@
-
-
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:liya/modules/auth/auth_service.dart';
@@ -8,7 +5,7 @@ import 'package:liya/modules/auth/auth_service.dart';
 import '../../core/loading_provider.dart';
 import '../../core/singletons.dart';
 import '../../routes/app_router.dart';
-import '../../routes/app_router.gr.dart';
+import 'package:liya/routes/app_router.gr.dart';
 
 enum OtpStatus {
   Empty,
@@ -29,7 +26,6 @@ class OtpState {
     this.errorMessage = '',
     this.status = OtpStatus.Empty,
     this.pin = '',
-
   });
 
   OtpState copyWith({
@@ -37,7 +33,7 @@ class OtpState {
     String? errorMessage,
     OtpStatus? status,
     String? pin,
-  }){
+  }) {
     return OtpState(
       hasError: hasError ?? this.hasError,
       errorMessage: errorMessage ?? this.errorMessage,
@@ -123,5 +119,5 @@ class OtpNotifier extends StateNotifier<OtpState> {
 }
 
 final otpProvider = StateNotifierProvider.family<OtpNotifier, OtpState, String>(
-      (ref, verificationId) => OtpNotifier(ref, verificationId),
+  (ref, verificationId) => OtpNotifier(ref, verificationId),
 );

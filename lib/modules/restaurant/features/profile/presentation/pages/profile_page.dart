@@ -5,8 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../../core/local_storage_factory.dart';
-import '../../../../../../core/routes/app_router.dart';
 import '../../../../../../core/singletons.dart';
+import '../../../../../../routes/app_router.gr.dart';
 import '../../../../../auth/auth_provider.dart';
 import '../../../../../auth/info_user_provider.dart';
 import '../../../../../home/application/home_provider.dart';
@@ -311,7 +311,7 @@ class ProfilePage extends ConsumerWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    SizedBox(
+                    /*SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
                         icon: Icon(Icons.home),
@@ -332,7 +332,7 @@ class ProfilePage extends ConsumerWidget {
                           }
                         },
                       ),
-                    ),
+                    ),*/
                     SizedBox(height: 12),
                     SizedBox(
                       width: double.infinity,

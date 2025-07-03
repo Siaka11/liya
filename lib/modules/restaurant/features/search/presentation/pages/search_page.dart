@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../home/presentation/widget/dish_card.dart';
 import '../../../home/presentation/widget/navigation_footer.dart';
 import '../providers/search_provider.dart';
+import 'package:liya/routes/app_router.gr.dart';
 // TODO: adapte le chemin selon ton projet
 
 @RoutePage(name: 'SearchRoute')
@@ -58,7 +59,8 @@ class _SearchPageState extends ConsumerState<SearchPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Recherche', style: TextStyle(color: Colors.deepOrange)),
+        title:
+            const Text('Recherche', style: TextStyle(color: Colors.deepOrange)),
         leading: BackButton(
           color: Colors.deepOrange,
         ),
@@ -80,36 +82,39 @@ class _SearchPageState extends ConsumerState<SearchPage> {
               controller: _controller,
               onSubmitted: (_) => _onSearch(),
               decoration: InputDecoration(
-                hintText: 'Garba...',
+                hintText: 'Recherche un plat...',
                 prefixIcon: IconButton(
                   icon: Icon(Icons.search, color: Colors.deepOrange),
                   onPressed: _onSearch,
                 ),
                 suffixIcon: _controller.text.isNotEmpty
                     ? IconButton(
-                  icon: Icon(Icons.clear, color: Colors.deepOrange),
-                  onPressed: () {
-                    _controller.clear();
-                    ref.read(searchProvider.notifier).search('');
-                  },
-                )
+                        icon: Icon(Icons.clear, color: Colors.deepOrange),
+                        onPressed: () {
+                          _controller.clear();
+                          ref.read(searchProvider.notifier).search('');
+                        },
+                      )
                     : null,
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(20), // Bord arrondi
-                  borderSide: BorderSide(color: Colors.deepOrange), // Couleur bord
+                  borderSide:
+                      BorderSide(color: Colors.deepOrange), // Couleur bord
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(20),
-                  borderSide: BorderSide(color: Colors.deepOrange, width: 2), // Accentuation si focus
+                  borderSide: BorderSide(
+                      color: Colors.deepOrange,
+                      width: 2), // Accentuation si focus
                 ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(20),
                   borderSide: BorderSide(color: Colors.deepOrange),
                 ),
-                contentPadding: EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+                contentPadding:
+                    EdgeInsets.symmetric(vertical: 12, horizontal: 20),
               ),
             ),
-
           ),
           if (_searchHistory.isNotEmpty)
             Container(
@@ -158,7 +163,18 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                           description: dish.description,
                           quantity: 0,
                           onTap: () {
-                            // Par exemple, ouvrir le détail du plat ou ajouter au panier
+                            // Navigation vers la page de détail du plat
+                            context.router.push(
+                              DishDetailRoute(
+                                id: dish.id.toString(),
+                                restaurantId: dish.restaurantId,
+                                name: dish.name,
+                                price: dish.price.toString(),
+                                imageUrl: dish.imageUrl,
+                                rating: '0', // Valeur par défaut
+                                description: dish.description,
+                              ),
+                            );
                           },
                           onDelete: null,
                         );

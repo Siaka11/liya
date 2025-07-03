@@ -19,24 +19,29 @@ class HomeLocalDataSourceImpl implements HomeLocalDataSource {
         ? jsonDecode(userDetailsJson)
         : userDetailsJson;
     role = userDetails['role'];
+    print('Role de l\'utilisateur : $role');
   }
+
+
 
   @override
   Future<List<HomeOptionModel>> getHomeOptions() async {
     return [
       const HomeOptionModel(
-        title: 'Je veux commander un plat',
+        title: 'Je commande un plat',
         icon: 'fastfood',
       ),
       const HomeOptionModel(
-        title: 'Je veux expédier un colis',
+        title: "J'expédie un colis",
         icon: 'local_shipping',
       ),
-      /*const HomeOptionModel(
-        title: 'Je veux livrer',
+      if(role == 'admin' || role == 'livreur')...[
+      const HomeOptionModel(
+        title: 'Je livre',
         icon: 'delivery_dining',
       ),
-      const HomeOptionModel(
+      ],
+      /*const HomeOptionModel(
         title: 'Faire des courses',
         icon: 'shopping_cart',
       ),*/

@@ -5,8 +5,16 @@ import 'package:liya/modules/admin/features/dishes/presentation/pages/restaurant
 import 'package:liya/modules/home/presentation/pages/utils/top_menu.dart';
 import 'package:liya/modules/home/presentation/pages/widget/home_card_widget.dart';
 import 'package:liya/core/test_modern_system.dart';
+import 'package:liya/core/test_beverages.dart';
+import 'package:liya/modules/home/domain/entities/home_option.dart';
+import 'package:liya/core/test_users_management.dart';
+import 'package:liya/modules/delivery/presentation/pages/delivery_assignment_page.dart';
+import 'package:liya/modules/delivery/presentation/pages/delivery_dashboard_page.dart';
+import 'package:liya/core/init_delivery_data.dart';
+import 'package:liya/core/local_storage_factory.dart';
+import 'package:liya/core/singletons.dart';
 
-import '../../../../core/routes/app_router.dart';
+import 'package:liya/routes/app_router.gr.dart';
 import '../../application/home_provider.dart';
 
 @RoutePage()
@@ -16,7 +24,28 @@ class HomePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final homeState = ref.watch(homeProvider);
-    print('HomePage build - User: ${homeState.user.name}');
+
+    // Map pour associer les titres aux routes
+    final _routeMap = {
+      'Je commande un plat': (context, option) =>
+          AutoRouter.of(context).push(HomeRestaurantRoute(option: option)),
+      "J'expédie un colis": (context, option) =>
+          AutoRouter.of(context).push(const ParcelHomeRoute()),
+      'Je livre': (context, option) =>
+          AutoRouter.of(context).push(const HomeDeliveryRoute()),
+      'Administrateur': (context, option) =>
+          AutoRouter.of(context).push(const AdminDashboardRoute()),
+    };
+
+    void onOptionSelected(BuildContext context, HomeOption option) {
+      final navigate = _routeMap[option.title];
+      if (navigate != null) {
+        print('Navigating to ${option.title}');
+        navigate(context, option);
+      } else {
+        print('Unknown module: ${option.title}');
+      }
+    }
 
     return Scaffold(
       body: SafeArea(
@@ -71,10 +100,7 @@ class HomePage extends ConsumerWidget {
                                 return HomeOptionCard(
                                   option: option,
                                   onTap: () {
-                                    // La logique de navigation sera gérée par un provider ou un controller
-                                    ref
-                                        .read(homeProvider.notifier)
-                                        .onOptionSelected(context, option);
+                                    onOptionSelected(context, option);
                                   },
                                 );
                               },
@@ -115,7 +141,7 @@ class HomePage extends ConsumerWidget {
                   ))),
           // Bouton de test pour le système moderne
           Positioned(
-            bottom: 20,
+            bottom: 200,
             left: 20,
             right: 20,
             child: ElevatedButton(
@@ -137,6 +163,231 @@ class HomePage extends ConsumerWidget {
               ),
               child: const Text(
                 '🧪 Tester le Système Moderne',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+          // Bouton de test pour les boissons
+          Positioned(
+            bottom: 140,
+            left: 20,
+            right: 20,
+            child: ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const TestBeveragesPage(),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text(
+                '🥤 Tester les Boissons',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+          // Bouton pour initialiser les données de livraison
+          Positioned(
+            bottom: 260,
+            left: 20,
+            right: 20,
+            child: ElevatedButton(
+              onPressed: () async {
+                await InitDeliveryData.initializeDeliverySystem();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('✅ Données de livraison initialisées!'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text(
+                '🚀 Initialiser les Données de Livraison',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+          // Bouton pour accéder au dashboard admin des livraisons
+          Positioned(
+            bottom: 200,
+            left: 20,
+            right: 20,
+            child: ElevatedButton(
+              onPressed: () {
+                AutoRouter.of(context)
+                    .push(const DeliveryAdminDashboardRoute());
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text(
+                '👨‍💼 Dashboard Admin - Assignation',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+          // Bouton pour accéder à l'interface livreur existante
+          Positioned(
+            bottom: 140,
+            left: 20,
+            right: 20,
+            child: ElevatedButton(
+              onPressed: () {
+                AutoRouter.of(context).push(const HomeDeliveryRoute());
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text(
+                '🚚 Interface Livreur (Dynamique)',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+
+          // Bouton pour accéder au dashboard admin
+          Positioned(
+            bottom: 80,
+            left: 20,
+            right: 20,
+            child: ElevatedButton(
+              onPressed: () {
+                AutoRouter.of(context).push(const AdminDashboardRoute());
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFF24E1E),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text(
+                '👨‍💼 Dashboard Admin',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+
+          // Bouton pour définir le rôle admin
+          Positioned(
+            bottom: 20,
+            left: 20,
+            right: 20,
+            child: ElevatedButton(
+              onPressed: () {
+                // Définir le rôle admin temporairement
+                final userDetails = {
+                  'name': homeState.user.name,
+                  'phoneNumber': homeState.user.phoneNumber,
+                  'email': homeState.user.email,
+                  'role': 'admin',
+                };
+                singleton<LocalStorageFactory>().setUserDetails(userDetails);
+
+                // Recharger la page pour voir les changements
+                ref.refresh(homeProvider);
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content:
+                        Text('✅ Rôle défini comme admin! Rechargez la page.'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.purple,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text(
+                '🔧 Définir Rôle Admin',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+
+          // Bouton pour initialiser les données de livraison
+          Positioned(
+            bottom: 20,
+            left: 20,
+            right: 20,
+            child: ElevatedButton(
+              onPressed: () async {
+                await InitDeliveryData.initializeDeliverySystem();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('✅ Données de livraison initialisées!'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text(
+                '🚀 Initialiser les Données',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,

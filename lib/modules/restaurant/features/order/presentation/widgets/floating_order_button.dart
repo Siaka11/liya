@@ -186,6 +186,16 @@ class OrderDetailsSheet extends ConsumerWidget {
     final totalPrice = ref.watch(orderTotalPriceProvider);
     final isLoading = orderState.isLoading;
 
+    // Fermeture automatique du modal si la commande devient vide
+    if (orderState.isEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        }
+      });
+      return const SizedBox.shrink();
+    }
+
     return Container(
       decoration: const BoxDecoration(
         color: Colors.white,
@@ -337,6 +347,14 @@ class OrderDetailsSheet extends ConsumerWidget {
                 'price': item.price,
                 'description': item.description,
                 'quantity': item.quantity,
+                'accompaniments': item.accompaniments
+                    .map((acc) => {
+                          'name': acc.beverage.name,
+                          'size': acc.selectedSize,
+                          'quantity': acc.quantity,
+                          'price': acc.totalPrice,
+                        })
+                    .toList(),
               })
           .toList();
 
@@ -409,6 +427,38 @@ class _OrderItemTile extends ConsumerWidget {
                     color: Colors.grey[600],
                   ),
                 ),
+                // Affichage des accompagnements
+                if (item.accompaniments.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 2,
+                    children: item.accompaniments
+                        .map((acc) => Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.local_drink,
+                                    size: 16, color: Colors.orange),
+                                const SizedBox(width: 4),
+                                Flexible(
+                                  child: Text(
+                                    '${acc.beverage.name} (${acc.selectedSize}) x${acc.quantity}',
+                                    style: const TextStyle(
+                                        fontSize: 13, color: Colors.black87),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '+${acc.totalPrice.toStringAsFixed(0)} FCFA',
+                                  style: const TextStyle(
+                                      fontSize: 12, color: Colors.grey),
+                                ),
+                              ],
+                            ))
+                        .toList(),
+                  ),
+                ],
               ],
             ),
           ),
@@ -437,7 +487,7 @@ class _OrderItemTile extends ConsumerWidget {
                       imageUrl: item.imageUrl,
                       restaurantId: item.restaurantId,
                       description: item.description,
-                      sodas: item.sodas,
+                      accompaniments: item.accompaniments,
                     ),
                 icon: const Icon(Icons.add_circle_outline),
                 color: UIColors.orange,

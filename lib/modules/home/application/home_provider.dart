@@ -8,7 +8,8 @@ import 'package:flutter/material.dart';
 import '../../../core/local_storage_factory.dart';
 import '../../../core/singletons.dart';
 import '../../../routes/app_router.dart';
-import '../../../routes/app_router.gr.dart';
+import 'package:liya/routes/app_router.gr.dart';
+import '../../delivery/presentation/pages/splash_delivery_page.dart';
 import '../data/datasources/home_local_datasource.dart';
 import '../data/repositories/home_repository_impl.dart';
 import 'package:liya/modules/home/domain/entities/home_option.dart';
@@ -92,13 +93,14 @@ class HomeNotifier extends StateNotifier<HomeState> {
 
   // Map pour associer les titres aux routes
   final _routeMap = {
-    'Je veux commander un plat': (context, option) =>
+    'Je commande un plat': (context, option) =>
         AutoRouter.of(context).push(HomeRestaurantRoute(option: option)),
-    'Je veux expédier un colis': (context, option) => Navigator.of(context)
+    "J'expédie un colis": (context, option) => Navigator.of(context)
         .push(MaterialPageRoute(builder: (_) => const ParcelHomePage())),
-    //'Je veux livrer': (context, option) => singleton<AppRouter>().push(const DeliveryRoute()),
+    'Je livrer': (context, option) =>
+        AutoRouter.of(context).push(const SplashDeliveryRoute()),
     //'Faire des courses': (context, option) => singleton<AppRouter>().push(const ShoppingRoute()),
-    //'Administrateur': (context, option) => singleton<AppRouter>().push(const AdminRoute()),
+    'Administrateur': (context, option) => AutoRouter.of(context).push(const AdminDashboardRoute()),
   };
 
   void onOptionSelected(BuildContext context, HomeOption option) {

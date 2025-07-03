@@ -8,7 +8,6 @@ class PopularDish extends Equatable {
   final String price;
   final String imageUrl;
   final String rating;
-  final bool sodas;
   /*  final String categorie;
   final String preparationTime;*/
 
@@ -20,14 +19,12 @@ class PopularDish extends Equatable {
     required this.price,
     required this.imageUrl,
     required this.rating,
-    required this.sodas,
 /*     required this.categorie,
     required this.preparationTime,*/
   });
 
   @override
-  List<Object?> get props =>
-      [id, restaurantId, name, price, description, sodas];
+  List<Object?> get props => [id, restaurantId, name, price, description];
 
   // Méthode pour créer un PopularDish à partir d'un JSON
   factory PopularDish.fromJson(Map<String, dynamic> json) {
@@ -38,10 +35,6 @@ class PopularDish extends Equatable {
       description: json['description'],
       price: json['price'] as String? ?? '0.00 F',
       imageUrl: json['image_url'],
-      sodas: json['sodas'] == true ||
-          json['sodas'] == 1 ||
-          json['sodas'] == '1' ||
-          json['sodas'] == 'true',
       rating: (json['rating']),
 /*        categorie: (json['categorie'] ),
       preparationTime: (json['preparationTime'] ),*/
@@ -58,7 +51,6 @@ class PopularDish extends Equatable {
       'price': price,
       'imageUrl': imageUrl,
       'rating': rating,
-      'sodas': sodas,
 /*      'categorie': categorie,
       'preparationTime': preparationTime,*/
     };

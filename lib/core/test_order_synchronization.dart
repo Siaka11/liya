@@ -224,7 +224,6 @@ class TestOrderSynchronizationPage extends ConsumerWidget {
           imageUrl: 'https://via.placeholder.com/150',
           restaurantId: restaurantId,
           description: 'Article de test pour la synchronisation',
-          sodas: false,
         );
   }
 

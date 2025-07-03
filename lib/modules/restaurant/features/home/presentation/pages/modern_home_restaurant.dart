@@ -11,7 +11,7 @@ import 'package:liya/modules/restaurant/features/home/presentation/widget/naviga
 import 'package:liya/modules/restaurant/features/home/presentation/pages/modern_restaurant_detail_page.dart';
 import 'package:liya/modules/restaurant/features/home/presentation/pages/modern_dish_detail_page.dart';
 
-import '../../../../../../core/routes/app_router.dart';
+import '../../../../../../routes/app_router.gr.dart';
 import '../../../../../home/domain/entities/home_option.dart';
 import '../../application/pupular_dish_controller_provider.dart';
 import '../../application/restaurant_controller_provider.dart';
@@ -124,6 +124,13 @@ class ModernHomeRestaurantPage extends ConsumerWidget {
                 icon: const Icon(Icons.favorite_border),
                 color: Colors.grey,
               ),
+              IconButton(
+                onPressed: () {
+                  context.router.push(TestBeveragesRoute());
+                },
+                icon: const Icon(Icons.local_drink),
+                color: Colors.grey,
+              ),
             ],
           ),
         ],
@@ -220,7 +227,6 @@ class ModernHomeRestaurantPage extends ConsumerWidget {
                       imageUrl: dish.imageUrl,
                       restaurantId: dish.restaurantId,
                       description: dish.description,
-                      sodas: dish.sodas,
                       onTap: () {
                         Navigator.push(
                           context,
@@ -233,7 +239,6 @@ class ModernHomeRestaurantPage extends ConsumerWidget {
                               imageUrl: dish.imageUrl,
                               rating: '0.0',
                               description: dish.description,
-                              sodas: dish.sodas,
                             ),
                           ),
                         );

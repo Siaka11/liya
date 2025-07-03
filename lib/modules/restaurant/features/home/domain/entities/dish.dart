@@ -5,7 +5,6 @@ class Dish {
   final String imageUrl;
   final String restaurantId;
   final String description;
-  final bool sodas;
 
   Dish({
     required this.id,
@@ -14,6 +13,5 @@ class Dish {
     required this.imageUrl,
     required this.restaurantId,
     required this.description,
-    required this.sodas,
   });
 }
