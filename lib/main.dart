@@ -5,6 +5,8 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:liya/core/singletons.dart';
 import 'package:liya/core/providers.dart';
+import 'package:liya/core/services/firebase_storage_helper.dart';
+import 'firebase_options.dart';
 
 import 'app.dart';
 
@@ -15,10 +17,18 @@ void main() async {
   await initSingletons();
 
   try {
-    await Firebase.initializeApp();
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    print('✅ Firebase initialisé avec succès');
+
+    // Diagnostic Firebase Storage
+    await FirebaseStorageHelper.printDiagnostics();
+    await FirebaseStorageHelper.ensureFoldersExist();
   } catch (e) {
-    print('Firebase init error: $e');
+    print('❌ Firebase init error: $e');
   }
+
   runApp(
       //Plugin for Internationalization i18n
       ProviderScope(
