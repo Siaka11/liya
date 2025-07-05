@@ -38,11 +38,11 @@ class VillePage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Je suis à',
+           /* const Text('Je suis à',
                 style: TextStyle(
                     color: Color(0xFFF24E1E),
                     fontWeight: FontWeight.bold,
-                    fontSize: 18)),
+                    fontSize: 18)),*/
             const SizedBox(height: 16),
             _VilleButton(
                 label: 'Yamoussoukro ou ville voisine',

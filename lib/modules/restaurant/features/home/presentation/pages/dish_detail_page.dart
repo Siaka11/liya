@@ -44,16 +44,60 @@ class DishDetailPage extends ConsumerStatefulWidget {
   ConsumerState<DishDetailPage> createState() => _DishDetailPageState();
 }
 
-class _DishDetailPageState extends ConsumerState<DishDetailPage> {
+class _DishDetailPageState extends ConsumerState<DishDetailPage>
+    with TickerProviderStateMixin {
   bool isLoading = true;
   List<BeverageSelection> selectedBeverages = [];
   List<Beverage> beverages = [];
   bool isBeveragesLoading = true;
 
+  // Contrôleurs d'animation simplifiés
+  late ScrollController _scrollController;
+  late AnimationController _fadeController;
+  late AnimationController _slideController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+  double _scrollOffset = 0;
+
   @override
   void initState() {
     super.initState();
     _fetchBeverages();
+
+    // Initialisation des contrôleurs d'animation simplifiés
+    _scrollController = ScrollController();
+    _fadeController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+    _slideController = AnimationController(
+      duration: const Duration(milliseconds: 500),
+      vsync: this,
+    );
+
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _fadeController,
+      curve: Curves.easeOut,
+    ));
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.2),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _slideController,
+      curve: Curves.easeOut,
+    ));
+
+    // Démarrer les animations
+    _fadeController.forward();
+    _slideController.forward();
+
+    // Écouter le scroll pour l'effet de parallaxe
+    _scrollController.addListener(_onScroll);
+
     // Simuler un chargement
     Future.delayed(const Duration(milliseconds: 500), () {
       if (mounted) {
@@ -61,6 +105,20 @@ class _DishDetailPageState extends ConsumerState<DishDetailPage> {
           isLoading = false;
         });
       }
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    _fadeController.dispose();
+    _slideController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    setState(() {
+      _scrollOffset = _scrollController.offset;
     });
   }
 
@@ -171,306 +229,380 @@ class _DishDetailPageState extends ConsumerState<DishDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer(
-      builder: (context, ref, child) {
-        final orderState = ref.watch(modernOrderProvider);
-        final item = orderState.items[widget.id];
-
-        // Si le plat n'est plus dans la commande, on vide la sélection locale
-        if (item == null && selectedBeverages.isNotEmpty) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            setState(() {
-              selectedBeverages.clear();
-            });
-          });
-        }
-
-        final modernQuantity = _getCurrentQuantity(ref);
-
-        return Scaffold(
-          body: Stack(
-            children: [
-              isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Image avec superposition des éléments
-                        Container(
-                          height: MediaQuery.of(context).size.height * 0.5,
-                          width: double.infinity,
-                          child: Stack(
-                            children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.vertical(
-                                    bottom: Radius.circular(20)),
-                                child: Image.network(
-                                  widget.imageUrl,
-                                  width: double.infinity,
-                                  height:
-                                      MediaQuery.of(context).size.height * 0.5,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) =>
-                                      Icon(Icons.error, size: 300),
-                                ),
-                              ),
-                              Positioned(
-                                top: 50,
-                                left: 16,
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: Colors.black.withOpacity(0.5),
-                                    borderRadius: BorderRadius.circular(40),
-                                  ),
-                                  child: IconButton(
-                                    color: Colors.white,
-                                    icon: Icon(Icons.arrow_back,
-                                        color: Colors.white),
-                                    onPressed: () => Navigator.pop(context),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Expanded(
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.vertical(
-                                  top: Radius.circular(20)),
-                            ),
-                            padding: EdgeInsets.symmetric(horizontal: 16),
-                            child: SingleChildScrollView(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    widget.name,
-                                    style: TextStyle(
-                                        fontSize: 24,
-                                        fontWeight: FontWeight.bold),
-                                  ),
-                                  Row(
-                                    children: [
-                                      Text('${widget.price} CFA',
-                                          style: TextStyle(
-                                              fontSize: 20,
-                                              fontWeight: FontWeight.bold)),
-                                    ],
-                                  ),
-                                  SizedBox(height: 16),
-                                  Text(
-                                    widget.description,
-                                    style: TextStyle(
-                                        fontSize: 16, color: Colors.grey[700]),
-                                  ),
-                                  // Section accompagnements (boissons)
-                                  SizedBox(height: 24),
-                                  Text(
-                                    'Accompagnements',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  isBeveragesLoading
-                                      ? Center(
-                                          child: CircularProgressIndicator())
-                                      : ListView.separated(
-                                          shrinkWrap: true,
-                                          physics:
-                                              NeverScrollableScrollPhysics(),
-                                          padding: EdgeInsets.zero,
-                                          itemCount: beverages.length,
-                                          separatorBuilder: (context, i) =>
-                                              SizedBox(height: 8),
-                                          itemBuilder: (context, i) {
-                                            final beverage = beverages[i];
-                                            final size =
-                                                beverage.sizes.keys.isNotEmpty
-                                                    ? beverage.sizes.keys.first
-                                                    : 'default';
-                                            final price =
-                                                beverage.sizes[size] ?? 0.0;
-                                            final selected =
-                                                selectedBeverages.firstWhere(
-                                              (b) =>
-                                                  b.beverage.id ==
-                                                      beverage.id &&
-                                                  b.selectedSize == size,
-                                              orElse: () => BeverageSelection(
-                                                  beverage: beverage,
-                                                  selectedSize: size,
-                                                  quantity: 0),
-                                            );
-                                            return Container(
-                                              decoration: BoxDecoration(
-                                                color: Colors.white,
-                                                borderRadius:
-                                                    BorderRadius.circular(12),
-                                                border: Border.all(
-                                                  color: Colors.grey[200]!,
-                                                ),
-                                                boxShadow: [
-                                                  BoxShadow(
-                                                    color: Colors.black
-                                                        .withOpacity(0.03),
-                                                    blurRadius: 4,
-                                                    offset: Offset(0, 2),
-                                                  ),
-                                                ],
-                                              ),
-                                              child: ListTile(
-                                                leading: beverage
-                                                        .imageUrl.isNotEmpty
-                                                    ? ClipRRect(
-                                                        borderRadius:
-                                                            BorderRadius
-                                                                .circular(8),
-                                                        child: Image.network(
-                                                          beverage.imageUrl,
-                                                          width: 40,
-                                                          height: 40,
-                                                          fit: BoxFit.cover,
-                                                        ),
-                                                      )
-                                                    : Icon(Icons.local_drink,
-                                                        color: Colors.orange,
-                                                        size: 32),
-                                                title: Text(
-                                                  beverage.name +
-                                                      (size != 'default'
-                                                          ? ' $size'
-                                                          : ''),
-                                                  style: TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.bold),
-                                                ),
-                                                subtitle: Text(
-                                                  '+${price.toStringAsFixed(2)} FCFA',
-                                                  style: TextStyle(
-                                                      color: Colors.grey[600]),
-                                                ),
-                                                trailing: Row(
-                                                  mainAxisSize:
-                                                      MainAxisSize.min,
-                                                  children: [
-                                                    if (selected.quantity >
-                                                        0) ...[
-                                                      IconButton(
-                                                        icon: Icon(
-                                                            Icons
-                                                                .remove_circle_outline,
-                                                            color:
-                                                                canModifyAccompaniments(
-                                                                        ref)
-                                                                    ? Colors
-                                                                        .orange
-                                                                    : Colors
-                                                                        .grey),
-                                                        onPressed:
-                                                            canModifyAccompaniments(
-                                                                    ref)
-                                                                ? () =>
-                                                                    _removeBeverage(
-                                                                        beverage,
-                                                                        ref)
-                                                                : null,
-                                                      ),
-                                                      Text(
-                                                          '${selected.quantity}',
-                                                          style: TextStyle(
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .bold,
-                                                              color: Colors
-                                                                  .orange)),
-                                                    ],
-                                                    IconButton(
-                                                      icon: Icon(
-                                                          Icons.add_circle,
-                                                          color:
-                                                              canModifyAccompaniments(
-                                                                      ref)
-                                                                  ? Colors
-                                                                      .orange
-                                                                  : Colors
-                                                                      .grey),
-                                                      onPressed:
-                                                          canModifyAccompaniments(
-                                                                  ref)
-                                                              ? () =>
-                                                                  _addBeverage(
-                                                                      beverage,
-                                                                      ref)
-                                                              : null,
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                            );
-                                          },
-                                        ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                        // Nouveau système de contrôles de quantité
-                        Container(
-                          padding: EdgeInsets.all(16),
-                          color: Colors.white,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Expanded(
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey[200],
-                                        borderRadius: BorderRadius.circular(24),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          IconButton(
-                                            icon: Icon(Icons.remove),
-                                            onPressed: modernQuantity > 0
-                                                ? () => _removeCurrent(ref)
-                                                : null,
-                                          ),
-                                          Text(
-                                            '$modernQuantity',
-                                            style: TextStyle(
-                                                fontSize: 18,
-                                                fontWeight: FontWeight.bold),
-                                          ),
-                                          IconButton(
-                                            icon: Icon(Icons.add),
-                                            onPressed: () => _addCurrent(ref),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(
-                            height: 100), // Espace pour le bouton flottant
+    final modernQuantity = _getCurrentQuantity(ref);
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: Stack(
+        children: [
+          CustomScrollView(
+            controller: _scrollController,
+            slivers: [
+              SliverAppBar(
+                automaticallyImplyLeading: false,
+                expandedHeight: MediaQuery.of(context).size.height * 0.5,
+                pinned: false,
+                floating: false,
+                backgroundColor: Colors.white,
+                flexibleSpace: FlexibleSpaceBar(
+                  background: Image.network(
+                    widget.imageUrl,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) =>
+                        Icon(Icons.error, size: 300),
+                  ),
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.only(
+                      bottom: 120), // espace pour le bouton quantité
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Contenu principal
+                      _buildDishHeader(),
+                      const SizedBox(height: 20),
+                      if( !widget.description.isEmpty) ...[
+                        _buildDescription(),
                       ],
-                    ),
-
-              // Bouton flottant de commande moderne
-              const FloatingOrderButton(),
+                      const SizedBox(height: 24),
+                      _buildAccompanimentsSection(ref),
+                      SizedBox(height: 30),
+                    ],
+                  ),
+                ),
+              ),
             ],
           ),
-        );
-      },
+          // Overlay des boutons retour et cœur sur l'image
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 10,
+            left: 0,
+            right: 0,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Bouton de retour
+                  CircleAvatar(
+                    backgroundColor: Colors.white70,
+                    child: IconButton(
+                      icon: const Icon(Icons.arrow_back, color: Colors.black),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ),
+                  // Bouton cœur (like)
+                  CircleAvatar(
+                    backgroundColor: Colors.white70,
+                    child: LikeButton(
+                      dishId: widget.id,
+                      userId: 'user_id', // À adapter selon votre logique
+                      name: widget.name,
+                      price: widget.price,
+                      imageUrl: widget.imageUrl,
+                      description: widget.description,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // Contrôle de quantité + Voir votre commande TOUJOURS visibles en bas
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 10, left: 10, right: 10),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    height: 60,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(30),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Padding(
+                          padding: EdgeInsets.only(left: 20),
+                          child: Text(
+                            'Quantité',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ),
+                        Container(
+                          margin: const EdgeInsets.only(right: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.orange,
+                            borderRadius: BorderRadius.circular(25),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.remove,
+                                    color: Colors.white, size: 20),
+                                onPressed: modernQuantity > 0
+                                    ? () => _removeCurrent(ref)
+                                    : null,
+                              ),
+                              Container(
+                                width: 40,
+                                alignment: Alignment.center,
+                                child: Text(
+                                  '$modernQuantity',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 18,
+                                  ),
+                                ),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.add,
+                                    color: Colors.white, size: 20),
+                                onPressed: () => _addCurrent(ref),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  // Voir votre commande (bouton flottant)
+                  FloatingOrderButton(),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDishHeader() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey[200]!),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(
+            child: Text(
+              widget.name,
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.orange,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              '${widget.price} FCFA',
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDescription() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey[200]!),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Description',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            widget.description,
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey[700],
+              height: 1.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAccompanimentsSection(WidgetRef ref) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey[200]!),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Accompagnements',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 16),
+          isBeveragesLoading
+              ? const Center(child: CircularProgressIndicator())
+              : ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  padding: EdgeInsets.zero,
+                  itemCount: beverages.length,
+                  separatorBuilder: (context, i) => const SizedBox(height: 8),
+                  itemBuilder: (context, i) {
+                    final beverage = beverages[i];
+                    final size = beverage.sizes.keys.isNotEmpty
+                        ? beverage.sizes.keys.first
+                        : 'default';
+                    final price = beverage.sizes[size] ?? 0.0;
+                    final selected = selectedBeverages.firstWhere(
+                      (b) =>
+                          b.beverage.id == beverage.id &&
+                          b.selectedSize == size,
+                      orElse: () => BeverageSelection(
+                          beverage: beverage, selectedSize: size, quantity: 0),
+                    );
+                    return Container(
+                      decoration: BoxDecoration(
+                        color: Colors.grey[50],
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey[200]!),
+                      ),
+                      child: ListTile(
+                        leading: beverage.imageUrl.isNotEmpty
+                            ? ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.network(
+                                  beverage.imageUrl,
+                                  width: 40,
+                                  height: 40,
+                                  fit: BoxFit.cover,
+                                ),
+                              )
+                            : Icon(Icons.local_drink,
+                                color: Colors.orange, size: 32),
+                        title: Text(
+                          beverage.name + (size != 'default' ? ' $size' : ''),
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        subtitle: Text(
+                          '+${price.toStringAsFixed(2)} FCFA',
+                          style: TextStyle(color: Colors.grey[600]),
+                        ),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: Icon(
+                                Icons.remove_circle_outline,
+                                color: canModifyAccompaniments(ref)
+                                    ? Colors.orange
+                                    : Colors.grey,
+                              ),
+                              onPressed: (canModifyAccompaniments(ref) &&
+                                      selected.quantity > 0)
+                                  ? () => _removeBeverage(beverage, ref)
+                                  : null,
+                            ),
+                            Container(
+                              width: 30,
+                              alignment: Alignment.center,
+                              child: Text(
+                                '${selected.quantity}',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.orange,
+                                ),
+                              ),
+                            ),
+                            IconButton(
+                              icon: Icon(
+                                Icons.add_circle,
+                                color: canModifyAccompaniments(ref)
+                                    ? Colors.orange
+                                    : Colors.grey,
+                              ),
+                              onPressed: canModifyAccompaniments(ref)
+                                  ? () => _addBeverage(beverage, ref)
+                                  : null,
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+        ],
+      ),
     );
   }
 }

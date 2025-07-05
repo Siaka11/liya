@@ -133,6 +133,12 @@ class ParcelHomePage extends ConsumerWidget {
                         child: Text('Ce que je veux',
                             style: TextStyle(fontWeight: FontWeight.bold)),
                       ),
+                      _ActionButton(
+                        label: 'Je reçois un colis',
+                        onTap: () {
+                          _askPhoneNumber(context, true);
+                        },
+                      ),
                       const SizedBox(height: 8),
                       _ActionButton(
                         label: 'Je livre un colis',
@@ -140,12 +146,7 @@ class ParcelHomePage extends ConsumerWidget {
                           _askPhoneNumber(context, false);
                         },
                       ),
-                      _ActionButton(
-                        label: 'Je reçois un colis',
-                        onTap: () {
-                          _askPhoneNumber(context, true);
-                        },
-                      ),
+
                       const SizedBox(height: 24),
                     ],
                   );
