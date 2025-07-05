@@ -11,6 +11,7 @@ import 'package:liya/core/test_users_management.dart';
 import 'package:liya/modules/delivery/presentation/pages/delivery_assignment_page.dart';
 import 'package:liya/modules/delivery/presentation/pages/delivery_dashboard_page.dart';
 import 'package:liya/core/init_delivery_data.dart';
+import 'package:liya/core/init_restaurant_data.dart';
 import 'package:liya/core/local_storage_factory.dart';
 import 'package:liya/core/singletons.dart';
 
@@ -388,6 +389,41 @@ class HomePage extends ConsumerWidget {
               ),
               child: const Text(
                 '🚀 Initialiser les Données',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+
+          // Bouton pour initialiser les restaurants
+          Positioned(
+            bottom: 80,
+            left: 20,
+            right: 20,
+            child: ElevatedButton(
+              onPressed: () async {
+                await InitRestaurantData.initializeRestaurantData();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('✅ Données des restaurants initialisées!'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.teal,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text(
+                '🍽️ Initialiser les Restaurants',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,

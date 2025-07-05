@@ -58,7 +58,7 @@ class AdminMenuCard extends StatelessWidget {
               Text(
                 title,
                 style: const TextStyle(
-                  fontSize: 16,
+                  fontSize: 14,
                   fontWeight: FontWeight.bold,
                   color: Colors.black87,
                 ),
@@ -68,8 +68,8 @@ class AdminMenuCard extends StatelessWidget {
               Text(
                 subtitle,
                 style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[600],
+                  fontSize: 8,
+                  color: Colors.black,
                 ),
                 textAlign: TextAlign.center,
                 maxLines: 2,
