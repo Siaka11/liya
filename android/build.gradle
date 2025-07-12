@@ -1,5 +1,5 @@
 buildscript {
-    ext.kotlin_version = '1.8.20' // Mise à jour à la version souhaitée
+    ext.kotlin_version = '2.1.0' // Mise à jour à la version souhaitée
 
     repositories {
         google()

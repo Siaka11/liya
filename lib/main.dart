@@ -9,6 +9,7 @@ import 'package:liya/core/services/firebase_storage_helper.dart';
 import 'firebase_options.dart';
 
 import 'app.dart';
+import 'modules/home/presentation/pages/home_page.dart'; // Pour PromoPopupManager
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -37,6 +38,6 @@ void main() async {
     supportedLocales: const [Locale('en'), Locale('fr')],
     path: 'assets/lang',
     fallbackLocale: const Locale('en', 'EN'),
-    child: App(),
+    child: App(), // PromoPopupManager sera utilisé dans HomePage
   )));
 }

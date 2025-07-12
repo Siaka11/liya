@@ -262,7 +262,7 @@ class _DishDetailPageState extends ConsumerState<DishDetailPage>
                       // Contenu principal
                       _buildDishHeader(),
                       const SizedBox(height: 20),
-                      if( !widget.description.isEmpty) ...[
+                      if (!widget.description.isEmpty) ...[
                         _buildDescription(),
                       ],
                       const SizedBox(height: 24),
