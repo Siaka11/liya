@@ -658,10 +658,14 @@ class _HomeDeliveryPageState extends ConsumerState<HomeDeliveryPage> {
               ],
             ),
             const SizedBox(height: 12),
-            _buildDetailRow('Client', order.customerName),
-            _buildDetailRow('Adresse', order.customerAddress),
             _buildDetailRow(
-                'Gain', '${order.deliveryFee.toStringAsFixed(0)} FCFA'),
+                'Client', order.customerFullName ?? order.customerName),
+            _buildDetailRow('📞 Téléphone', order.customerPhoneNumber),
+            _buildDetailRow('📍 Adresse', order.customerAddress),
+            if (order.customerEmail != null)
+              _buildDetailRow('📧 Email', order.customerEmail!),
+            _buildDetailRow(
+                '💰 Gain', '${order.deliveryFee.toStringAsFixed(0)} FCFA'),
           ],
         ),
       ),

@@ -846,4 +846,85 @@ class DeliveryLocationService {
       return [];
     }
   }
+
+  /// Récupérer les informations du client depuis la collection users
+  static Future<Map<String, dynamic>?> getClientInfo(String phoneNumber) async {
+    try {
+      print('🔍 Récupération des informations du client: $phoneNumber');
+
+      final userDoc =
+          await _firestore.collection('users').doc(phoneNumber).get();
+
+      if (!userDoc.exists) {
+        print('❌ Client $phoneNumber non trouvé');
+        return null;
+      }
+
+      final userData = userDoc.data()!;
+      print(
+          '✅ Informations client récupérées: ${userData['name']} ${userData['lastname']}');
+
+      return {
+        'name': userData['name'] ?? 'Client inconnu',
+        'lastname': userData['lastname'] ?? '',
+        'phoneNumber': userData['phoneNumber'] ?? phoneNumber,
+        'email': userData['email'] ?? '',
+        'address': userData['address'] ?? '',
+        'fullName':
+            '${userData['name'] ?? ''} ${userData['lastname'] ?? ''}'.trim(),
+      };
+    } catch (e) {
+      print('❌ Erreur récupération informations client: $e');
+      return null;
+    }
+  }
+
+  /// Récupérer les commandes avec les informations complètes du client
+  static Future<List<Map<String, dynamic>>>
+      getPendingRestaurantOrdersWithClientInfo() async {
+    try {
+      print('🔍 Récupération des commandes restaurant avec infos client...');
+
+      // Essayer d'abord avec les filtres stricts
+      var querySnapshot = await _firestore
+          .collection('orders')
+          .where('status', isEqualTo: 'reception')
+          .get();
+
+      if (querySnapshot.docs.isEmpty) {
+        // Essayer avec un filtre plus large
+        querySnapshot = await _firestore
+            .collection('orders')
+            .where('status', whereIn: ['reception', 'pending']).get();
+      }
+
+      final List<Map<String, dynamic>> pendingOrders = [];
+
+      for (final doc in querySnapshot.docs) {
+        final data = doc.data();
+        data['id'] = doc.id;
+
+        // Récupérer les informations du client
+        final clientPhone = data['phoneNumber'] as String?;
+        if (clientPhone != null) {
+          final clientInfo = await getClientInfo(clientPhone);
+          if (clientInfo != null) {
+            data['customer_name'] = clientInfo['fullName'];
+            data['customer_phone'] = clientInfo['phoneNumber'];
+            data['customer_email'] = clientInfo['email'];
+            data['customer_address'] = clientInfo['address'];
+          }
+        }
+
+        pendingOrders.add(data);
+      }
+
+      print(
+          '✅ ${pendingOrders.length} commandes restaurant avec infos client récupérées');
+      return pendingOrders;
+    } catch (e) {
+      print('❌ Erreur récupération commandes restaurant: $e');
+      return [];
+    }
+  }
 }

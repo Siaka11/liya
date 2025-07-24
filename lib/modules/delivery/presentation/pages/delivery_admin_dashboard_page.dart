@@ -48,7 +48,8 @@ class _DeliveryAdminDashboardPageState
     });
 
     try {
-      final orders = await DeliveryLocationService.getPendingRestaurantOrders();
+      final orders = await DeliveryLocationService
+          .getPendingRestaurantOrdersWithClientInfo();
       final parcels = await DeliveryLocationService.getPendingParcelOrders();
 
       setState(() {
@@ -394,9 +395,18 @@ class _DeliveryAdminDashboardPageState
                         order['customer_name'] ?? 'Client inconnu',
                         style: TextStyle(
                           fontSize: 14,
-                          color: Colors.grey.shade600,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.grey.shade700,
                         ),
                       ),
+                      if (order['customer_phone'] != null)
+                        Text(
+                          '📞 ${order['customer_phone']}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
                     ],
                   ),
                 ),
@@ -419,13 +429,43 @@ class _DeliveryAdminDashboardPageState
               ],
             ),
             const SizedBox(height: 12),
-            Text(
-              'Adresse: ${order['customer_address'] ?? 'Non spécifiée'}',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey.shade600,
+            if (order['customer_address'] != null) ...[
+              Row(
+                children: [
+                  Icon(Icons.location_on,
+                      size: 16, color: Colors.grey.shade600),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      '📍 ${order['customer_address']}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ),
+              const SizedBox(height: 8),
+            ],
+            if (order['customer_email'] != null) ...[
+              Row(
+                children: [
+                  Icon(Icons.email, size: 16, color: Colors.grey.shade600),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      '📧 ${order['customer_email']}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+            ],
             const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
@@ -775,9 +815,37 @@ class _DeliveryAdminDashboardPageState
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Client: ${order['customer_name'] ?? 'Inconnu'}'),
-            Text('Adresse: ${order['customer_address'] ?? 'Non spécifiée'}'),
-            Text('Montant: ${order['amount']?.toStringAsFixed(0) ?? '0'} FCFA'),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.blue.shade200),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '📋 Détails de la commande',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue.shade700,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text('Client: ${order['customer_name'] ?? 'Inconnu'}'),
+                  if (order['customer_phone'] != null)
+                    Text('📞 ${order['customer_phone']}'),
+                  if (order['customer_address'] != null)
+                    Text('📍 ${order['customer_address']}'),
+                  if (order['customer_email'] != null)
+                    Text('📧 ${order['customer_email']}'),
+                  Text(
+                      'Montant: ${order['amount']?.toStringAsFixed(0) ?? '0'} FCFA'),
+                ],
+              ),
+            ),
             const SizedBox(height: 16),
             if (availableDrivers.isEmpty) ...[
               Container(
