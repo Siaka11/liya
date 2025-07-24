@@ -314,8 +314,8 @@ class DeliveryLocationService {
       final driverData = driverDoc.data()!;
       final driver = DeliveryUser.fromMap(driverData);
 
-      if (!driver.isOnline) {
-        print('❌ Livreur $driverPhoneNumber n\'est pas en ligne');
+      if (!driver.active) {
+        print('❌ Livreur $driverPhoneNumber n\'est pas actif');
         return false;
       }
 
@@ -471,8 +471,6 @@ class DeliveryLocationService {
           : userDetailsJson;
       final phoneNumber = userDetails['phoneNumber'] ?? '';
       print('🧪 Test avec le numéro du livreur connecté: $phoneNumber');
-
-
 
       if (phoneNumber.isEmpty) {
         print('❌ Aucun numéro de téléphone trouvé pour le livreur');
@@ -809,63 +807,39 @@ class DeliveryLocationService {
     try {
       print('🔍 Récupération des livreurs disponibles...');
 
-      // Chercher dans orders pour trouver tous les livreurs qui ont des commandes
-      final ordersQuery = await _firestore
-          .collection('orders')
-          .where('delivery_phone_number', isNull: false)
+      // Chercher dans users pour trouver les livreurs avec active: true
+      final usersQuery = await _firestore
+          .collection('users')
+          .where('role', isEqualTo: 'livreur')
+          .where('active', isEqualTo: true)
           .get();
 
-      // Extraire les numéros de téléphone uniques des livreurs
-      final Set<String> allDriverPhones = {};
-      for (final doc in ordersQuery.docs) {
-        final data = doc.data();
-        final deliveryPhone = data['delivery_phone_number'] as String?;
-        if (deliveryPhone != null && deliveryPhone.isNotEmpty) {
-          allDriverPhones.add(deliveryPhone);
-        }
-      }
-
-      print('📱 Tous les livreurs trouvés: ${allDriverPhones.length}');
-
-      // Créer des objets DeliveryUser pour chaque livreur
       final List<DeliveryUser> availableUsers = [];
-      for (final phone in allDriverPhones) {
-        // Chercher les informations du livreur dans les commandes
-        final driverOrders = ordersQuery.docs.where((doc) {
-          final data = doc.data();
-          return data['delivery_phone_number'] == phone;
-        }).toList();
 
-        if (driverOrders.isNotEmpty) {
-          final latestOrder = driverOrders.first;
-          final orderData = latestOrder.data();
+      for (final doc in usersQuery.docs) {
+        final userData = doc.data();
 
-          // Vérifier si le livreur a des commandes actives
-          final hasActiveOrders = driverOrders.any((doc) {
-            final data = doc.data();
-            return data['status'] == 'enRoute' || data['status'] == 'reception';
-          });
+        // Vérifier si le livreur a une position
+        final hasLocation = userData['currentLatitude'] != null &&
+            userData['currentLongitude'] != null;
 
-          availableUsers.add(DeliveryUser(
-            id: phone, // phoneNumber comme id
-            phoneNumber: phone,
-            name: orderData['delivery_name'] ?? 'Livreur',
-            lastname: '', // Valeur par défaut
-            email: '', // Valeur par défaut
-            address: '', // Valeur par défaut
-            role: 'livreur', // Rôle par défaut
-            isOnline: hasActiveOrders,
-            active: true,
-            currentLatitude:
-                orderData['driver_coordinates']?['latitude'] ?? 0.0,
-            currentLongitude:
-                orderData['driver_coordinates']?['longitude'] ?? 0.0,
-            lastLocationUpdate: orderData['assigned_at'],
-          ));
-        }
+        availableUsers.add(DeliveryUser(
+          id: userData['phoneNumber'] ?? doc.id,
+          phoneNumber: userData['phoneNumber'] ?? '',
+          name: userData['name'] ?? 'Livreur',
+          lastname: userData['lastname'] ?? '',
+          email: userData['email'] ?? '',
+          address: userData['address'] ?? '',
+          role: userData['role'] ?? 'livreur',
+          isOnline: hasLocation,
+          active: userData['active'] ?? false,
+          currentLatitude: userData['currentLatitude']?.toDouble(),
+          currentLongitude: userData['currentLongitude']?.toDouble(),
+          lastLocationUpdate: userData['lastLocationUpdate'],
+        ));
       }
 
-      print('✅ ${availableUsers.length} livreurs disponibles récupérés');
+      print('✅ ${availableUsers.length} livreurs actifs récupérés');
       return availableUsers;
     } catch (e) {
       print('❌ Erreur récupération livreurs disponibles: $e');

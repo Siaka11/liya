@@ -9,6 +9,7 @@ import 'dart:async';
 import '../../domain/entities/delivery_order.dart';
 import '../../application/home_delivery_provider.dart';
 import '../../data/services/delivery_location_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class DeliveryNavigationPage extends ConsumerStatefulWidget {
   final DeliveryOrder order;
@@ -26,7 +27,7 @@ class DeliveryNavigationPage extends ConsumerStatefulWidget {
 class _DeliveryNavigationPageState extends ConsumerState<DeliveryNavigationPage>
     with TickerProviderStateMixin {
   GoogleMapController? _mapController;
-  Position? _currentPosition;
+  LatLng? _currentPosition;
   Set<Marker> _markers = {};
   Set<Polyline> _polylines = {};
   bool _isLoading = true;
@@ -46,47 +47,95 @@ class _DeliveryNavigationPageState extends ConsumerState<DeliveryNavigationPage>
   late Animation<Offset> _slideAnimation;
   late Animation<double> _pulseAnimation;
 
+  Timer? _arrivalDetectionTimer;
+  bool _hasArrived = false;
+  bool _isCheckingArrival = false;
+
   @override
   void initState() {
     super.initState();
-
-    // Initialiser les animations
-    _slideController = AnimationController(
-      duration: const Duration(milliseconds: 300),
-      vsync: this,
-    );
-
-    _pulseController = AnimationController(
-      duration: const Duration(milliseconds: 1500),
-      vsync: this,
-    );
-
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 1),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _slideController,
-      curve: Curves.easeOutCubic,
-    ));
-
-    _pulseAnimation = Tween<double>(
-      begin: 1.0,
-      end: 1.2,
-    ).animate(CurvedAnimation(
-      parent: _pulseController,
-      curve: Curves.easeInOut,
-    ));
-
-    _initializeMap();
+    _initializeLocation();
+    _startArrivalDetection();
   }
 
   @override
   void dispose() {
-    _slideController.dispose();
-    _pulseController.dispose();
+    _arrivalDetectionTimer?.cancel();
     _positionSubscription?.cancel();
     _locationTimer?.cancel();
     super.dispose();
+  }
+
+  void _initializeLocation() async {
+    try {
+      // Demander les permissions
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          print('❌ Permissions de localisation refusées');
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        print('❌ Permissions de localisation refusées définitivement');
+        return;
+      }
+
+      // Récupérer la position actuelle
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      setState(() {
+        _currentPosition = LatLng(position.latitude, position.longitude);
+        _isLoading = false;
+      });
+
+      // Créer les éléments de la carte
+      _createMapElements();
+
+      // Démarrer le suivi de position
+      _startLocationTracking();
+    } catch (e) {
+      print('❌ Erreur initialisation localisation: $e');
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _onMapCreated(GoogleMapController controller) {
+    _mapController = controller;
+  }
+
+  void _startNavigation() async {
+    if (_destination == null) return;
+
+    setState(() {
+      _isNavigating = true;
+    });
+
+    // Mettre à jour le statut de la commande
+    try {
+      await FirebaseFirestore.instance
+          .collection('orders')
+          .doc(widget.order.id)
+          .update({
+        'status': 'enRoute',
+        'updated_at': FieldValue.serverTimestamp(),
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Course démarrée!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      print('❌ Erreur démarrage course: $e');
+    }
   }
 
   // Démarrer le suivi de position
@@ -106,7 +155,7 @@ class _DeliveryNavigationPageState extends ConsumerState<DeliveryNavigationPage>
       ),
     ).listen((Position position) {
       setState(() {
-        _currentPosition = position;
+        _currentPosition = LatLng(position.latitude, position.longitude);
       });
       _checkDistanceToDestination();
     });
@@ -206,44 +255,6 @@ class _DeliveryNavigationPageState extends ConsumerState<DeliveryNavigationPage>
         ],
       ),
     );
-  }
-
-  Future<void> _initializeMap() async {
-    try {
-      setState(() {
-        _isLoading = true;
-      });
-
-      // Vérifier les permissions
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          _showErrorDialog('Permission de localisation refusée');
-          return;
-        }
-      }
-
-      // Obtenir la position actuelle
-      final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-      );
-
-      setState(() {
-        _currentPosition = position;
-        _isLoading = false;
-      });
-
-      // Créer les marqueurs et l'itinéraire
-      await _createMapElements();
-
-      // Démarrer les animations
-      _slideController.forward();
-      _pulseController.repeat(reverse: true);
-    } catch (e) {
-      print('❌ Erreur initialisation carte: $e');
-      _showErrorDialog('Erreur lors du chargement de la carte');
-    }
   }
 
   Future<void> _createMapElements() async {
@@ -698,745 +709,448 @@ class _DeliveryNavigationPageState extends ConsumerState<DeliveryNavigationPage>
     );
   }
 
+  void _startArrivalDetection() {
+    _arrivalDetectionTimer =
+        Timer.periodic(Duration(seconds: 10), (timer) async {
+      if (_hasArrived || _isCheckingArrival) return;
+
+      _isCheckingArrival = true;
+
+      try {
+        // Récupérer la position actuelle
+        final position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high,
+        );
+
+        if (_destination != null) {
+          // Calculer la distance jusqu'à la destination
+          final distance = Geolocator.distanceBetween(
+            position.latitude,
+            position.longitude,
+            _destination!.latitude,
+            _destination!.longitude,
+          );
+
+          print(
+              '📍 Distance jusqu\'à destination: ${distance.toStringAsFixed(2)}m');
+
+          // Si on est à moins de 50 mètres de la destination
+          if (distance <= 50 && !_hasArrived) {
+            _hasArrived = true;
+            _showArrivalDialog();
+            timer.cancel();
+
+            // Ne pas changer le statut ici, il restera "enRoute" jusqu'à confirmation
+            print('🎯 Arrivée détectée à destination!');
+          }
+        }
+      } catch (e) {
+        print('❌ Erreur détection arrivée: $e');
+      } finally {
+        _isCheckingArrival = false;
+      }
+    });
+  }
+
+  void _showArrivalDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.location_on, color: Colors.green),
+            SizedBox(width: 8),
+            Text('Arrivée à destination'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Vous êtes arrivé à destination!'),
+            SizedBox(height: 16),
+            Text(
+              'Client: ${widget.order.customerName}',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            Text('Adresse: ${widget.order.customerAddress}'),
+            SizedBox(height: 16),
+            Text(
+              'Veuillez remettre la commande au client.',
+              style: TextStyle(color: Colors.orange),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _showDeliveryCompletionDialog();
+            },
+            child: Text('Livraison terminée'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _showDeliveryFailureDialog();
+            },
+            child: Text('Problème de livraison'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDeliveryCompletionDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.check_circle, color: Colors.green),
+            SizedBox(width: 8),
+            Text('Livraison réussie'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('La commande a été livrée avec succès!'),
+            SizedBox(height: 16),
+            Text('Client: ${widget.order.customerName}'),
+            Text('Montant: ${widget.order.totalAmount} FCFA'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await _finalizeDelivery(true);
+            },
+            child: Text('Confirmer'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDeliveryFailureDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.error, color: Colors.red),
+            SizedBox(width: 8),
+            Text('Problème de livraison'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Quel est le problème?'),
+            SizedBox(height: 16),
+            Text('Client: ${widget.order.customerName}'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await _finalizeDelivery(false);
+            },
+            child: Text('Client absent'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await _finalizeDelivery(false);
+            },
+            child: Text('Adresse incorrecte'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await _finalizeDelivery(false);
+            },
+            child: Text('Autre problème'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _updateOrderStatus(String status) async {
+    try {
+      // Mettre à jour le statut dans Firestore
+      await FirebaseFirestore.instance
+          .collection('orders')
+          .doc(widget.order.id)
+          .update({
+        'status': status,
+        'updated_at': FieldValue.serverTimestamp(),
+      });
+
+      print('✅ Statut commande mis à jour: $status');
+    } catch (e) {
+      print('❌ Erreur mise à jour statut: $e');
+    }
+  }
+
+  Future<void> _finalizeDelivery(bool success) async {
+    try {
+      final status = success ? 'livre' : 'nonLivre';
+
+      // Mettre à jour le statut de la commande
+      await _updateOrderStatus(status);
+
+      // Mettre à jour la position du livreur après livraison
+      await DeliveryLocationService.forceUpdateDriverPosition(widget.order.id);
+
+      // Afficher une notification
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(success
+              ? 'Livraison terminée avec succès!'
+              : 'Livraison échouée enregistrée'),
+          backgroundColor: success ? Colors.green : Colors.orange,
+          duration: Duration(seconds: 3),
+        ),
+      );
+
+      // Retourner à la page précédente
+      Navigator.pop(context);
+    } catch (e) {
+      print('❌ Erreur finalisation livraison: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erreur lors de la finalisation'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        children: [
-          // Carte en arrière-plan
-          _isLoading
-              ? Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.blue.shade50,
-                        Colors.white,
-                      ],
-                    ),
-                  ),
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        AnimatedBuilder(
-                          animation: _pulseAnimation,
-                          builder: (context, child) {
-                            return Transform.scale(
-                              scale: _pulseAnimation.value,
-                              child: Container(
-                                padding: EdgeInsets.all(20),
-                                decoration: BoxDecoration(
-                                  color: Colors.blue,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  Icons.map,
-                                  color: Colors.white,
-                                  size: 40,
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                        SizedBox(height: 24),
-                        Text(
-                          'Chargement de la carte...',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.grey.shade700,
-                          ),
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          'Préparation de votre itinéraire',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                )
-              : _currentPosition == null
-                  ? Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.red.shade50,
-                            Colors.white,
-                          ],
-                        ),
-                      ),
-                      child: Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.location_off,
-                              size: 64,
-                              color: Colors.red.shade300,
-                            ),
-                            SizedBox(height: 16),
-                            Text(
-                              'Position non disponible',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.grey.shade700,
-                              ),
-                            ),
-                            SizedBox(height: 8),
-                            Text(
-                              'Vérifiez vos permissions de localisation',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey.shade600,
-                              ),
-                            ),
-                            SizedBox(height: 24),
-                            ElevatedButton.icon(
-                              onPressed: _initializeMap,
-                              icon: Icon(Icons.refresh),
-                              label: Text('Réessayer'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.blue,
-                                foregroundColor: Colors.white,
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 24,
-                                  vertical: 12,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    )
-                  : GoogleMap(
-                      onMapCreated: (GoogleMapController controller) {
-                        _mapController = controller;
-                        _createMapElements();
-                      },
-                      initialCameraPosition: CameraPosition(
-                        target: LatLng(
-                          _currentPosition!.latitude,
-                          _currentPosition!.longitude,
-                        ),
-                        zoom: 15.0,
-                      ),
-                      markers: _markers,
-                      polylines: _polylines,
-                      myLocationEnabled: true,
-                      myLocationButtonEnabled: false,
-                      zoomControlsEnabled: false,
-                      mapToolbarEnabled: false,
-                      compassEnabled: true,
-                      mapType: MapType.normal,
-                    ),
-
-          // En-tête avec infos de la commande
-          if (_showOrderInfo)
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: SlideTransition(
-                position: _slideAnimation,
-                child: Container(
-                  margin: EdgeInsets.all(16),
-                  padding: EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 20,
-                        offset: Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade100,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: IconButton(
-                              onPressed: () => Navigator.of(context).pop(),
-                              icon: Icon(Icons.arrow_back),
-                              style: IconButton.styleFrom(
-                                backgroundColor: Colors.transparent,
-                              ),
-                            ),
-                          ),
-                          SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Commande #${widget.order.id}',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                Text(
-                                  widget.order.customerName,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.grey.shade600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: _isDeliveryStarted
-                                  ? Colors.green
-                                  : Colors.orange,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                AnimatedBuilder(
-                                  animation: _pulseAnimation,
-                                  builder: (context, child) {
-                                    return Transform.scale(
-                                      scale: _isDeliveryStarted
-                                          ? 1.0
-                                          : _pulseAnimation.value,
-                                      child: Container(
-                                        width: 8,
-                                        height: 8,
-                                        decoration: BoxDecoration(
-                                          color: Colors.white,
-                                          shape: BoxShape.circle,
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                                SizedBox(width: 6),
-                                Text(
-                                  _isDeliveryStarted ? 'En cours' : 'Prêt',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 16),
-                      Container(
-                        padding: EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.red.shade50,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: Colors.red.shade200,
-                            width: 1,
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Colors.red,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Icon(
-                                Icons.location_on,
-                                color: Colors.white,
-                                size: 20,
-                              ),
-                            ),
-                            SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Destination',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w500,
-                                      color: Colors.grey.shade600,
-                                    ),
-                                  ),
-                                  SizedBox(height: 2),
-                                  Text(
-                                    widget.order.customerAddress,
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                  if (_isDeliveryStarted &&
-                                      _destination != null) ...[
-                                    SizedBox(height: 4),
-                                    Text(
-                                      'Distance: ${_getDistanceToDestination()}',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: _isNearDestination
-                                            ? Colors.green
-                                            : Colors.blue,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    SizedBox(height: 2),
-                                    Text(
-                                      'Coords: ${_getDestinationCoordinatesText()}',
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        color: Colors.grey.shade500,
-                                      ),
-                                    ),
-                                  ],
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-
-          // Boutons d'action en bas
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: SlideTransition(
-              position: _slideAnimation,
-              child: Container(
-                margin: EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    // Bouton navigation
-                    if (_isDeliveryStarted) ...[
-                      Container(
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.blue.withOpacity(0.3),
-                              blurRadius: 10,
-                              offset: Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: ElevatedButton.icon(
-                          onPressed:
-                              _isNavigating ? null : _openGoogleMapsNavigation,
-                          icon: _isNavigating
-                              ? SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                        Colors.white),
-                                  ),
-                                )
-                              : Icon(Icons.navigation),
-                          label: Text(_isNavigating
-                              ? 'Navigation ouverte...'
-                              : 'Ouvrir Navigation'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue,
-                            foregroundColor: Colors.white,
-                            padding: EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: 16),
-                    ],
-
-                    // Boutons d'action
-                    Row(
-                      children: [
-                        if (!_isDeliveryStarted) ...[
-                          Expanded(
-                            child: Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(16),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.green.withOpacity(0.3),
-                                    blurRadius: 10,
-                                    offset: Offset(0, 4),
-                                  ),
-                                ],
-                              ),
-                              child: ElevatedButton.icon(
-                                onPressed: _startDelivery,
-                                icon: Icon(Icons.play_arrow),
-                                label: Text('Démarrer'),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.green,
-                                  foregroundColor: Colors.white,
-                                  padding: EdgeInsets.symmetric(vertical: 16),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ] else ...[
-                          Expanded(
-                            child: Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(16),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.green.withOpacity(0.3),
-                                    blurRadius: 10,
-                                    offset: Offset(0, 4),
-                                  ),
-                                ],
-                              ),
-                              child: ElevatedButton.icon(
-                                onPressed: _completeDelivery,
-                                icon: Icon(Icons.check),
-                                label: Text('Terminer'),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.green,
-                                  foregroundColor: Colors.white,
-                                  padding: EdgeInsets.symmetric(vertical: 16),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                        SizedBox(width: 12),
-                        Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.grey.withOpacity(0.3),
-                                blurRadius: 10,
-                                offset: Offset(0, 4),
-                              ),
+      appBar: AppBar(
+        title: Text('Navigation - ${widget.order.customerName}'),
+        backgroundColor: Colors.blue,
+        foregroundColor: Colors.white,
+        actions: [
+          // Bouton de débogage (temporaire)
+          if (_destination != null)
+            Container(
+              margin: EdgeInsets.only(bottom: 8),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: Text('Coordonnées de destination'),
+                          content: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Latitude: ${_destination!.latitude}'),
+                              Text('Longitude: ${_destination!.longitude}'),
+                              SizedBox(height: 8),
+                              Text('Client: ${widget.order.customerName}'),
+                              Text('Adresse: ${widget.order.customerAddress}'),
+                              SizedBox(height: 8),
+                              Text('Marqueurs: ${_markers.length}'),
+                              Text(
+                                  'Marqueurs IDs: ${_markers.map((m) => m.markerId.value).toList()}'),
+                              SizedBox(height: 8),
+                              Text('Arrivée détectée: $_hasArrived'),
+                              Text('Distance: ${_getDistanceToDestination()}m'),
                             ],
                           ),
-                          child: ElevatedButton.icon(
-                            onPressed: () => Navigator.of(context).pop(),
-                            icon: Icon(Icons.close),
-                            label: Text('Fermer'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.grey.shade300,
-                              foregroundColor: Colors.black,
-                              padding: EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: Text('Fermer'),
+                            ),
+                            ElevatedButton(
+                              onPressed: () {
+                                Navigator.pop(context);
+                                _createMapElements();
+                              },
+                              child: Text('Rafraîchir'),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                    icon: Icon(Icons.info),
+                    tooltip: 'Voir les coordonnées',
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.blue.shade50,
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () {
+                      _createMapElements();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Carte rafraîchie'),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                    },
+                    icon: Icon(Icons.refresh),
+                    tooltip: 'Rafraîchir la carte',
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.orange.shade50,
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () {
+                      _hasArrived = true;
+                      _showArrivalDialog();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Arrivée forcée'),
+                          backgroundColor: Colors.purple,
+                        ),
+                      );
+                    },
+                    icon: Icon(Icons.location_on),
+                    tooltip: 'Forcer arrivée',
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.purple.shade50,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+      body: Stack(
+        children: [
+          // Carte Google Maps
+          GoogleMap(
+            onMapCreated: _onMapCreated,
+            initialCameraPosition: CameraPosition(
+              target: _currentPosition ?? LatLng(6.8270, -5.2890),
+              zoom: 15.0,
+            ),
+            markers: _markers,
+            polylines: _polylines,
+            myLocationEnabled: true,
+            myLocationButtonEnabled: true,
+            zoomControlsEnabled: false,
+            mapToolbarEnabled: false,
+            compassEnabled: true,
+            onCameraMove: (position) {
+              // Optionnel: mettre à jour la position de la caméra
+            },
+          ),
+
+          // Notification d'arrivée
+          if (_hasArrived)
+            Positioned(
+              top: 20,
+              left: 20,
+              right: 20,
+              child: Container(
+                padding: EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.green,
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black26,
+                      blurRadius: 10,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.location_on, color: Colors.white),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Arrivée à destination!',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
                             ),
                           ),
-                        ),
-                      ],
+                          Text(
+                            'Client: ${widget.order.customerName}',
+                            style: TextStyle(color: Colors.white70),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () {
+                        _showArrivalDialog();
+                      },
+                      icon: Icon(Icons.arrow_forward, color: Colors.white),
                     ),
                   ],
                 ),
               ),
             ),
-          ),
 
-          // Bouton de navigation
+          // Boutons d'action
           Positioned(
-            bottom: 120,
-            right: 16,
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 10,
-                    offset: Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Bouton de débogage (temporaire)
-                  if (_destination != null)
-                    Container(
-                      margin: EdgeInsets.only(bottom: 8),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            onPressed: () {
-                              showDialog(
-                                context: context,
-                                builder: (context) => AlertDialog(
-                                  title: Text('Coordonnées de destination'),
-                                  content: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                          'Latitude: ${_destination!.latitude}'),
-                                      Text(
-                                          'Longitude: ${_destination!.longitude}'),
-                                      SizedBox(height: 8),
-                                      Text(
-                                          'Client: ${widget.order.customerName}'),
-                                      Text(
-                                          'Adresse: ${widget.order.customerAddress}'),
-                                      SizedBox(height: 8),
-                                      Text('Marqueurs: ${_markers.length}'),
-                                      Text(
-                                          'Marqueurs IDs: ${_markers.map((m) => m.markerId.value).toList()}'),
-                                    ],
-                                  ),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () => Navigator.pop(context),
-                                      child: Text('Fermer'),
-                                    ),
-                                    ElevatedButton(
-                                      onPressed: () {
-                                        Navigator.pop(context);
-                                        _createMapElements();
-                                      },
-                                      child: Text('Rafraîchir'),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
-                            icon: Icon(Icons.info),
-                            tooltip: 'Voir les coordonnées',
-                            style: IconButton.styleFrom(
-                              backgroundColor: Colors.blue.shade50,
-                            ),
-                          ),
-                          IconButton(
-                            onPressed: () {
-                              _createMapElements();
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('Carte rafraîchie'),
-                                  backgroundColor: Colors.green,
-                                ),
-                              );
-                            },
-                            icon: Icon(Icons.refresh),
-                            tooltip: 'Rafraîchir la carte',
-                            style: IconButton.styleFrom(
-                              backgroundColor: Colors.orange.shade50,
-                            ),
-                          ),
-                        ],
+            bottom: 20,
+            left: 20,
+            right: 20,
+            child: Column(
+              children: [
+                // Bouton "Démarrer la course"
+                if (!_isNavigating)
+                  Container(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: _startNavigation,
+                      icon: Icon(Icons.directions_car),
+                      label: Text('Démarrer la course'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        foregroundColor: Colors.white,
+                        padding: EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
                     ),
+                  ),
 
-                  // Bouton de navigation
-                  ElevatedButton.icon(
-                    onPressed: _isNavigating ? null : _openGoogleMapsNavigation,
-                    icon: _isNavigating
-                        ? SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor:
-                                  AlwaysStoppedAnimation<Color>(Colors.white),
-                            ),
-                          )
-                        : Icon(Icons.navigation),
-                    label: Text(_isNavigating ? 'Ouverture...' : 'Naviguer'),
+                SizedBox(height: 12),
+
+                // Bouton "Ouvrir Navigation"
+                Container(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: _openGoogleMapsNavigation,
+                    icon: Icon(Icons.navigation),
+                    label: Text('Ouvrir Navigation'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
+                      backgroundColor: Colors.green,
                       foregroundColor: Colors.white,
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
                   ),
-                ],
-              ),
-            ),
-          ),
-
-          // Légende de la carte
-          Positioned(
-            top: 200,
-            right: 16,
-            child: Container(
-              padding: EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 10,
-                    offset: Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 12,
-                        height: 12,
-                        decoration: BoxDecoration(
-                          color: Colors.blue,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                      ),
-                      SizedBox(width: 8),
-                      Text(
-                        'Votre position',
-                        style: TextStyle(fontSize: 12),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Container(
-                        width: 12,
-                        height: 12,
-                        decoration: BoxDecoration(
-                          color: Colors.red,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                      ),
-                      SizedBox(width: 8),
-                      Text(
-                        'Destination',
-                        style: TextStyle(fontSize: 12),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Container(
-                        width: 12,
-                        height: 12,
-                        decoration: BoxDecoration(
-                          color: Colors.yellow,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                      ),
-                      SizedBox(width: 8),
-                      Text(
-                        'Points de passage',
-                        style: TextStyle(fontSize: 12),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 12),
-                  Container(
-                    padding: EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.shade50,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Distance estimée: ~1.2 km',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Text(
-                          'Temps estimé: ~5 min',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          // Bouton toggle info
-          Positioned(
-            top: 16,
-            right: 16,
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 10,
-                    offset: Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: IconButton(
-                onPressed: () {
-                  setState(() {
-                    _showOrderInfo = !_showOrderInfo;
-                  });
-                },
-                icon: Icon(
-                  _showOrderInfo ? Icons.visibility_off : Icons.visibility,
                 ),
-                style: IconButton.styleFrom(
-                  backgroundColor: Colors.transparent,
-                ),
-              ),
+              ],
             ),
           ),
         ],

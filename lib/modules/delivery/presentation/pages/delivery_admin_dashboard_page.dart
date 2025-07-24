@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:auto_route/auto_route.dart';
 import '../../../../core/ui/theme/theme.dart';
 import '../../application/delivery_location_provider.dart';
 import '../../domain/entities/delivery_user.dart';
 import '../../data/services/delivery_location_service.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
+@RoutePage()
 class DeliveryAdminDashboardPage extends ConsumerStatefulWidget {
   const DeliveryAdminDashboardPage({Key? key}) : super(key: key);
 
@@ -763,7 +765,7 @@ class _DeliveryAdminDashboardPageState
       Map<String, dynamic> order, DeliveryLocationNotifier locationNotifier) {
     final locationState = ref.watch(deliveryLocationProvider);
     final availableDrivers =
-        locationState.availableDeliveryUsers.where((d) => d.isOnline).toList();
+        locationState.availableDeliveryUsers.where((d) => d.active).toList();
 
     showDialog(
       context: context,
@@ -824,7 +826,7 @@ class _DeliveryAdminDashboardPageState
                         child: ListTile(
                           leading: CircleAvatar(
                             backgroundColor:
-                                driver.isOnline ? Colors.green : Colors.grey,
+                                driver.active ? Colors.green : Colors.grey,
                             child: Text(
                               '${driver.name[0]}${driver.lastname[0]}',
                               style: const TextStyle(

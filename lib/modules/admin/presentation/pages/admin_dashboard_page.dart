@@ -206,16 +206,15 @@ class AdminDashboardPage extends ConsumerWidget {
                     );
                   },
                 ),
+                //HomeDeliveryPage
                 AdminMenuCard(
                   title: 'Assignations',
                   subtitle: 'Assigner les livraisons',
                   icon: Icons.people,
                   color: Colors.cyan,
                   onTap: () {
-                    // TODO: Implémenter la navigation vers DeliveryAdminDashboardRoute
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Fonctionnalité à venir')),
-                    );
+                    AutoRouter.of(context)
+                        .push(const DeliveryAdminDashboardRoute());
                   },
                 ),
                 AdminMenuCard(

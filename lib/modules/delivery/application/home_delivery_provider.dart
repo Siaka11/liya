@@ -296,7 +296,6 @@ final homeDeliveryProvider =
 });
 
 // Provider pour les commandes assignées
-
 final assignedOrdersProvider = Provider<List<DeliveryOrder>>((ref) {
   final state = ref.watch(homeDeliveryProvider);
   return state.assignedOrders;
