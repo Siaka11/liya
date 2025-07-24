@@ -20,6 +20,8 @@ class ImageUploadService {
         throw Exception('Le fichier image est vide');
       }
 
+      print('📁 Taille du fichier: ${fileSize} bytes');
+
       // Générer un nom de fichier unique
       final fileName =
           '${DateTime.now().millisecondsSinceEpoch}_${file.path.split('/').last}';
@@ -32,7 +34,8 @@ class ImageUploadService {
         throw Exception('Firebase Storage n\'est pas initialisé');
       }
 
-      print('Début de l\'upload vers: $folder/$fileName');
+      print('🚀 Début de l\'upload vers: $folder/$fileName');
+      print('📦 Bucket: ${_storage.bucket}');
 
       // Upload du fichier avec métadonnées
       final metadata = SettableMetadata(
@@ -40,6 +43,7 @@ class ImageUploadService {
         customMetadata: {
           'uploaded_at': DateTime.now().toIso8601String(),
           'folder': folder,
+          'original_name': file.path.split('/').last,
         },
       );
 
@@ -48,14 +52,14 @@ class ImageUploadService {
       // Surveiller le progrès
       uploadTask.snapshotEvents.listen((TaskSnapshot snapshot) {
         final progress = snapshot.bytesTransferred / snapshot.totalBytes;
-        print('Progrès upload: ${(progress * 100).toStringAsFixed(1)}%');
+        print('📊 Progrès upload: ${(progress * 100).toStringAsFixed(1)}%');
       });
 
       final snapshot = await uploadTask;
 
       if (snapshot.state == TaskState.success) {
         final downloadUrl = await snapshot.ref.getDownloadURL();
-        print('Upload réussi: $downloadUrl');
+        print('✅ Upload réussi: $downloadUrl');
         return downloadUrl;
       } else {
         throw Exception('Échec de l\'upload: ${snapshot.state}');
@@ -66,7 +70,7 @@ class ImageUploadService {
       switch (e.code) {
         case 'storage/unauthorized':
           errorMessage +=
-              'Accès non autorisé. Vérifiez les règles de sécurité.';
+              'Accès non autorisé. Vérifiez les règles de sécurité Firebase Storage.';
           break;
         case 'storage/canceled':
           errorMessage += 'Upload annulé.';
@@ -78,7 +82,8 @@ class ImageUploadService {
           errorMessage += 'Argument invalide: ${e.message}';
           break;
         case 'storage/no-default-bucket':
-          errorMessage += 'Aucun bucket par défaut configuré.';
+          errorMessage +=
+              'Aucun bucket par défaut configuré. Vérifiez la configuration Firebase.';
           break;
         case 'storage/cannot-slice-blob':
           errorMessage += 'Impossible de traiter le fichier.';
@@ -87,7 +92,8 @@ class ImageUploadService {
           errorMessage += 'Taille de fichier incorrecte sur le serveur.';
           break;
         case 'storage/quota-exceeded':
-          errorMessage += 'Quota de stockage dépassé.';
+          errorMessage +=
+              'Quota de stockage dépassé. Vérifiez votre plan Firebase.';
           break;
         case 'storage/unauthenticated':
           errorMessage += 'Utilisateur non authentifié.';
@@ -97,9 +103,6 @@ class ImageUploadService {
           break;
         case 'storage/invalid-checksum':
           errorMessage += 'Checksum invalide.';
-          break;
-        case 'storage/canceled':
-          errorMessage += 'Opération annulée.';
           break;
         case 'storage/invalid-event-name':
           errorMessage += 'Nom d\'événement invalide.';
@@ -120,7 +123,8 @@ class ImageUploadService {
           errorMessage += 'Impossible de supprimer le bucket par défaut.';
           break;
         case 'storage/bucket-not-found':
-          errorMessage += 'Bucket non trouvé.';
+          errorMessage +=
+              'Bucket non trouvé. Vérifiez la configuration Firebase.';
           break;
         case 'storage/object-not-found':
           errorMessage +=
@@ -130,10 +134,12 @@ class ImageUploadService {
           errorMessage += 'Code: ${e.code}, Message: ${e.message}';
       }
 
-      print('Erreur lors de l\'upload de l\'image: $errorMessage');
+      print('❌ Erreur lors de l\'upload de l\'image: $errorMessage');
+      print('🔍 Code d\'erreur: ${e.code}');
+      print('📝 Message: ${e.message}');
       throw Exception(errorMessage);
     } catch (e) {
-      print('Erreur lors de l\'upload de l\'image: $e');
+      print('❌ Erreur lors de l\'upload de l\'image: $e');
       rethrow;
     }
   }
@@ -155,7 +161,7 @@ class ImageUploadService {
 
       return null;
     } catch (e) {
-      print('Erreur lors de la sélection et upload de l\'image: $e');
+      print('❌ Erreur lors de la sélection et upload de l\'image: $e');
       rethrow;
     }
   }
@@ -166,14 +172,14 @@ class ImageUploadService {
       if (imageUrl.isNotEmpty) {
         final ref = _storage.refFromURL(imageUrl);
         await ref.delete();
-        print('Image supprimée avec succès: $imageUrl');
+        print('✅ Image supprimée avec succès: $imageUrl');
       }
     } on FirebaseException catch (e) {
       print(
-          'Erreur Firebase lors de la suppression de l\'image: ${e.code} - ${e.message}');
+          '❌ Erreur Firebase lors de la suppression de l\'image: ${e.code} - ${e.message}');
       // Ne pas rethrow car ce n'est pas critique
     } catch (e) {
-      print('Erreur lors de la suppression de l\'image: $e');
+      print('❌ Erreur lors de la suppression de l\'image: $e');
       // Ne pas rethrow car ce n'est pas critique
     }
   }
@@ -181,12 +187,51 @@ class ImageUploadService {
   /// Vérifie si Firebase Storage est configuré correctement
   static Future<bool> isStorageConfigured() async {
     try {
+      print('🔍 Vérification de la configuration Firebase Storage...');
+      print('📦 Bucket: ${_storage.bucket}');
+
       final ref = _storage.ref().child('test/connection-test.txt');
       await ref.putString('test', format: PutStringFormat.raw);
       await ref.delete();
+      print('✅ Firebase Storage correctement configuré');
       return true;
     } catch (e) {
-      print('Firebase Storage non configuré: $e');
+      print('❌ Firebase Storage non configuré: $e');
+      return false;
+    }
+  }
+
+  /// Teste l'upload vers un dossier spécifique
+  static Future<bool> testUploadToFolder(String folder) async {
+    try {
+      print('🧪 Test d\'upload vers le dossier: $folder');
+
+      final ref = _storage
+          .ref()
+          .child('$folder/test-${DateTime.now().millisecondsSinceEpoch}.txt');
+      await ref.putString('test', format: PutStringFormat.raw);
+      await ref.delete();
+
+      print('✅ Test d\'upload réussi pour le dossier: $folder');
+      return true;
+    } catch (e) {
+      print('❌ Test d\'upload échoué pour le dossier: $folder - $e');
+      return false;
+    }
+  }
+
+  /// Vérifie les permissions pour un dossier
+  static Future<bool> checkFolderPermissions(String folder) async {
+    try {
+      print('🔐 Vérification des permissions pour: $folder');
+
+      final folderRef = _storage.ref().child(folder);
+      await folderRef.listAll();
+
+      print('✅ Permissions OK pour: $folder');
+      return true;
+    } catch (e) {
+      print('❌ Problème de permissions pour: $folder - $e');
       return false;
     }
   }

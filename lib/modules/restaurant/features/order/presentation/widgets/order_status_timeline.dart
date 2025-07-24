@@ -1,11 +1,18 @@
 import 'package:flutter/material.dart';
 import '../../domain/entities/order.dart';
+import 'package:liya/modules/delivery/presentation/pages/delivery_tracking_page.dart';
 
 class OrderStatusTimeline extends StatelessWidget {
   final OrderStatus status;
   final DateTime expectedDate;
+  final String orderId;
+  final String? deliveryAddress;
   const OrderStatusTimeline(
-      {required this.status, required this.expectedDate, Key? key})
+      {required this.status,
+      required this.expectedDate,
+      required this.orderId,
+      this.deliveryAddress,
+      Key? key})
       : super(key: key);
 
   int get statusIndex {
@@ -39,15 +46,19 @@ class OrderStatusTimeline extends StatelessWidget {
             description: null,
             active: statusIndex >= 0,
             color: statusIndex >= 0 ? orange : Colors.black,
+            orderId: orderId,
+            deliveryAddress: deliveryAddress,
           ),
           _VerticalLine(color: statusIndex >= 1 ? orange : grey),
           _TimelineStep(
             icon: Icons.local_shipping,
             label: 'VOTRE LIVREUR EST ROUTE',
-            description:
-                "Vous pouvez suivre votre livreur sur la carte",
+            description: "Vous pouvez suivre votre livreur sur la carte",
             active: statusIndex >= 1,
             color: statusIndex >= 1 ? orange : Colors.black,
+            showTrackingButton: statusIndex >= 1,
+            orderId: orderId,
+            deliveryAddress: deliveryAddress,
           ),
           _VerticalLine(color: statusIndex >= 2 ? orange : grey),
           _TimelineStep(
@@ -57,6 +68,8 @@ class OrderStatusTimeline extends StatelessWidget {
             active: statusIndex >= 2,
             color: statusIndex >= 2 ? orange : Colors.black,
             isDelivery: true,
+            orderId: orderId,
+            deliveryAddress: deliveryAddress,
           ),
         ],
       ),
@@ -102,6 +115,9 @@ class _TimelineStep extends StatelessWidget {
   final bool active;
   final bool isDelivery;
   final Color color;
+  final bool showTrackingButton;
+  final String orderId;
+  final String? deliveryAddress;
   const _TimelineStep(
       {required this.icon,
       required this.label,
@@ -109,6 +125,9 @@ class _TimelineStep extends StatelessWidget {
       required this.active,
       this.isDelivery = false,
       required this.color,
+      this.showTrackingButton = false,
+      required this.orderId,
+      this.deliveryAddress,
       Key? key})
       : super(key: key);
 
@@ -143,6 +162,43 @@ class _TimelineStep extends StatelessWidget {
                   padding: const EdgeInsets.only(top: 2.0),
                   child: Text(description!,
                       style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                ),
+              if (showTrackingButton)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => DeliveryTrackingPage(
+                            orderId: orderId,
+                            clientAddress:
+                                deliveryAddress ?? 'Adresse non spécifiée',
+                            clientLatitude: 0.0,
+                            clientLongitude: 0.0,
+                          ),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    icon: const Icon(Icons.location_on, size: 16),
+                    label: const Text(
+                      'Suivre le livreur',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
                 ),
             ],
           ),

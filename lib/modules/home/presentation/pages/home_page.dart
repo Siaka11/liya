@@ -6,14 +6,17 @@ import 'package:liya/modules/home/presentation/pages/utils/top_menu.dart';
 import 'package:liya/modules/home/presentation/pages/widget/home_card_widget.dart';
 import 'package:liya/core/test_modern_system.dart';
 import 'package:liya/core/test_beverages.dart';
+import 'package:liya/core/test_notifications.dart';
 import 'package:liya/modules/home/domain/entities/home_option.dart';
 import 'package:liya/core/test_users_management.dart';
 import 'package:liya/modules/delivery/presentation/pages/delivery_assignment_page.dart';
+import 'package:liya/core/test_maps_simple.dart';
 import 'package:liya/modules/delivery/presentation/pages/delivery_dashboard_page.dart';
 import 'package:liya/core/init_delivery_data.dart';
 import 'package:liya/core/init_restaurant_data.dart';
 import 'package:liya/core/local_storage_factory.dart';
 import 'package:liya/core/singletons.dart';
+import 'package:liya/core/clean_test_data.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
@@ -217,9 +220,8 @@ class _PromoPopupManagerState extends State<PromoPopupManager> {
         message: popupConfig['message'] ?? '',
         imageUrl: popupConfig['imageUrl'],
         buttonText: popupConfig['buttonText'] ?? 'OK',
-        onButtonPressed: () {
-          Navigator.of(context).pop();
-        },
+        action: popupConfig['action'],
+        actionData: popupConfig['actionData'],
       );
 
       // Marquer comme vu
@@ -273,7 +275,8 @@ void showCustomBottomPopup(
   required String message,
   String? imageUrl,
   required String buttonText,
-  required VoidCallback onButtonPressed,
+  String? action,
+  dynamic actionData,
 }) {
   showModalBottomSheet(
     context: context,
@@ -282,7 +285,7 @@ void showCustomBottomPopup(
     builder: (context) {
       final height = MediaQuery.of(context).size.height;
       return Container(
-        height: height * 0.62, // Commence vers le milieu, ajuste si besoin
+        height: height * 0.62,
         decoration: const BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.only(
@@ -292,25 +295,25 @@ void showCustomBottomPopup(
         ),
         child: Stack(
           children: [
-            // Utilise SingleChildScrollView pour garantir la taille de l'image
             SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: SizedBox(
-                      width: double.infinity,
-                      height: 300, // Hauteur garantie
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(28),
-                        child: Image.network(
-                          imageUrl!,
-                          fit: BoxFit.cover,
+                  if (imageUrl != null && imageUrl.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: SizedBox(
+                        width: double.infinity,
+                        height: 300,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(28),
+                          child: Image.network(
+                            imageUrl,
+                            fit: BoxFit.cover,
+                          ),
                         ),
                       ),
                     ),
-                  ),
                   const SizedBox(height: 8),
                   Text(
                     title,
@@ -341,7 +344,26 @@ void showCustomBottomPopup(
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         elevation: 0,
                       ),
-                      onPressed: onButtonPressed,
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        // Action dynamique selon le JSON
+                        if (action == 'open_restaurant' && actionData != null) {
+                          // Naviguer vers la page restaurant
+                          // context.router.push(RestaurantDetailRoute(restaurantId: actionData));
+                        } else if (action == 'open_dish' &&
+                            actionData != null) {
+                          // Naviguer vers la page plat
+                          // context.router.push(DishDetailRoute(dishId: actionData));
+                        } else if (action == 'open_dishes' &&
+                            actionData is List) {
+                          // Naviguer vers une page liste de plats personnalisée
+                          // context.router.push(DishesListRoute(dishIds: List<String>.from(actionData)));
+                        } else if (action == 'open_all_restaurants') {
+                          // Naviguer vers la liste de tous les restaurants
+                          context.router.push(AllRestaurantsRoute());
+                        }
+                        // Ajoute d'autres cas selon tes besoins
+                      },
                       child: Text(
                         buttonText,
                         style: const TextStyle(
@@ -478,6 +500,37 @@ class HomePage extends ConsumerWidget {
                 ],
               ),
             ),
+
+            // Message de bienvenue en haut à gauche
+            Positioned(
+              top: 10,
+              left: 10,
+              child: Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "Bonjour ",
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey,
+                      ),
+                    ),
+                    Text(
+                      homeState.user.name,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                        color: Colors.black,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Bouton menu utilisateur en haut à droite
             Positioned(
               top: 10,
               right: 10,
@@ -488,320 +541,428 @@ class HomePage extends ConsumerWidget {
                   size: 40,
                 ),
                 onPressed: () {
-                  showTopMenu(context, ref); // Ouvre le menu depuis le haut
+                  showTopMenu(context, ref);
                 },
-              ),
-            ),
-            Positioned(
-                top: 10,
-                left: 10,
-                child: Padding(
-                    padding: const EdgeInsets.all(12.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text("Bonjour "),
-                        Text(homeState.user.name,
-                            style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 18,
-                                color: Colors.black)),
-                      ],
-                    ))),
-            // Bouton de test pour le système moderne
-            Positioned(
-              bottom: 200,
-              left: 20,
-              right: 20,
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const TestModernSystemPage(),
-                    ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text(
-                  '🧪 Tester le Système Moderne',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-            // Bouton de test pour les boissons
-            Positioned(
-              bottom: 140,
-              left: 20,
-              right: 20,
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const TestBeveragesPage(),
-                    ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text(
-                  '🥤 Tester les Boissons',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-            // Bouton pour initialiser les données de livraison
-            Positioned(
-              bottom: 260,
-              left: 20,
-              right: 20,
-              child: ElevatedButton(
-                onPressed: () async {
-                  await InitDeliveryData.initializeDeliverySystem();
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('✅ Données de livraison initialisées!'),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text(
-                  '🚀 Initialiser les Données de Livraison',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-            // Bouton pour accéder au dashboard admin des livraisons
-            Positioned(
-              bottom: 200,
-              left: 20,
-              right: 20,
-              child: ElevatedButton(
-                onPressed: () {
-                  AutoRouter.of(context)
-                      .push(const DeliveryAdminDashboardRoute());
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text(
-                  '👨‍💼 Dashboard Admin - Assignation',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-            // Bouton pour accéder à l'interface livreur existante
-            Positioned(
-              bottom: 140,
-              left: 20,
-              right: 20,
-              child: ElevatedButton(
-                onPressed: () {
-                  AutoRouter.of(context).push(const HomeDeliveryRoute());
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text(
-                  '🚚 Interface Livreur (Dynamique)',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
               ),
             ),
 
-            // Bouton pour accéder au dashboard admin
-            Positioned(
-              bottom: 80,
-              left: 20,
-              right: 20,
-              child: ElevatedButton(
-                onPressed: () {
-                  AutoRouter.of(context).push(const AdminDashboardRoute());
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFF24E1E),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text(
-                  '👨‍💼 Dashboard Admin',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-
-            // Bouton pour définir le rôle admin
+            // Bouton paramètres en bas à gauche
             Positioned(
               bottom: 20,
               left: 20,
-              right: 20,
-              child: ElevatedButton(
+              child: FloatingActionButton(
                 onPressed: () {
-                  // Définir le rôle admin temporairement
-                  final userDetails = {
-                    'name': homeState.user.name,
-                    'phoneNumber': homeState.user.phoneNumber,
-                    'email': homeState.user.email,
-                    'role': 'admin',
-                  };
-                  singleton<LocalStorageFactory>().setUserDetails(userDetails);
-
-                  // Recharger la page pour voir les changements
-                  ref.refresh(homeProvider);
-
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content:
-                          Text('✅ Rôle défini comme admin! Rechargez la page.'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
+                  _showTestDrawer(context);
                 },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.purple,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text(
-                  '🔧 Définir Rôle Admin',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-
-            // Bouton pour initialiser les données de livraison
-            Positioned(
-              bottom: 20,
-              left: 20,
-              right: 20,
-              child: ElevatedButton(
-                onPressed: () async {
-                  await InitDeliveryData.initializeDeliverySystem();
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('✅ Données de livraison initialisées!'),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text(
-                  '🚀 Initialiser les Données',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-
-            // Bouton pour initialiser les restaurants
-            Positioned(
-              bottom: 80,
-              left: 20,
-              right: 20,
-              child: ElevatedButton(
-                onPressed: () async {
-                  await InitRestaurantData.initializeRestaurantData();
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content:
-                            Text('✅ Données des restaurants initialisées!'),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.teal,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text(
-                  '🍽️ Initialiser les Restaurants',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+                backgroundColor: Colors.grey[300],
+                child: const Icon(
+                  Icons.settings,
+                  color: Colors.black54,
                 ),
               ),
             ),
           ],
         )),
+      ),
+    );
+  }
+
+  void _showTestDrawer(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.8,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          children: [
+            // Handle
+            Container(
+              margin: const EdgeInsets.only(top: 8),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            // Titre
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Row(
+                children: [
+                  const Icon(Icons.science, color: Colors.blue),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Tests et Configuration',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Boutons de test
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Column(
+                  children: [
+                    // Bouton pour tester les boissons
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const TestBeveragesPage(),
+                            ),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          '🥤 Tester les Boissons',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    // Bouton pour tester le système moderne
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  const TestModernSystemPage(),
+                            ),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.indigo,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          '🎨 Tester le Système Moderne',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    // Bouton pour tester la gestion des utilisateurs
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  const TestUsersManagementPage(),
+                            ),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.deepPurple,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          '👥 Tester la Gestion des Utilisateurs',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    // Bouton pour initialiser les données de livraison
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          await InitDeliveryData.initializeDeliverySystem();
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                    '✅ Données de livraison initialisées!'),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.orange,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          '🚀 Initialiser les Données',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    // Bouton pour initialiser les restaurants
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          await InitRestaurantData.initializeRestaurantData();
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                    '✅ Données des restaurants initialisées!'),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.teal,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          '🍽️ Initialiser les Restaurants',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    // Bouton pour tester les notifications
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  const TestNotificationsPage(),
+                            ),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.purple,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          '🔔 Tester les Notifications',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    // Bouton pour tester Google Maps
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => _TestMapsPage(),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.map),
+                        label: const Text('🗺️ Test Google Maps'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    // Bouton pour nettoyer les données de test
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          try {
+                            await CleanTestData.cleanTestOrders();
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('✅ Données de test nettoyées!'),
+                                  backgroundColor: Colors.green,
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('❌ Erreur: $e'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          '🧹 Nettoyer Données Test',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// Page de test pour Google Maps
+class _TestMapsPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Test Google Maps'),
+        backgroundColor: Colors.green,
+        foregroundColor: Colors.white,
+      ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Colors.blue[50]!,
+              Colors.blue[100]!,
+            ],
+          ),
+        ),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.map,
+                size: 64,
+                color: Colors.blue[600],
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Test Google Maps',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blue[600],
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Position: Yamoussoukro (6.8270, -5.2890)',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey[600],
+                ),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                icon: const Icon(Icons.arrow_back),
+                label: const Text('Retour'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

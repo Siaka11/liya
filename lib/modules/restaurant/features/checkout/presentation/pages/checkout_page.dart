@@ -21,6 +21,8 @@ import 'package:liya/modules/restaurant/features/card/data/datasources/cart_remo
 import 'package:liya/modules/restaurant/features/card/data/repositories/cart_repository_impl.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:liya/modules/restaurant/features/order/presentation/providers/modern_order_provider.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:liya/modules/restaurant/features/checkout/presentation/pages/delivery_address_page.dart';
 
 @RoutePage()
 class CheckoutPage extends ConsumerStatefulWidget {
@@ -60,13 +62,22 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
 
   void _initializeUserLocation() {
     final localStorage = singleton<LocalStorageFactory>();
+
+    // Nettoyer les anciennes données si elles correspondent à Abidjan
     if (localStorage.hasUserLocation()) {
       final userLocation = localStorage.getUserLocation();
       if (userLocation.isNotEmpty) {
         final userLat = userLocation['latitude'] as double?;
         final userLng = userLocation['longitude'] as double?;
 
+        // Vérifier si les coordonnées correspondent à Abidjan (5.3xxx, -4.0xxx)
         if (userLat != null && userLng != null) {
+          if (userLat < 6.0 || userLng > -4.5) {
+            // Coordonnées d'Abidjan détectées, utiliser Yamoussoukro
+            _setYamoussoukroAsDefault(localStorage);
+            return;
+          }
+
           setState(() {
             selectedLat = userLat;
             selectedLng = userLng;
@@ -75,7 +86,55 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
           _updateAddressFromLatLng(userLat, userLng);
         }
       }
+    } else {
+      _setYamoussoukroAsDefault(localStorage);
     }
+  }
+
+  void _setYamoussoukroAsDefault(LocalStorageFactory localStorage) {
+    // Position par défaut : Yamoussoukro
+    const defaultLat = 6.8270;
+    const defaultLng = -5.2890;
+
+    setState(() {
+      selectedLat = defaultLat;
+      selectedLng = defaultLng;
+    });
+
+    // Sauvegarder la position par défaut
+    localStorage.setUserLocation(
+      latitude: defaultLat,
+      longitude: defaultLng,
+      address: 'Yamoussoukro, Région des Lacs, Côte d\'Ivoire',
+    );
+
+    _calculateDistance(defaultLat, defaultLng);
+    _updateAddressFromLatLng(defaultLat, defaultLng);
+  }
+
+  // Méthode pour forcer la réinitialisation des coordonnées
+  void _resetToYamoussoukro() {
+    final localStorage = singleton<LocalStorageFactory>();
+
+    // Supprimer les anciennes données de localisation
+    localStorage.setUserLocation(
+      latitude: 6.8270,
+      longitude: -5.2890,
+      address: 'Yamoussoukro, Région des Lacs, Côte d\'Ivoire',
+    );
+
+    // Réinitialiser l'état
+    setState(() {
+      selectedLat = 6.8270;
+      selectedLng = -5.2890;
+      calculatedDistance = null;
+      deliveryTime = null;
+      deliveryFee = null;
+    });
+
+    // Recalculer avec les nouvelles coordonnées
+    _calculateDistance(6.8270, -5.2890);
+    _updateAddressFromLatLng(6.8270, -5.2890);
   }
 
   @override
@@ -98,6 +157,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
         });
       }
     } catch (e) {
+      // Adresse par défaut pour Yamoussoukro
       setState(() {
         selectedAddress =
             'Lat: ${lat.toStringAsFixed(5)}, Lng: ${lng.toStringAsFixed(5)}';
@@ -113,6 +173,14 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
 
     // Calculer la distance
     _calculateDistance(lat, lng);
+
+    // Sauvegarder la nouvelle position dans le localStorage
+    final localStorage = singleton<LocalStorageFactory>();
+    localStorage.setUserLocation(
+      latitude: lat,
+      longitude: lng,
+      address: selectedAddress ?? 'Position actuelle',
+    );
   }
 
   void _calculateDistance(double lat, double lng) {
@@ -127,6 +195,29 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
     });
   }
 
+  // Méthode pour mettre à jour la carte avec les nouvelles coordonnées
+  Future<void> _updateMapWithNewLocation(double lat, double lng) async {
+    setState(() {
+      selectedLat = lat;
+      selectedLng = lng;
+    });
+
+    // Centrer la carte sur la nouvelle position
+    if (mapController != null) {
+      await mapController!.animateCamera(
+        CameraUpdate.newCameraPosition(
+          CameraPosition(
+            target: LatLng(lat, lng),
+            zoom: 15.0,
+          ),
+        ),
+      );
+    }
+
+    // Recalculer la distance
+    _calculateDistance(lat, lng);
+  }
+
   Future<void> _showPhoneDialog() async {
     final userDetailsJson = singleton<LocalStorageFactory>().getUserDetails();
     final userDetails = userDetailsJson is String
@@ -139,41 +230,216 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text('Contact supplémentaire'),
+        content: TextField(
+          controller: controller,
+          keyboardType: TextInputType.phone,
+          decoration: InputDecoration(
+            labelText: 'Numéro de téléphone',
+            hintText: 'Ex: +225 0701234567',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Annuler'),
+          ),
+          TextButton(
+            onPressed: () {
+              setState(() {
+                phone = controller.text.isNotEmpty ? controller.text : null;
+              });
+              Navigator.pop(context, controller.text);
+            },
+            child: Text('Confirmer'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Méthode pour changer l'adresse de livraison
+  Future<void> _showAddressChangeDialog() async {
+    final controller = TextEditingController(text: selectedAddress ?? '');
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Modifier l\'adresse de livraison'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             TextField(
               controller: controller,
-              keyboardType: TextInputType.phone,
               decoration: InputDecoration(
-                hintText: 'Entrez un numéro de contact supplémentaire',
-                helperText: 'Laissez vide pour utiliser le numéro principal',
+                labelText: 'Nouvelle adresse',
+                hintText: 'Ex: 04 BP YAM 04, Yamoussoukro',
               ),
             ),
-            SizedBox(height: 8),
+            SizedBox(height: 16),
             Text(
-              'Numéro principal: $phoneNumber',
+              'Ou utilisez votre position actuelle',
               style: TextStyle(
                 fontSize: 12,
                 color: Colors.grey[600],
+              ),
+            ),
+            SizedBox(height: 8),
+            ElevatedButton.icon(
+              onPressed: () async {
+                Navigator.pop(context);
+                await _getCurrentLocation();
+              },
+              icon: Icon(Icons.my_location),
+              label: Text('Utiliser ma position'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: UIColors.orange,
+                foregroundColor: Colors.white,
               ),
             ),
           ],
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context), child: Text('Annuler')),
-          ElevatedButton(
-              onPressed: () => Navigator.pop(context, controller.text),
-              child: Text('Valider')),
+            onPressed: () => Navigator.pop(context),
+            child: Text('Annuler'),
+          ),
+          TextButton(
+            onPressed: () {
+              if (controller.text.isNotEmpty) {
+                _updateAddressFromText(controller.text);
+              }
+              Navigator.pop(context, controller.text);
+            },
+            child: Text('Confirmer'),
+          ),
         ],
       ),
     );
-    if (result != null) {
-      print('DEBUG - _showPhoneDialog result: "$result"');
-      setState(() => phone = result.isEmpty ? null : result);
-      print('DEBUG - phone after setState: $phone');
+  }
+
+  // Obtenir la position actuelle
+  Future<void> _getCurrentLocation() async {
+    try {
+      // Demander les permissions de localisation
+      final permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        final requested = await Geolocator.requestPermission();
+        if (requested == LocationPermission.denied) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Permission de localisation refusée')),
+          );
+          return;
+        }
+      }
+
+      // Afficher un indicateur de chargement
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(UIColors.orange),
+          ),
+        ),
+      );
+
+      // Obtenir la position actuelle
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      // Fermer le dialogue de chargement
+      Navigator.pop(context);
+
+      // Mettre à jour l'adresse avec la nouvelle position
+      await _updateAddressFromLatLng(position.latitude, position.longitude);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Position actuelle utilisée'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      // Fermer le dialogue de chargement en cas d'erreur
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erreur lors de l\'obtention de la position: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  // Mettre à jour l'adresse à partir du texte
+  Future<void> _updateAddressFromText(String address) async {
+    try {
+      // Afficher un indicateur de chargement
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(UIColors.orange),
+          ),
+        ),
+      );
+
+      // Convertir l'adresse en coordonnées
+      final locations = await locationFromAddress(address);
+      if (locations.isNotEmpty) {
+        final location = locations.first;
+
+        setState(() {
+          selectedLat = location.latitude;
+          selectedLng = location.longitude;
+          selectedAddress = address;
+        });
+
+        // Recalculer la distance et les frais
+        _calculateDistance(location.latitude, location.longitude);
+
+        // Centrer la carte
+        if (mapController != null) {
+          await mapController!.animateCamera(
+            CameraUpdate.newLatLng(
+                LatLng(location.latitude, location.longitude)),
+          );
+        }
+
+        // Sauvegarder la nouvelle position
+        final localStorage = singleton<LocalStorageFactory>();
+        localStorage.setUserLocation(
+          latitude: location.latitude,
+          longitude: location.longitude,
+          address: address,
+        );
+      }
+
+      // Fermer le dialogue de chargement
+      Navigator.pop(context);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Adresse mise à jour'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      // Fermer le dialogue de chargement en cas d'erreur
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erreur lors de la mise à jour de l\'adresse: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -233,17 +499,17 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                 fontWeight: FontWeight.w500,
               ),
             ),
-            /*Text(
-              widget.restaurantName,
-              style: TextStyle(
-                color: Colors.black,
-                fontSize: 14,
-                fontWeight: FontWeight.w400,
-              ),
-            ),*/
           ],
         ),
         centerTitle: true,
+        actions: [
+          // Bouton de debug temporaire
+          IconButton(
+            icon: Icon(Icons.refresh, color: Colors.orange),
+            onPressed: () => _resetToYamoussoukro(),
+            tooltip: 'Réinitialiser à Yamoussoukro',
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -251,39 +517,146 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
             // Map Section
             Container(
               height: 200,
-              child: GoogleMap(
-                initialCameraPosition: CameraPosition(
-                  target: LatLng(selectedLat ?? 6.8276, selectedLng ?? -5.2893),
-                  zoom: 15,
-                ),
-                onMapCreated: (GoogleMapController controller) {
-                  mapController = controller;
-                },
-                onTap: (LatLng pos) async {
-                  setState(() {
-                    selectedLat = pos.latitude;
-                    selectedLng = pos.longitude;
-                  });
-                  await _updateAddressFromLatLng(pos.latitude, pos.longitude);
-                },
-                markers: selectedLat != null && selectedLng != null
-                    ? {
-                        Marker(
-                          markerId: MarkerId('delivery_location'),
-                          position: LatLng(selectedLat!, selectedLng!),
-                          infoWindow: InfoWindow(
-                            title: 'Adresse de livraison',
-                            snippet: selectedAddress ?? 'Adresse sélectionnée',
+              child: Stack(
+                children: [
+                  // Carte grisée (non interactive)
+                  GoogleMap(
+                    initialCameraPosition: CameraPosition(
+                      target:
+                          LatLng(selectedLat ?? 6.8270, selectedLng ?? -5.2890),
+                      zoom: 15,
+                    ),
+                    onMapCreated: (GoogleMapController controller) {
+                      mapController = controller;
+                    },
+                    // Désactiver les interactions
+                    onTap: null,
+                    onLongPress: null,
+                    onCameraMove: null,
+                    markers: selectedLat != null && selectedLng != null
+                        ? {
+                            Marker(
+                              markerId: MarkerId('delivery_location'),
+                              position: LatLng(selectedLat!, selectedLng!),
+                              infoWindow: InfoWindow(
+                                title: 'Adresse de livraison',
+                                snippet:
+                                    selectedAddress ?? 'Adresse sélectionnée',
+                              ),
+                              icon: BitmapDescriptor.defaultMarkerWithHue(
+                                  BitmapDescriptor.hueOrange),
+                              // Rendre le marqueur plus visible
+                              draggable: false,
+                              flat: false,
+                              anchor: Offset(0.5, 1.0),
+                            ),
+                          }
+                        : {},
+                    myLocationEnabled: false,
+                    myLocationButtonEnabled: false,
+                    mapType: MapType.normal,
+                    zoomControlsEnabled: false,
+                    // Désactiver les contrôles de carte
+                    compassEnabled: false,
+                    mapToolbarEnabled: false,
+                    rotateGesturesEnabled: false,
+                    scrollGesturesEnabled: false,
+                    tiltGesturesEnabled: false,
+                    zoomGesturesEnabled: false,
+                  ),
+
+                  // Overlay grisé pour indiquer que la carte n'est pas interactive
+                  Container(
+                    height: 200,
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.1),
+                    ),
+                  ),
+
+                  // Bouton pour modifier l'adresse
+                  Positioned(
+                    top: 16,
+                    right: 16,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 4,
+                            offset: Offset(0, 2),
                           ),
-                          icon: BitmapDescriptor.defaultMarkerWithHue(
-                              BitmapDescriptor.hueOrange),
+                        ],
+                      ),
+                      child: IconButton(
+                        onPressed: () async {
+                          final result = await Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => DeliveryAddressPage(
+                                initialLocation:
+                                    selectedLat != null && selectedLng != null
+                                        ? LatLng(selectedLat!, selectedLng!)
+                                        : null,
+                                initialAddress: selectedAddress,
+                              ),
+                            ),
+                          );
+
+                          if (result != null) {
+                            // Utiliser la nouvelle méthode pour mettre à jour la carte
+                            await _updateMapWithNewLocation(
+                              result['latitude'],
+                              result['longitude'],
+                            );
+
+                            // Mettre à jour l'adresse
+                            setState(() {
+                              selectedAddress = result['address'];
+                            });
+                          }
+                        },
+                        icon: Icon(Icons.edit_location),
+                        tooltip: 'Modifier l\'adresse',
+                        style: IconButton.styleFrom(
+                          backgroundColor: Colors.transparent,
                         ),
-                      }
-                    : {},
-                myLocationEnabled: true,
-                myLocationButtonEnabled: true,
-                mapType: MapType.normal,
-                zoomControlsEnabled: false,
+                      ),
+                    ),
+                  ),
+
+                  // Indicateur "Carte non interactive"
+                  Positioned(
+                    bottom: 16,
+                    left: 16,
+                    child: Container(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.7),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.info_outline,
+                            color: Colors.white,
+                            size: 16,
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            'Appuyez sur l\'icône pour modifier',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
 
@@ -422,14 +795,46 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
               leading: Icon(Icons.location_on_outlined),
               title: Text('Adresse de livraison'),
               subtitle: Text(
-                selectedAddress ?? 'Sélectionnez sur la carte',
+                selectedAddress ?? 'Sélectionnez une adresse',
                 style: TextStyle(
                   color: selectedAddress != null ? Colors.black87 : Colors.grey,
                 ),
               ),
-              trailing: selectedAddress != null
-                  ? Icon(Icons.check_circle, color: UIColors.orange)
-                  : Icon(Icons.edit_location, color: Colors.grey),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (selectedAddress != null)
+                    Icon(Icons.check_circle, color: UIColors.orange, size: 20),
+                  SizedBox(width: 8),
+                  Icon(Icons.edit_location, color: UIColors.orange),
+                ],
+              ),
+              onTap: () async {
+                final result = await Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => DeliveryAddressPage(
+                      initialLocation:
+                          selectedLat != null && selectedLng != null
+                              ? LatLng(selectedLat!, selectedLng!)
+                              : null,
+                      initialAddress: selectedAddress,
+                    ),
+                  ),
+                );
+
+                if (result != null) {
+                  // Utiliser la nouvelle méthode pour mettre à jour la carte
+                  await _updateMapWithNewLocation(
+                    result['latitude'],
+                    result['longitude'],
+                  );
+
+                  // Mettre à jour l'adresse
+                  setState(() {
+                    selectedAddress = result['address'];
+                  });
+                }
+              },
             ),
 
             // Delivery Instructions

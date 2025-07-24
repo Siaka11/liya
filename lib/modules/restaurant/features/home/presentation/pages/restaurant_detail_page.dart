@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:liya/core/ui/theme/theme.dart';
+import 'package:liya/core/ui/components/notification_button.dart';
 
 import '../../../../../../core/local_storage_factory.dart';
 import '../../../../../../core/singletons.dart';
@@ -283,12 +284,21 @@ class RestaurantDetailPage extends ConsumerWidget {
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.all(8.0),
-              child: CircleAvatar(
-                backgroundColor: Colors.white.withOpacity(0.7),
-                child: IconButton(
-                  icon: Icon(Icons.close, color: Colors.black),
-                  onPressed: () => Navigator.pop(context),
-                ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  CircleAvatar(
+                    backgroundColor: Colors.white.withOpacity(0.7),
+                    child: IconButton(
+                      icon: Icon(Icons.close, color: Colors.black),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ),
+                  NotificationAppBarButton(
+                    backgroundColor: Colors.white.withOpacity(0.7),
+                    iconColor: Colors.black,
+                  ),
+                ],
               ),
             ),
           ),

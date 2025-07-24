@@ -28,6 +28,8 @@ class DeliveryOrder {
   final String? notes;
   final double? rating;
   final String? ratingComment;
+  final double? destinationLatitude; // Coordonnées de destination
+  final double? destinationLongitude; // Coordonnées de destination
 
   const DeliveryOrder({
     required this.id,
@@ -47,6 +49,8 @@ class DeliveryOrder {
     this.notes,
     this.rating,
     this.ratingComment,
+    this.destinationLatitude,
+    this.destinationLongitude,
   });
 
   DeliveryOrder copyWith({
@@ -67,6 +71,8 @@ class DeliveryOrder {
     String? notes,
     double? rating,
     String? ratingComment,
+    double? destinationLatitude,
+    double? destinationLongitude,
   }) {
     return DeliveryOrder(
       id: id ?? this.id,
@@ -86,6 +92,8 @@ class DeliveryOrder {
       notes: notes ?? this.notes,
       rating: rating ?? this.rating,
       ratingComment: ratingComment ?? this.ratingComment,
+      destinationLatitude: destinationLatitude ?? this.destinationLatitude,
+      destinationLongitude: destinationLongitude ?? this.destinationLongitude,
     );
   }
 
@@ -108,6 +116,8 @@ class DeliveryOrder {
       'notes': notes,
       'rating': rating,
       'rating_comment': ratingComment,
+      'destination_latitude': destinationLatitude,
+      'destination_longitude': destinationLongitude,
     };
   }
 
@@ -137,6 +147,8 @@ class DeliveryOrder {
       notes: map['notes'],
       rating: map['rating']?.toDouble(),
       ratingComment: map['rating_comment'],
+      destinationLatitude: map['destination_latitude']?.toDouble(),
+      destinationLongitude: map['destination_longitude']?.toDouble(),
     );
   }
 

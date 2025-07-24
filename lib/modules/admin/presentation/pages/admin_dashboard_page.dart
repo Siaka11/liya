@@ -212,8 +212,10 @@ class AdminDashboardPage extends ConsumerWidget {
                   icon: Icons.people,
                   color: Colors.cyan,
                   onTap: () {
-                    AutoRouter.of(context)
-                        .push(const DeliveryAdminDashboardRoute());
+                    // TODO: Implémenter la navigation vers DeliveryAdminDashboardRoute
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Fonctionnalité à venir')),
+                    );
                   },
                 ),
                 AdminMenuCard(

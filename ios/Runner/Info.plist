@@ -9,7 +9,20 @@
         <key>NSMicrophoneUsageDescription</key>
         <string>Nous avons besoin d'accéder au micro pour les vidéos (optionnel).</string>
 	    <key>NSLocationWhenInUseUsageDescription</key>
-        <string>Nous avons besoin de votre localisation pour partager votre position.</string>
+        <string>Nous avons besoin de votre localisation pour partager votre position et suivre les livraisons.</string>
+        <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+        <string>Nous avons besoin de votre localisation pour le suivi en temps réel des livraisons.</string>
+        
+        <!-- Permissions de notifications -->
+        <key>UIBackgroundModes</key>
+        <array>
+            <string>remote-notification</string>
+        </array>
+        
+        <!-- Permissions de notifications iOS 10+ -->
+        <key>NSUserNotificationUsageDescription</key>
+        <string>Nous avons besoin d'envoyer des notifications pour vous informer de vos commandes.</string>
+        
 		<key>CFBundleDevelopmentRegion</key>
 		<string>$(DEVELOPMENT_LANGUAGE)</string>
 		<key>CFBundleDisplayName</key>

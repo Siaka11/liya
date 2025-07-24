@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:liya/core/ui/components/notification_button.dart';
 import '../../../home/presentation/widget/dish_card.dart';
 import '../../../home/presentation/widget/navigation_footer.dart';
 import '../providers/search_provider.dart';
@@ -65,6 +66,10 @@ class _SearchPageState extends ConsumerState<SearchPage> {
           color: Colors.deepOrange,
         ),
         actions: [
+          NotificationAppBarButton(
+            backgroundColor: Colors.transparent,
+            iconColor: Colors.deepOrange,
+          ),
           IconButton(
             icon: Icon(Icons.close, color: Colors.deepOrange),
             onPressed: () {

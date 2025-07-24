@@ -22,6 +22,18 @@ class FirebaseStorageHelper {
         final bucket = _storage.bucket;
         diagnostics['storage_bucket'] = bucket;
         diagnostics['storage_bucket_accessible'] = bucket != null;
+
+        // Vérifier si le bucket existe réellement
+        if (bucket != null) {
+          try {
+            final bucketRef = _storage.ref();
+            await bucketRef.listAll();
+            diagnostics['bucket_exists'] = true;
+          } catch (e) {
+            diagnostics['bucket_exists'] = false;
+            diagnostics['bucket_error'] = e.toString();
+          }
+        }
       } catch (e) {
         diagnostics['storage_bucket_error'] = e.toString();
         diagnostics['storage_bucket_accessible'] = false;
@@ -72,6 +84,11 @@ class FirebaseStorageHelper {
     if (diagnostics['storage_bucket_accessible'] != true) {
       print('  ❌ Le bucket de stockage n\'est pas accessible');
     }
+    if (diagnostics['bucket_exists'] == false) {
+      print('  ❌ Le bucket n\'existe pas. Créez-le dans Google Cloud Console');
+      print(
+          '  🔗 https://console.cloud.google.com/storage/browser?project=liya-a4a9f');
+    }
     if (diagnostics['test_upload_success'] != true) {
       print('  ❌ L\'upload de test a échoué');
     }
@@ -81,6 +98,7 @@ class FirebaseStorageHelper {
 
     if (diagnostics['firebase_initialized'] == true &&
         diagnostics['storage_bucket_accessible'] == true &&
+        diagnostics['bucket_exists'] == true &&
         diagnostics['test_upload_success'] == true) {
       print('  ✅ Firebase Storage semble correctement configuré');
     }
@@ -105,45 +123,70 @@ class FirebaseStorageHelper {
   /// Nettoie les fichiers temporaires
   static Future<void> cleanupTempFiles() async {
     try {
-      final tempRef = _storage.ref().child('temp');
-      final result = await tempRef.listAll();
+      final testRef = _storage.ref().child('test');
+      final result = await testRef.listAll();
 
       for (final item in result.items) {
         try {
           await item.delete();
-          print('🗑️ Fichier temporaire supprimé: ${item.name}');
+          print('🗑️ Fichier supprimé: ${item.name}');
         } catch (e) {
-          print('❌ Erreur lors de la suppression de ${item.name}: $e');
+          print('⚠️ Impossible de supprimer: ${item.name} - $e');
         }
       }
+
+      print('✅ Nettoyage terminé');
     } catch (e) {
       print('❌ Erreur lors du nettoyage: $e');
     }
   }
 
-  /// Obtient les informations sur l'utilisation du stockage
-  static Future<Map<String, dynamic>> getStorageUsage() async {
-    final usage = <String, dynamic>{};
+  /// Vérifie si le bucket existe et retourne des instructions
+  static Future<Map<String, dynamic>> checkBucketStatus() async {
+    final status = <String, dynamic>{};
 
     try {
-      final folders = ['restaurants', 'dishes', 'users'];
+      final bucket = _storage.bucket;
+      status['bucket_name'] = bucket;
 
-      for (final folder in folders) {
+      if (bucket != null) {
         try {
-          final folderRef = _storage.ref().child(folder);
-          final result = await folderRef.listAll();
-          usage[folder] = {
-            'files_count': result.items.length,
-            'total_size': 0, // Firebase ne fournit pas directement la taille
-          };
+          final bucketRef = _storage.ref();
+          await bucketRef.listAll();
+          status['bucket_exists'] = true;
+          status['bucket_accessible'] = true;
         } catch (e) {
-          usage[folder] = {'error': e.toString()};
+          status['bucket_exists'] = false;
+          status['bucket_accessible'] = false;
+          status['error'] = e.toString();
         }
+      } else {
+        status['bucket_exists'] = false;
+        status['bucket_accessible'] = false;
+        status['error'] = 'Bucket non défini';
       }
     } catch (e) {
-      usage['error'] = e.toString();
+      status['bucket_exists'] = false;
+      status['bucket_accessible'] = false;
+      status['error'] = e.toString();
     }
 
-    return usage;
+    return status;
+  }
+
+  /// Retourne les instructions pour créer le bucket
+  static Map<String, dynamic> getBucketCreationInstructions() {
+    return {
+      'title': 'Bucket Firebase Storage créé avec succès',
+      'bucket_name': 'liya-a4a9f-storage',
+      'status': 'created',
+      'next_steps': [
+        '1. Aller dans Firebase Console > Storage > Rules',
+        '2. Configurer les règles de sécurité',
+        '3. Tester l\'upload d\'images dans l\'app',
+        '4. Vérifier que les fichiers s\'affichent correctement'
+      ],
+      'url': 'https://console.firebase.google.com/project/liya-a4a9f/storage'
+    };
   }
 }

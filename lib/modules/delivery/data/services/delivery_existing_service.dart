@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/entities/delivery_user.dart';
 import '../../domain/entities/delivery_order.dart';
+import 'package:geolocator/geolocator.dart';
 
 class DeliveryExistingService {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -25,17 +26,63 @@ class DeliveryExistingService {
     }
   }
 
+  // Mettre à jour la position après une livraison
+  static Future<void> updatePositionAfterDelivery(String phoneNumber) async {
+    try {
+      print('📍 Mise à jour position après livraison pour: $phoneNumber');
+
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      await _firestore.collection('users').doc(phoneNumber).update({
+        'current_latitude': position.latitude,
+        'current_longitude': position.longitude,
+        'last_location_update': FieldValue.serverTimestamp(),
+        'last_delivery_completion': FieldValue.serverTimestamp(),
+      });
+
+      print(
+          '✅ Position mise à jour après livraison: ${position.latitude}, ${position.longitude}');
+    } catch (e) {
+      print('❌ Erreur mise à jour position après livraison: $e');
+    }
+  }
+
   // Mettre à jour la disponibilité d'un livreur
   static Future<void> updateDeliveryUserAvailability(
     String phoneNumber,
     bool isAvailable,
   ) async {
     try {
-      await _firestore.collection('users').doc(phoneNumber).update({
-        'active': isAvailable,
-      });
+      print(
+          '🔄 Mise à jour disponibilité pour: $phoneNumber, disponible: $isAvailable');
+
+      if (isAvailable) {
+        // Si le livreur devient disponible, récupérer sa position actuelle
+        final position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high,
+        );
+
+        await _firestore.collection('users').doc(phoneNumber).update({
+          'active': isAvailable,
+          'current_latitude': position.latitude,
+          'current_longitude': position.longitude,
+          'last_location_update': FieldValue.serverTimestamp(),
+        });
+
+        print(
+            '✅ Disponibilité activée avec position: ${position.latitude}, ${position.longitude}');
+      } else {
+        // Si le livreur devient indisponible, juste désactiver
+        await _firestore.collection('users').doc(phoneNumber).update({
+          'active': isAvailable,
+        });
+
+        print('❌ Disponibilité désactivée');
+      }
     } catch (e) {
-      print('Erreur lors de la mise à jour de la disponibilité: $e');
+      print('❌ Erreur lors de la mise à jour de la disponibilité: $e');
       rethrow;
     }
   }
@@ -172,12 +219,37 @@ class DeliveryExistingService {
   static Future<List<DeliveryOrder>> getRestaurantOrdersForDeliveryUser(
       String phoneNumber) async {
     try {
-      final querySnapshot = await _firestore
+      print('🔍 Recherche commandes restaurant pour: $phoneNumber');
+
+      // Essayer d'abord avec delivery_phone_number
+      var querySnapshot = await _firestore
           .collection('orders')
-          .where('delivery_phone', isEqualTo: phoneNumber)
-          .where('status', isEqualTo: 'enRoute')
-          .orderBy('createdAt', descending: true)
+          .where('delivery_phone_number', isEqualTo: phoneNumber)
           .get();
+
+      print(
+          '📦 Commandes trouvées avec delivery_phone_number: ${querySnapshot.docs.length}');
+
+      // Si aucune commande trouvée, essayer avec delivery_phone
+      if (querySnapshot.docs.isEmpty) {
+        print('🔄 Aucune commande trouvée, essai avec delivery_phone...');
+        querySnapshot = await _firestore
+            .collection('orders')
+            .where('delivery_phone', isEqualTo: phoneNumber)
+            .get();
+        print(
+            '📦 Commandes trouvées avec delivery_phone: ${querySnapshot.docs.length}');
+      }
+
+      // Afficher toutes les commandes pour diagnostiquer
+      final allOrders = await _firestore.collection('orders').get();
+      print('📋 Total commandes dans la base: ${allOrders.docs.length}');
+
+      for (final doc in allOrders.docs) {
+        final data = doc.data();
+        print(
+            '📄 Commande ${doc.id}: delivery_phone_number=${data['delivery_phone_number']}, delivery_phone=${data['delivery_phone']}, status=${data['status']}');
+      }
 
       return querySnapshot.docs.map((doc) {
         final data = doc.data();
@@ -186,8 +258,9 @@ class DeliveryExistingService {
           customerPhoneNumber: data['phone'] ?? '',
           customerName: data['customer_name'] ?? 'Client',
           customerAddress: data['address'] ?? '',
-          deliveryPhoneNumber: data['delivery_phone'],
-          deliveryName: data['delivery_name'],
+          deliveryPhoneNumber:
+              data['delivery_phone_number'] ?? data['delivery_phone'] ?? '',
+          deliveryName: data['delivery_name'] ?? '',
           type: DeliveryType.restaurant,
           status: _mapOrderStatus(data['status']),
           amount: (data['subtotal'] ?? 0.0).toDouble(),
@@ -205,7 +278,7 @@ class DeliveryExistingService {
       }).toList();
     } catch (e) {
       print(
-          'Erreur lors de la récupération des commandes restaurant du livreur: $e');
+          '❌ Erreur lors de la récupération des commandes restaurant du livreur: $e');
       return [];
     }
   }
@@ -214,12 +287,27 @@ class DeliveryExistingService {
   static Future<List<DeliveryOrder>> getParcelOrdersForDeliveryUser(
       String phoneNumber) async {
     try {
-      final querySnapshot = await _firestore
+      print('🔍 Recherche colis pour: $phoneNumber');
+
+      // Essayer d'abord avec delivery_phone_number
+      var querySnapshot = await _firestore
           .collection('parcels')
-          .where('delivery_phone', isEqualTo: phoneNumber)
-          .where('status', isEqualTo: 'enRoute')
-          .orderBy('createdAt', descending: true)
+          .where('delivery_phone_number', isEqualTo: phoneNumber)
           .get();
+
+      print(
+          '📦 Colis trouvés avec delivery_phone_number: ${querySnapshot.docs.length}');
+
+      // Si aucun colis trouvé, essayer avec delivery_phone
+      if (querySnapshot.docs.isEmpty) {
+        print('🔄 Aucun colis trouvé, essai avec delivery_phone...');
+        querySnapshot = await _firestore
+            .collection('parcels')
+            .where('delivery_phone', isEqualTo: phoneNumber)
+            .get();
+        print(
+            '📦 Colis trouvés avec delivery_phone: ${querySnapshot.docs.length}');
+      }
 
       return querySnapshot.docs.map((doc) {
         final data = doc.data();
@@ -228,8 +316,9 @@ class DeliveryExistingService {
           customerPhoneNumber: data['phone'] ?? '',
           customerName: data['receiverName'] ?? '',
           customerAddress: data['address'] ?? '',
-          deliveryPhoneNumber: data['delivery_phone'],
-          deliveryName: data['delivery_name'],
+          deliveryPhoneNumber:
+              data['delivery_phone_number'] ?? data['delivery_phone'] ?? '',
+          deliveryName: data['delivery_name'] ?? '',
           type: DeliveryType.parcel,
           status: _mapOrderStatus(data['status']),
           amount: (data['prix'] ?? 0.0).toDouble(),
@@ -244,7 +333,7 @@ class DeliveryExistingService {
         );
       }).toList();
     } catch (e) {
-      print('Erreur lors de la récupération des colis du livreur: $e');
+      print('❌ Erreur lors de la récupération des colis du livreur: $e');
       return [];
     }
   }

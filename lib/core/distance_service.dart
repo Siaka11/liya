@@ -1,9 +1,9 @@
 import 'dart:math';
 
 class DistanceService {
-  // Coordonnées du restaurant (Yamoussoukro)
-  static const double restaurantLatitude = 6.813533;
-  static const double restaurantLongitude = -5.251962;
+  // Coordonnées du restaurant (Yamoussoukro - centre ville)
+  static const double restaurantLatitude = 6.8270;
+  static const double restaurantLongitude = -5.2890;
 
   /// Calcule la distance entre deux points GPS en utilisant la formule de Haversine
   /// Retourne la distance en kilomètres
@@ -57,9 +57,11 @@ class DistanceService {
   /// Calcule le temps de livraison estimé basé sur la distance
   /// Retourne le temps en minutes
   static int calculateDeliveryTime(double distanceInKm) {
-    // Estimation : 5 minutes de base + 2 minutes par km
-    const int baseTime = 5; // minutes
-    const double timePerKm = 2.0; // minutes par km
+    // Estimation pour livraisons locales à Yamoussoukro :
+    // - Temps de base : 10 minutes
+    // - 3 minutes par km pour les distances locales
+    const int baseTime = 10; // minutes
+    const double timePerKm = 3.0; // minutes par km
 
     return (baseTime + (distanceInKm * timePerKm)).round();
   }
@@ -82,13 +84,16 @@ class DistanceService {
   /// Calcule les frais de livraison basés sur la distance
   /// Retourne les frais en FCFA
   static int calculateDeliveryFee(double distanceInKm) {
-    // Tarification progressive :
-    // - 0-5 km : 500 FCFA
+    // Tarification pour livraisons locales à Yamoussoukro :
+    // - 0-2 km : 300 FCFA
+    // - 2-5 km : 500 FCFA
     // - 5-10 km : 750 FCFA
     // - 10-15 km : 1000 FCFA
     // - 15+ km : 1250 FCFA
 
-    if (distanceInKm <= 5) {
+    if (distanceInKm <= 2) {
+      return 300;
+    } else if (distanceInKm <= 5) {
       return 500;
     } else if (distanceInKm <= 10) {
       return 750;

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:liya/core/ui/theme/theme.dart';
 import 'package:liya/core/local_storage_factory.dart';
 import 'package:liya/core/singletons.dart';
+import 'package:liya/core/ui/components/notification_button.dart';
 import 'package:liya/modules/restaurant/features/order/presentation/widgets/floating_order_button.dart';
 import 'package:liya/modules/restaurant/features/order/presentation/widgets/modern_dish_card.dart';
 import 'package:liya/modules/restaurant/features/home/presentation/widget/navigation_footer.dart';
@@ -116,6 +117,10 @@ class ModernHomeRestaurantPage extends ConsumerWidget {
                     ),
                   ],
                 ),
+              ),
+              NotificationAppBarButton(
+                backgroundColor: Colors.transparent,
+                iconColor: Colors.grey[700],
               ),
               IconButton(
                 onPressed: () {

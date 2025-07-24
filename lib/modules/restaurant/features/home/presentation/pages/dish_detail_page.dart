@@ -4,6 +4,7 @@ import 'package:auto_route/annotations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:liya/core/ui/components/notification_button.dart';
 
 import '../../../../../../core/local_storage_factory.dart';
 import '../../../../../../core/singletons.dart';
@@ -291,6 +292,11 @@ class _DishDetailPageState extends ConsumerState<DishDetailPage>
                       icon: const Icon(Icons.arrow_back, color: Colors.black),
                       onPressed: () => Navigator.pop(context),
                     ),
+                  ),
+                  // Bouton notifications
+                  NotificationAppBarButton(
+                    backgroundColor: Colors.white70,
+                    iconColor: Colors.black,
                   ),
                   // Bouton cœur (like)
                   CircleAvatar(

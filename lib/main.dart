@@ -6,6 +6,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:liya/core/singletons.dart';
 import 'package:liya/core/providers.dart';
 import 'package:liya/core/services/firebase_storage_helper.dart';
+import 'package:liya/core/services/notification_service.dart';
 import 'firebase_options.dart';
 
 import 'app.dart';
@@ -26,6 +27,9 @@ void main() async {
     // Diagnostic Firebase Storage
     await FirebaseStorageHelper.printDiagnostics();
     await FirebaseStorageHelper.ensureFoldersExist();
+
+    // Initialiser le service de notifications
+    await NotificationService.initialize();
   } catch (e) {
     print('❌ Firebase init error: $e');
   }

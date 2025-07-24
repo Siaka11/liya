@@ -3,15 +3,20 @@ import 'package:liya/modules/parcel/feature/presentation/pages/parcel_home_page.
 import 'package:liya/modules/restaurant/features/order/presentation/pages/order_detail_page.dart';
 import 'package:liya/modules/restaurant/features/profile/presentation/pages/profile_page.dart';
 import 'package:liya/modules/delivery/presentation/pages/delivery_admin_dashboard_page.dart';
+import 'package:liya/modules/delivery/presentation/pages/delivery_navigation_page.dart';
 import 'package:liya/modules/admin/presentation/pages/restaurant_management_page.dart';
 import 'package:liya/modules/admin/presentation/pages/dish_management_page.dart';
 import 'package:liya/modules/admin/presentation/pages/delivery_user_management_page.dart';
+import 'package:liya/modules/restaurant/features/notifications/presentation/pages/notifications_page.dart';
 import 'package:liya/routes/app_router.gr.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../config/app_information.dart';
 import '../core/singletons.dart';
+import '../core/test_delivery_tracking.dart';
 import '../modules/auth/auth_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/material.dart';
 
 @AutoRouterConfig()
 class AppRouter extends $AppRouter implements AutoRouteGuard {
@@ -74,11 +79,14 @@ class AppRouter extends $AppRouter implements AutoRouteGuard {
         AutoRoute(page: EarningsRoute.page),
         AutoRoute(page: DeliveryProfileRoute.page),
         AutoRoute(page: StatusRoute.page),
-        AutoRoute(page: DeliveryAdminDashboardRoute.page),
+        // AutoRoute(page: DeliveryAdminDashboardRoute.page),
         AutoRoute(page: AdminDashboardRoute.page),
         AutoRoute(page: RestaurantManagementRoute.page),
         AutoRoute(page: DishManagementRoute.page),
         AutoRoute(page: DeliveryUserManagementRoute.page),
         AutoRoute(page: RestaurantEditRoute.page),
+        AutoRoute(page: NotificationsRoute.page),
+        // AutoRoute(page: DeliveryNavigationRoute.page),
+        // AutoRoute(page: DeliveryAddressRoute.page),
       ];
 }
