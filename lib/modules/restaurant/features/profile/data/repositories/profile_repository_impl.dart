@@ -5,7 +5,7 @@ import '../../domain/repositories/profile_repository.dart';
 import '../datasources/profile_remote_data_source.dart';
 
 class ProfileRepositoryImpl implements ProfileRepository {
-  final ProfileRemoteDataSourceMySQL remoteDataSource;
+  final ProfileRemoteDataSource remoteDataSource;
 
   ProfileRepositoryImpl({required this.remoteDataSource});
 
@@ -13,7 +13,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
   Future<dartz.Either<Failure, UserProfile>> getUserProfile(
       String phoneNumber) async {
     try {
-      final profile = await remoteDataSource.getUserProfileByPhone(phoneNumber);
+      final profile = await remoteDataSource.getUserProfile(phoneNumber);
       return dartz.Right(profile);
     } catch (e) {
       return dartz.Left(ServerFailure(message: e.toString()));

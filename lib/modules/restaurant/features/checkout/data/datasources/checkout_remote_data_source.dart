@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../card/data/models/cart_item_model.dart';
 import '../../domain/entities/delivery_info.dart';
 import '../models/delivery_info_model.dart';
+import 'package:liya/core/services/notification_service.dart';
 
 abstract class CheckoutRemoteDataSource {
   Future<DeliveryInfo> getDeliveryInfo(String userId);
@@ -12,6 +13,7 @@ abstract class CheckoutRemoteDataSource {
 
 class CheckoutRemoteDataSourceImpl implements CheckoutRemoteDataSource {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final NotificationService _notificationService = NotificationService();
 
   @override
   Future<DeliveryInfo> getDeliveryInfo(String userId) async {
@@ -54,23 +56,43 @@ class CheckoutRemoteDataSourceImpl implements CheckoutRemoteDataSource {
       throw Exception('DeliveryInfo must be a DeliveryInfoModel');
     }
 
+    final orderId = orderRef.id;
+    final total = cartItems.fold(
+        0.0,
+        (sum, item) =>
+            sum + (double.tryParse(item.price) ?? 0) * item.quantity);
+
     final orderRef = _firestore.collection('orders').doc();
     final batch = _firestore.batch();
 
     // Create order
     batch.set(orderRef, {
+      'id': orderId,
       'userId': userId,
       'status': 'pending',
       'createdAt': FieldValue.serverTimestamp(),
       'items': cartItems.map((item) => item.toFirestore()).toList(),
       'deliveryInfo': (deliveryInfo as DeliveryInfoModel).toFirestore(),
-      'total': cartItems.fold(
-          0.0,
-          (sum, item) =>
-              sum + (double.tryParse(item.price) ?? 0) * item.quantity),
+      'total': total,
     });
 
     // Execute batch
     await batch.commit();
+
+    // Envoyer notification aux admins
+    await _notificationService.notifyNewOrderToAdmin(
+      orderId: orderId,
+      customerName: deliveryInfo.customerName,
+      customerPhone: userId,
+      restaurantName: 'Restaurant', // TODO: Récupérer le nom du restaurant
+      total: total,
+      items: cartItems
+          .map((item) => {
+                'name': item.name,
+                'price': double.tryParse(item.price) ?? 0,
+                'quantity': item.quantity,
+              })
+          .toList(),
+    );
   }
 }

@@ -41,10 +41,6 @@ class HomeLocalDataSourceImpl implements HomeLocalDataSource {
         icon: 'delivery_dining',
       ),
       ],
-      /*const HomeOptionModel(
-        title: 'Faire des courses',
-        icon: 'shopping_cart',
-      ),*/
       if (role == 'admin') ...[
         const HomeOptionModel(
           title: 'Administrateur',

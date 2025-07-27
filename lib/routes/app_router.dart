@@ -1,4 +1,5 @@
 import 'package:auto_route/auto_route.dart';
+import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
 import 'package:liya/modules/parcel/feature/presentation/pages/parcel_home_page.dart';
 import 'package:liya/modules/restaurant/features/order/presentation/pages/order_detail_page.dart';
 import 'package:liya/modules/restaurant/features/profile/presentation/pages/profile_page.dart';
@@ -30,14 +31,26 @@ class AppRouter extends $AppRouter implements AutoRouteGuard {
 
   @override
   void onNavigation(NavigationResolver resolver, StackRouter router) {
-    if (isAuthenticated() ||
-        resolver.route.name == AuthRoute.name ||
-        resolver.route.name == OtpRoute.name ||
-        resolver.route.name == InfoUserRoute.name) {
-      resolver.next();
-    } else {
-      resolver.redirect(const AuthRoute(), replace: true);
-    }
+    // Utiliser un Future.microtask pour gérer l'asynchrone
+    Future.microtask(() async {
+      try {
+        // Vérifier l'état d'authentification et synchroniser
+        final isUserAuthenticated = await authProvider.checkAuthStateAndSync();
+
+        if (isUserAuthenticated ||
+            resolver.route.name == AuthRoute.name ||
+            resolver.route.name == OtpRoute.name ||
+            resolver.route.name == InfoUserRoute.name) {
+          resolver.next();
+        } else {
+          resolver.redirect(const AuthRoute(), replace: true);
+        }
+      } catch (e) {
+        print('❌ Erreur dans onNavigation: $e');
+        // En cas d'erreur, rediriger vers l'auth
+        resolver.redirect(const AuthRoute(), replace: true);
+      }
+    });
   }
 
   @override

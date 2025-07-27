@@ -1,226 +1,345 @@
-import 'dart:io';
-import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:permission_handler/permission_handler.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:liya/core/services/fcm_service.dart';
+import 'package:liya/modules/auth/firebase_auth_service.dart';
 
 class NotificationService {
-  static final FlutterLocalNotificationsPlugin _localNotifications =
-      FlutterLocalNotificationsPlugin();
-  static final FirebaseMessaging _firebaseMessaging =
-      FirebaseMessaging.instance;
+  static final NotificationService _instance = NotificationService._internal();
+  factory NotificationService() => _instance;
+  NotificationService._internal();
 
-  static Future<void> initialize() async {
-    print('🔔 Initialisation du service de notifications...');
+  final FCMService _fcmService = FCMService();
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuthService _authService = FirebaseAuthService();
 
+  /// Notification: Nouvelle commande de plat → Admin
+  Future<void> notifyNewOrderToAdmin({
+    required String orderId,
+    required String customerName,
+    required String customerPhone,
+    required String restaurantName,
+    required double total,
+    required List<Map<String, dynamic>> items,
+  }) async {
     try {
-      // Demander les permissions
-      await _requestPermissions();
+      print('📤 Notification nouvelle commande → Admin');
 
-      // Configurer les notifications locales
-      await _configureLocalNotifications();
+      final title = '🆕 Nouvelle commande reçue';
+      final body =
+          '$customerName a commandé ${items.length} article(s) pour ${total.toStringAsFixed(0)} FCFA';
 
-      // Configurer Firebase Messaging
-      await _configureFirebaseMessaging();
+      final data = {
+        'type': 'new_order',
+        'orderId': orderId,
+        'customerName': customerName,
+        'customerPhone': customerPhone,
+        'restaurantName': restaurantName,
+        'total': total.toString(),
+        'items': items.toString(),
+      };
 
-      print('✅ NotificationService initialisé avec succès');
-    } catch (e) {
-      print('❌ Erreur lors de l\'initialisation des notifications: $e');
-    }
-  }
-
-  static Future<void> _requestPermissions() async {
-    print('🔐 Demande des permissions de notifications...');
-
-    // Demander les permissions iOS
-    if (Platform.isIOS) {
-      final status = await Permission.notification.request();
-      print('🍎 iOS - Permission notifications: $status');
-
-      // Demander les permissions Firebase
-      final settings = await _firebaseMessaging.requestPermission(
-        alert: true,
-        announcement: false,
-        badge: true,
-        carPlay: false,
-        criticalAlert: false,
-        provisional: false,
-        sound: true,
+      await _fcmService.sendNotificationToRole(
+        role: 'admin',
+        title: title,
+        body: body,
+        data: data,
       );
-      print('🔑 Firebase - Permission: ${settings.authorizationStatus}');
-    }
 
-    // Demander les permissions Android
-    if (Platform.isAndroid) {
-      final status = await Permission.notification.request();
-      print('🤖 Android - Permission notifications: $status');
-    }
-  }
+      // Sauvegarder la notification dans Firestore pour l'historique
+      await _saveNotificationToFirestore(
+        type: 'new_order',
+        title: title,
+        body: body,
+        data: data,
+        targetRole: 'admin',
+      );
 
-  static Future<void> _configureLocalNotifications() async {
-    print('📱 Configuration des notifications locales...');
-
-    const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
-
-    const DarwinInitializationSettings initializationSettingsIOS =
-        DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
-    );
-
-    const InitializationSettings initializationSettings =
-        InitializationSettings(
-      android: initializationSettingsAndroid,
-      iOS: initializationSettingsIOS,
-    );
-
-    await _localNotifications.initialize(
-      initializationSettings,
-      onDidReceiveNotificationResponse: (NotificationResponse response) {
-        print('📱 Notification locale reçue: ${response.payload}');
-      },
-    );
-  }
-
-  static Future<void> _configureFirebaseMessaging() async {
-    print('🔥 Configuration Firebase Messaging...');
-
-    // Configurer les handlers pour les notifications en arrière-plan
-    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-
-    // Configurer les handlers pour les notifications au premier plan
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      print(
-          '📨 Notification reçue au premier plan: ${message.notification?.title}');
-      _showLocalNotification(message);
-    });
-
-    // Configurer les handlers pour les notifications quand l'app est ouverte
-    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      print('📱 App ouverte via notification: ${message.notification?.title}');
-    });
-
-    // Obtenir le token FCM
-    try {
-      final token = await _firebaseMessaging.getToken();
-      print('🔑 FCM Token: $token');
-
-      // Sauvegarder le token dans Firestore (optionnel)
-      // await _saveTokenToFirestore(token);
+      print('✅ Notification nouvelle commande envoyée aux admins');
     } catch (e) {
-      print('❌ Erreur lors de la récupération du token FCM: $e');
+      print('❌ Erreur notification nouvelle commande: $e');
     }
   }
 
-  static Future<void> _showLocalNotification(RemoteMessage message) async {
-    const AndroidNotificationDetails androidPlatformChannelSpecifics =
-        AndroidNotificationDetails(
-      'liya_channel',
-      'Liya Notifications',
-      channelDescription: 'Notifications pour l\'application Liya',
-      importance: Importance.max,
-      priority: Priority.high,
-      showWhen: true,
-    );
+  /// Notification: Nouveau colis → Admin
+  Future<void> notifyNewParcelToAdmin({
+    required String parcelId,
+    required String customerName,
+    required String customerPhone,
+    required String destination,
+    required double total,
+  }) async {
+    try {
+      print('📤 Notification nouveau colis → Admin');
 
-    const DarwinNotificationDetails iOSPlatformChannelSpecifics =
-        DarwinNotificationDetails(
-      presentAlert: true,
-      presentBadge: true,
-      presentSound: true,
-    );
+      final title = '📦 Nouveau colis à expédier';
+      final body =
+          '$customerName veut expédier un colis vers $destination pour ${total.toStringAsFixed(0)} FCFA';
 
-    const NotificationDetails platformChannelSpecifics = NotificationDetails(
-      android: androidPlatformChannelSpecifics,
-      iOS: iOSPlatformChannelSpecifics,
-    );
+      final data = {
+        'type': 'new_parcel',
+        'parcelId': parcelId,
+        'customerName': customerName,
+        'customerPhone': customerPhone,
+        'destination': destination,
+        'total': total.toString(),
+      };
 
-    await _localNotifications.show(
-      message.hashCode,
-      message.notification?.title ?? 'Nouvelle notification',
-      message.notification?.body ?? '',
-      platformChannelSpecifics,
-      payload: message.data.toString(),
-    );
+      await _fcmService.sendNotificationToRole(
+        role: 'admin',
+        title: title,
+        body: body,
+        data: data,
+      );
+
+      await _saveNotificationToFirestore(
+        type: 'new_parcel',
+        title: title,
+        body: body,
+        data: data,
+        targetRole: 'admin',
+      );
+
+      print('✅ Notification nouveau colis envoyée aux admins');
+    } catch (e) {
+      print('❌ Erreur notification nouveau colis: $e');
+    }
   }
 
-  static Future<void> showLocalNotification({
+  /// Notification: Commande assignée → Livreur
+  Future<void> notifyOrderAssignedToDelivery({
+    required String orderId,
+    required String deliveryPhone,
+    required String customerName,
+    required String customerPhone,
+    required String address,
+    required double total,
+    required double deliveryFee,
+  }) async {
+    try {
+      print('📤 Notification commande assignée → Livreur: $deliveryPhone');
+
+      final title = '🚚 Nouvelle livraison assignée';
+      final body =
+          'Livraison pour $customerName - ${total.toStringAsFixed(0)} FCFA + ${deliveryFee.toStringAsFixed(0)} FCFA de frais';
+
+      final data = {
+        'type': 'order_assigned',
+        'orderId': orderId,
+        'customerName': customerName,
+        'customerPhone': customerPhone,
+        'address': address,
+        'total': total.toString(),
+        'deliveryFee': deliveryFee.toString(),
+      };
+
+      await _fcmService.sendNotificationToUser(
+        userPhoneNumber: deliveryPhone,
+        title: title,
+        body: body,
+        data: data,
+      );
+
+      await _saveNotificationToFirestore(
+        type: 'order_assigned',
+        title: title,
+        body: body,
+        data: data,
+        targetUser: deliveryPhone,
+      );
+
+      print('✅ Notification commande assignée envoyée au livreur');
+    } catch (e) {
+      print('❌ Erreur notification commande assignée: $e');
+    }
+  }
+
+  /// Notification: Colis assigné → Livreur
+  Future<void> notifyParcelAssignedToDelivery({
+    required String parcelId,
+    required String deliveryPhone,
+    required String customerName,
+    required String customerPhone,
+    required String destination,
+    required double total,
+  }) async {
+    try {
+      print('📤 Notification colis assigné → Livreur: $deliveryPhone');
+
+      final title = '📦 Nouveau colis à livrer';
+      final body =
+          'Colis de $customerName vers $destination - ${total.toStringAsFixed(0)} FCFA';
+
+      final data = {
+        'type': 'parcel_assigned',
+        'parcelId': parcelId,
+        'customerName': customerName,
+        'customerPhone': customerPhone,
+        'destination': destination,
+        'total': total.toString(),
+      };
+
+      await _fcmService.sendNotificationToUser(
+        userPhoneNumber: deliveryPhone,
+        title: title,
+        body: body,
+        data: data,
+      );
+
+      await _saveNotificationToFirestore(
+        type: 'parcel_assigned',
+        title: title,
+        body: body,
+        data: data,
+        targetUser: deliveryPhone,
+      );
+
+      print('✅ Notification colis assigné envoyée au livreur');
+    } catch (e) {
+      print('❌ Erreur notification colis assigné: $e');
+    }
+  }
+
+  /// Notification: Livraison en cours → Client
+  Future<void> notifyDeliveryStartedToCustomer({
+    required String orderId,
+    required String customerPhone,
+    required String deliveryName,
+    required String deliveryPhone,
+    required String estimatedTime,
+  }) async {
+    try {
+      print('📤 Notification livraison en cours → Client: $customerPhone');
+
+      final title = '🚚 Votre commande est en route';
+      final body =
+          '$deliveryName a commencé la livraison. Arrivée estimée: $estimatedTime';
+
+      final data = {
+        'type': 'delivery_started',
+        'orderId': orderId,
+        'deliveryName': deliveryName,
+        'deliveryPhone': deliveryPhone,
+        'estimatedTime': estimatedTime,
+      };
+
+      await _fcmService.sendNotificationToUser(
+        userPhoneNumber: customerPhone,
+        title: title,
+        body: body,
+        data: data,
+      );
+
+      await _saveNotificationToFirestore(
+        type: 'delivery_started',
+        title: title,
+        body: body,
+        data: data,
+        targetUser: customerPhone,
+      );
+
+      print('✅ Notification livraison en cours envoyée au client');
+    } catch (e) {
+      print('❌ Erreur notification livraison en cours: $e');
+    }
+  }
+
+  /// Notification: Livraison terminée → Client
+  Future<void> notifyDeliveryCompletedToCustomer({
+    required String orderId,
+    required String customerPhone,
+    required String deliveryName,
+  }) async {
+    try {
+      print('📤 Notification livraison terminée → Client: $customerPhone');
+
+      final title = '✅ Livraison terminée';
+      final body =
+          '$deliveryName a livré votre commande. Merci de votre confiance !';
+
+      final data = {
+        'type': 'delivery_completed',
+        'orderId': orderId,
+        'deliveryName': deliveryName,
+      };
+
+      await _fcmService.sendNotificationToUser(
+        userPhoneNumber: customerPhone,
+        title: title,
+        body: body,
+        data: data,
+      );
+
+      await _saveNotificationToFirestore(
+        type: 'delivery_completed',
+        title: title,
+        body: body,
+        data: data,
+        targetUser: customerPhone,
+      );
+
+      print('✅ Notification livraison terminée envoyée au client');
+    } catch (e) {
+      print('❌ Erreur notification livraison terminée: $e');
+    }
+  }
+
+  /// Sauvegarder une notification dans Firestore pour l'historique
+  Future<void> _saveNotificationToFirestore({
+    required String type,
     required String title,
     required String body,
-    String? payload,
+    required Map<String, dynamic> data,
+    String? targetRole,
+    String? targetUser,
   }) async {
-    print('📱 Affichage notification locale: $title');
-
-    const AndroidNotificationDetails androidPlatformChannelSpecifics =
-        AndroidNotificationDetails(
-      'liya_channel',
-      'Liya Notifications',
-      channelDescription: 'Notifications pour l\'application Liya',
-      importance: Importance.max,
-      priority: Priority.high,
-      showWhen: true,
-    );
-
-    const DarwinNotificationDetails iOSPlatformChannelSpecifics =
-        DarwinNotificationDetails(
-      presentAlert: true,
-      presentBadge: true,
-      presentSound: true,
-    );
-
-    const NotificationDetails platformChannelSpecifics = NotificationDetails(
-      android: androidPlatformChannelSpecifics,
-      iOS: iOSPlatformChannelSpecifics,
-    );
-
-    await _localNotifications.show(
-      DateTime.now().millisecondsSinceEpoch ~/ 1000,
-      title,
-      body,
-      platformChannelSpecifics,
-      payload: payload,
-    );
-  }
-
-  static Future<String?> getToken() async {
     try {
-      final token = await _firebaseMessaging.getToken();
-      print('🔑 Token récupéré: ${token?.substring(0, 20)}...');
-      return token;
+      await _firestore.collection('notifications').add({
+        'type': type,
+        'title': title,
+        'body': body,
+        'data': data,
+        'targetRole': targetRole,
+        'targetUser': targetUser,
+        'createdAt': FieldValue.serverTimestamp(),
+        'read': false,
+      });
+
+      print('💾 Notification sauvegardée dans Firestore');
     } catch (e) {
-      print('❌ Erreur lors de la récupération du token: $e');
-      return null;
+      print('❌ Erreur sauvegarde notification: $e');
     }
   }
 
-  static Future<void> subscribeToTopic(String topic) async {
+  /// Marquer une notification comme lue
+  Future<void> markNotificationAsRead(String notificationId) async {
     try {
-      await _firebaseMessaging.subscribeToTopic(topic);
-      print('📡 Abonné au topic: $topic');
+      await _firestore.collection('notifications').doc(notificationId).update({
+        'read': true,
+        'readAt': FieldValue.serverTimestamp(),
+      });
+
+      print('✅ Notification marquée comme lue: $notificationId');
     } catch (e) {
-      print('❌ Erreur lors de l\'abonnement au topic: $e');
+      print('❌ Erreur marquage notification: $e');
     }
   }
 
-  static Future<void> unsubscribeFromTopic(String topic) async {
-    try {
-      await _firebaseMessaging.unsubscribeFromTopic(topic);
-      print('📡 Désabonné du topic: $topic');
-    } catch (e) {
-      print('❌ Erreur lors du désabonnement du topic: $e');
-    }
+  /// Obtenir les notifications d'un utilisateur
+  Stream<QuerySnapshot> getUserNotifications(String userPhone) {
+    return _firestore
+        .collection('notifications')
+        .where('targetUser', isEqualTo: userPhone)
+        .orderBy('createdAt', descending: true)
+        .limit(50)
+        .snapshots();
   }
-}
 
-// Handler pour les notifications en arrière-plan
-Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  print('📨 Notification en arrière-plan: ${message.notification?.title}');
-
-  // Afficher une notification locale même en arrière-plan
-  await NotificationService.showLocalNotification(
-    title: message.notification?.title ?? 'Nouvelle notification',
-    body: message.notification?.body ?? '',
-    payload: message.data.toString(),
-  );
+  /// Obtenir les notifications d'un rôle
+  Stream<QuerySnapshot> getRoleNotifications(String role) {
+    return _firestore
+        .collection('notifications')
+        .where('targetRole', isEqualTo: role)
+        .orderBy('createdAt', descending: true)
+        .limit(50)
+        .snapshots();
+  }
 }

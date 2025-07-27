@@ -15,7 +15,6 @@ import 'package:logger/logger.dart';
 import '../../core/loading_provider.dart';
 import '../core/local_storage_factory.dart';
 
-
 enum LocationStatus { Empty, Loading, Success, Error }
 
 class ShareLocationState {
@@ -70,7 +69,8 @@ class ShareLocationNotifier extends StateNotifier<ShareLocationState> {
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
         logger.w('Les services de localisation sont désactivés');
-        throw Exception('Les services de localisation sont désactivés. Veuillez les activer.');
+        throw Exception(
+            'Les services de localisation sont désactivés. Veuillez les activer.');
       }
 
       // Vérifier et demander les permissions
@@ -85,14 +85,16 @@ class ShareLocationNotifier extends StateNotifier<ShareLocationState> {
       }
 
       if (permission == LocationPermission.deniedForever) {
-        logger.w('Les permissions de localisation sont refusées de manière permanente');
+        logger.w(
+            'Les permissions de localisation sont refusées de manière permanente');
         throw Exception(
             'Les permissions de localisation sont refusées de manière permanente. Veuillez modifier les paramètres.');
       }
 
       // Vérifier la précision de la localisation (optionnel, mais utile pour Android)
       if (Platform.isAndroid) {
-        LocationAccuracyStatus accuracy = await Geolocator.getLocationAccuracy();
+        LocationAccuracyStatus accuracy =
+            await Geolocator.getLocationAccuracy();
         if (accuracy == LocationAccuracyStatus.reduced) {
           logger.w('La précision de la localisation est réduite');
         }
@@ -103,7 +105,8 @@ class ShareLocationNotifier extends StateNotifier<ShareLocationState> {
       Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       ).timeout(const Duration(seconds: 10), onTimeout: () {
-        throw Exception('Délai dépassé lors de la récupération de la position.');
+        throw Exception(
+            'Délai dépassé lors de la récupération de la position.');
       });
 
       LatLng latLng = LatLng(position.latitude, position.longitude);
@@ -134,12 +137,14 @@ class ShareLocationNotifier extends StateNotifier<ShareLocationState> {
       });
 
       String address = placemarks.isNotEmpty
-          ? '${placemarks.first.subLocality ?? ''} ${placemarks.first.locality ?? ''}'.trim()
+          ? '${placemarks.first.subLocality ?? ''} ${placemarks.first.locality ?? ''}'
+              .trim()
           : 'Adresse inconnue';
       if (address.isEmpty) address = 'Adresse inconnue';
       logger.i('Adresse récupérée : $address');
       singleton<LocalStorageFactory>().setObject('address', address);
-      singleton<LocalStorageFactory>().setObject('coordinates', {'latitude': position.latitude, 'longitude': position.longitude});
+      singleton<LocalStorageFactory>().setObject('coordinates',
+          {'latitude': position.latitude, 'longitude': position.longitude});
 
       state = state.copyWith(
         position: position,
@@ -159,7 +164,8 @@ class ShareLocationNotifier extends StateNotifier<ShareLocationState> {
   Future<void> updatePosition(LatLng newPosition) async {
     state = state.copyWith(status: LocationStatus.Loading);
     ref.read(loadingProvider.notifier).start();
-    logger.i('Mise à jour de la position : ${newPosition.latitude}, ${newPosition.longitude}');
+    logger.i(
+        'Mise à jour de la position : ${newPosition.latitude}, ${newPosition.longitude}');
 
     try {
       await _updateAddressForPosition(newPosition);
@@ -191,7 +197,8 @@ class ShareLocationNotifier extends StateNotifier<ShareLocationState> {
           singleton<AppRouter>().replace(const HomeRoute());
         },
         onError: (error) {
-          logger.e('Erreur lors de la sauvegarde de la localisation', error: error);
+          logger.e('Erreur lors de la sauvegarde de la localisation',
+              error: error);
           state = state.copyWith(
             status: LocationStatus.Error,
             errorText: error,
@@ -216,6 +223,7 @@ class ShareLocationNotifier extends StateNotifier<ShareLocationState> {
   }
 }
 
-final shareLocationProvider = StateNotifierProvider<ShareLocationNotifier, ShareLocationState>(
-      (ref) => ShareLocationNotifier(ref),
+final shareLocationProvider =
+    StateNotifierProvider<ShareLocationNotifier, ShareLocationState>(
+  (ref) => ShareLocationNotifier(ref),
 );

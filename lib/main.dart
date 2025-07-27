@@ -1,4 +1,5 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -8,31 +9,58 @@ import 'package:liya/core/providers.dart';
 import 'package:liya/core/services/firebase_storage_helper.dart';
 import 'package:liya/core/services/notification_service.dart';
 import 'firebase_options.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
+import 'package:liya/modules/auth/firebase_auth_service.dart';
+import 'package:liya/core/services/fcm_service.dart';
 
 import 'app.dart';
 import 'modules/home/presentation/pages/home_page.dart'; // Pour PromoPopupManager
+
+// Handler pour les notifications en arrière-plan
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  print(
+      '📱 Notification reçue en arrière-plan: ${message.notification?.title}');
+}
+
+// Handler pour les notifications en premier plan
+void _handleForegroundMessage(RemoteMessage message) {
+  print('📱 Notification reçue en premier plan: ${message.data}');
+
+  // Afficher une notification locale si nécessaire
+  if (message.notification != null) {
+    // Vous pouvez afficher un SnackBar ou une notification locale ici
+  }
+}
+
+// Handler pour les notifications en arrière-plan
+void _handleBackgroundMessage(RemoteMessage message) {
+  print('📱 Notification reçue en arrière-plan: ${message.data}');
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await EasyLocalization.ensureInitialized();
   await initializeDateFormatting('fr_FR', null);
+
+  // Initialiser Firebase
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // Configurer Firebase Messaging
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
+  // Initialiser les singletons
   await initSingletons();
 
-  try {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-    print('✅ Firebase initialisé avec succès');
+  // Initialiser FCM
+  await FCMService().initialize();
 
-    // Diagnostic Firebase Storage
-    await FirebaseStorageHelper.printDiagnostics();
-    await FirebaseStorageHelper.ensureFoldersExist();
+  // Nettoyer les anciens tokens FCM
+  await FCMService().cleanupOldTokens();
 
-    // Initialiser le service de notifications
-    await NotificationService.initialize();
-  } catch (e) {
-    print('❌ Firebase init error: $e');
-  }
+  // Forcer le nettoyage des verification_id au démarrage
+  FirebaseAuthService().forceClearVerificationId();
 
   runApp(
       //Plugin for Internationalization i18n
@@ -44,4 +72,37 @@ void main() async {
     fallbackLocale: const Locale('en', 'EN'),
     child: App(), // PromoPopupManager sera utilisé dans HomePage
   )));
+}
+
+Future<void> _configureFirebaseMessaging() async {
+  try {
+    // Configurer le handler pour les notifications en arrière-plan
+    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
+    // Demander les permissions
+    final settings = await FirebaseMessaging.instance.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+      provisional: false,
+    );
+
+    if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+      print('✅ Permissions FCM accordées');
+
+      // Configurer les handlers de notifications
+      FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
+      FirebaseMessaging.onMessageOpenedApp.listen(_handleBackgroundMessage);
+
+      // Récupérer le token FCM
+      final token = await FirebaseMessaging.instance.getToken();
+      if (token != null) {
+        print('📱 Token FCM: ${token.substring(0, 20)}...');
+      }
+    } else {
+      print('❌ Permissions FCM refusées');
+    }
+  } catch (e) {
+    print('❌ Erreur configuration FCM: $e');
+  }
 }

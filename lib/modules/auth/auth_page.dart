@@ -1,15 +1,15 @@
-import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:liya/core/ui/components/custom_button.dart';
-import 'package:liya/core/ui/components/custom_field.dart';
-import 'package:liya/modules/auth/login_provider.dart';
+import 'package:auto_route/auto_route.dart'; // Pour la navigation
+import 'package:liya/modules/auth/auth_provider.dart'; // Votre AuthProvider
+import 'package:liya/core/ui/components/custom_button.dart'; // Vos composants UI
+import 'package:liya/core/ui/components/custom_field.dart'; // Vos composants UI
+import 'package:liya/routes/app_router.gr.dart'; // Vos routes générées
 
-import '../../core/ui/theme/theme.dart';
-import 'package:liya/routes/app_router.gr.dart';
+import '../../core/ui/theme/theme.dart'; // Votre thème UI
+import '../home/application/home_provider.dart'; // Votre HomeProvider
 
-@RoutePage()
+@RoutePage() // Assurez-vous que cette annotation est présente si vous utilisez AutoRouter
 class AuthPage extends ConsumerStatefulWidget {
   const AuthPage({super.key});
 
@@ -23,24 +23,63 @@ class _AuthPageState extends ConsumerState<AuthPage>
   late Animation<double> _animation;
   late final TextEditingController _phoneController;
   bool _isSubmitting = false;
+  bool _hasShownLengthError = false; // Pour éviter les SnackBar répétés
 
   @override
   void initState() {
     super.initState();
-
     _phoneController = TextEditingController();
     _phoneController.addListener(() {
-      ref.read(loginProvider.notifier).updatePhoneNumber(_phoneController.text);
+      _validatePhoneNumberLength();
     });
-
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 2),
     )..forward();
-
     _animation = Tween<double>(begin: 1.5, end: 1.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
     );
+
+    // Vérifier si l'utilisateur est déjà connecté
+    _checkIfUserAlreadyAuthenticated();
+  }
+
+  /// Vérifier si l'utilisateur est déjà authentifié
+  Future<void> _checkIfUserAlreadyAuthenticated() async {
+    try {
+      final isAuthenticated =
+          await ref.read(authProvider.notifier).checkAuthStateAndSync();
+
+      if (isAuthenticated && mounted) {
+        print(
+            '✅ Utilisateur déjà authentifié, redirection vers share-location');
+        // Rediriger directement vers la page de localisation
+        context.router.pushNamed('/share-location');
+      }
+    } catch (e) {
+      print('❌ Erreur vérification authentification: $e');
+    }
+  }
+
+  void _validatePhoneNumberLength() {
+    final phoneNumber = _phoneController.text.replaceAll(RegExp(r'[^\d]'), '');
+
+    if (phoneNumber.isNotEmpty &&
+        phoneNumber.length < 10 &&
+        !_hasShownLengthError) {
+      _hasShownLengthError = true;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              'Numéro incomplet. Vous avez saisi ${phoneNumber.length} chiffres sur 10 requis.'),
+          backgroundColor: Colors.orange,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    } else if (phoneNumber.length >= 10) {
+      _hasShownLengthError =
+          false; // Reset pour permettre un nouveau message si nécessaire
+    }
   }
 
   @override
@@ -51,30 +90,134 @@ class _AuthPageState extends ConsumerState<AuthPage>
   }
 
   Future<void> _handleSubmit() async {
+    // Protection contre les appels multiples
+    if (_isSubmitting) {
+      print('🛡️ Appel multiple bloqué');
+      return;
+    }
+
+    // Extraire uniquement les chiffres
+    final phoneNumber = _phoneController.text.replaceAll(RegExp(r'[^\d]'), '');
+
+    // Vérifier que le numéro a exactement 10 chiffres pour la Côte d'Ivoire
+    if (phoneNumber.length != 10) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              'Numéro invalide. Vous avez saisi ${phoneNumber.length} chiffres sur 10 requis. Format attendu: 0701234567'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+
+    // Vérifier que le numéro commence par 0
+    if (!phoneNumber.startsWith('0')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content:
+              Text('Numéro invalide. Doit commencer par 0. Format: 0701234567'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+
     setState(() => _isSubmitting = true);
     try {
-      final loginForm = ref.read(loginProvider.notifier);
-      final success = await loginForm.submit(context, ref);
-      if (mounted && success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Code envoyé'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        // Utiliser ref.read pour obtenir l'état le plus récent
-        final updatedLoginState = ref.read(loginProvider);
-        final verificationId = updatedLoginState.verificationId;
-        if (mounted && verificationId != null) {
-          context.router.replace(OtpRoute(verificationId: verificationId));
-        } else if (mounted) {
+      final needsOTP =
+          await ref.read(authProvider.notifier).sendOTP(_phoneController.text);
+
+      if (mounted) {
+        if (needsOTP) {
+          // Cas 1 : OTP nécessaire (nouvel utilisateur ou utilisateur existant mais infos incomplètes)
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Erreur : verificationId manquant'),
-              backgroundColor: Colors.red,
+              content: Text('Code envoyé avec succès !'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
             ),
           );
+
+          // Récupérer le verificationId et naviguer vers la page OTP
+          final verificationId =
+              await ref.read(authProvider.notifier).getVerificationId();
+          if (verificationId != null && mounted) {
+            context.router.push(OtpRoute(verificationId: verificationId));
+          }
+        } else {
+          // Cas 2 : Pas besoin d'OTP (utilisateur existant avec infos complètes ou auto-vérification)
+          // Attendre un peu pour s'assurer que l'état est mis à jour
+          await Future.delayed(const Duration(milliseconds: 100));
+
+          // Vérifier si l'utilisateur est authentifié
+          final authState = ref.read(authProvider);
+          print(
+              '🔍 DEBUG: authState.isAuthenticated = ${authState.isAuthenticated}');
+          print('🔍 DEBUG: authState.currentUser = ${authState.currentUser}');
+
+          if (authState.isAuthenticated) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Connexion réussie !'),
+                backgroundColor: Colors.green,
+                duration: Duration(seconds: 2),
+              ),
+            );
+
+            // Forcer le rafraîchissement du HomeProvider
+            print('🔄 Forçage du rafraîchissement du HomeProvider');
+            await ref.read(homeProvider.notifier).refreshUser();
+
+            // Navigation directe vers le dashboard
+            if (mounted) {
+              print('🔍 DEBUG: Navigation vers /home');
+              context.router.push(HomeRoute());
+            }
+          } else {
+            // Cas d'auto-vérification Firebase - navigation vers localisation
+            print(
+                '🔍 DEBUG: Navigation vers /share-location (auto-vérification)');
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Connexion réussie !'),
+                backgroundColor: Colors.green,
+                duration: Duration(seconds: 2),
+              ),
+            );
+
+            if (mounted) {
+              context.router.push(HomeRoute());
+            }
+          }
         }
+      }
+    } catch (e) {
+      if (mounted) {
+        String errorMessage = 'Erreur: ${e.toString()}';
+
+        // Messages d'erreur plus spécifiques
+        if (e.toString().contains('blocked all requests')) {
+          errorMessage =
+              'Appareil temporairement bloqué. Attendez quelques minutes ou utilisez un autre appareil.';
+        } else if (e.toString().contains('invalid-phone-number')) {
+          errorMessage =
+              'Numéro de téléphone invalide. Vérifiez le format (0701234567).';
+        } else if (e.toString().contains('quota-exceeded')) {
+          errorMessage = 'Limite de SMS dépassée. Réessayez plus tard.';
+        } else if (e.toString().contains('network-request-failed')) {
+          errorMessage = 'Erreur réseau. Vérifiez votre connexion internet.';
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
@@ -83,8 +226,8 @@ class _AuthPageState extends ConsumerState<AuthPage>
 
   @override
   Widget build(BuildContext context) {
-    final loginState = ref.watch(loginProvider);
-    final loginForm = ref.read(loginProvider.notifier);
+    // Écoute les changements d'état du AuthProvider pour afficher les messages d'erreur
+    final authState = ref.watch(authProvider);
 
     return Scaffold(
       body: Stack(
@@ -153,13 +296,27 @@ class _AuthPageState extends ConsumerState<AuthPage>
                   child: CustomField(
                     controller: _phoneController,
                     fontSize: 21,
-                    prefixText: "+225 ",
+                    prefixText:
+                        "", // Pas de préfixe pour éviter la suppression du 0
                     paddingLeft: 12,
                     keyboardType: TextInputType.phone,
+                    placeholder:
+                        "0701234567", // Placeholder pour guider l'utilisateur
+                  ),
+                ),
+                const SizedBox(height: 10),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 20.0),
+                  child: Text(
+                    "Saisissez votre numéro complet (ex: 0701234567)",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 20),
-                if (loginState.hasError)
+                if (authState.errorMessage != null)
                   Container(
                     decoration: BoxDecoration(
                       color: Colors.red,
@@ -167,7 +324,7 @@ class _AuthPageState extends ConsumerState<AuthPage>
                     ),
                     padding: const EdgeInsets.all(8),
                     child: Text(
-                      loginState.errorText,
+                      authState.errorMessage!,
                       style: const TextStyle(color: Colors.white),
                     ),
                   ),

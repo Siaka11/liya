@@ -17,6 +17,7 @@ import '../domain/entities/user.dart';
 import '../domain/repositories/home_repository.dart';
 import '../domain/usecases/get_home_options.dart';
 import 'package:liya/modules/parcel/feature/presentation/pages/parcel_home_page.dart';
+import 'package:liya/modules/auth/auth_provider.dart'; // Ajout de l'import
 
 class HomeState {
   final List<HomeOption> options;
@@ -48,25 +49,49 @@ class HomeState {
 
 class HomeNotifier extends StateNotifier<HomeState> {
   final GetHomeOptions getHomeOptions;
+  final Ref ref; // Ajout de Ref pour accéder aux autres providers
 
-  HomeNotifier(this.getHomeOptions) : super(const HomeState()) {
+  HomeNotifier(this.getHomeOptions, this.ref) : super(const HomeState()) {
     _init();
+    _listenToAuthChanges(); // Écouter les changements d'authentification
   }
+
   Future<void> _init() async {
     await _loadUserData();
     await fetchOptions();
   }
 
+  /// Écouter les changements d'authentification pour rafraîchir les données utilisateur
+  void _listenToAuthChanges() {
+    // Écouter les changements du AuthProvider
+    ref.listen<AuthProvider>(authProvider, (previous, next) {
+      if (next.isAuthenticated &&
+          previous?.isAuthenticated != next.isAuthenticated) {
+        print(
+            '🔄 Changement d\'authentification détecté - rafraîchissement des données utilisateur');
+        refreshUser();
+      }
+    });
+  }
+
   Future<void> _loadUserData() async {
-    print('Loading user data');
+    print('🔄 Loading user data');
     state = state.copyWith(isLoading: true);
     try {
       final userDetails = singleton<LocalStorageFactory>().getUserDetails();
+      print('🔍 UserDetails from LocalStorage: $userDetails');
+
       final userJson = jsonDecode(userDetails) as Map<String, dynamic>;
+      print('🔍 UserJson decoded: $userJson');
+
       final user = User.fromJson(userJson);
+      print('🔍 User object created: ${user.name} ${user.lastName}');
+
       state = state.copyWith(user: user, isLoading: false);
+      print(
+          '✅ State updated with user: ${state.user.name} ${state.user.lastName}');
     } catch (e) {
-      print('Error loading user data: $e');
+      print('❌ Error loading user data: $e');
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
@@ -100,7 +125,8 @@ class HomeNotifier extends StateNotifier<HomeState> {
     'Je livrer': (context, option) =>
         AutoRouter.of(context).push(const SplashDeliveryRoute()),
     //'Faire des courses': (context, option) => singleton<AppRouter>().push(const ShoppingRoute()),
-    'Administrateur': (context, option) => AutoRouter.of(context).push(const AdminDashboardRoute()),
+    'Administrateur': (context, option) =>
+        AutoRouter.of(context).push(const AdminDashboardRoute()),
   };
 
   void onOptionSelected(BuildContext context, HomeOption option) {
@@ -133,5 +159,5 @@ final getHomeOptionsProvider = Provider<GetHomeOptions>((ref) {
 
 final homeProvider = StateNotifierProvider<HomeNotifier, HomeState>((ref) {
   final getHomeOptions = ref.read(getHomeOptionsProvider);
-  return HomeNotifier(getHomeOptions);
+  return HomeNotifier(getHomeOptions, ref);
 });

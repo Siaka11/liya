@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "353439898034-sftoni5vr8ms8l321ikajtmqn2ee398u.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.liya.ci",
+            "certificate_hash": "bc69126cb4165ffebd61c7a99b5df2ba7dd3a883"
+          }
+        },
+        {
           "client_id": "353439898034-hbofomtqqco4p5gh8jlmv9vir833qjdi.apps.googleusercontent.com",
           "client_type": 3
         }

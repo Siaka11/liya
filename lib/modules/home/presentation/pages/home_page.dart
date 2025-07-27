@@ -6,7 +6,6 @@ import 'package:liya/modules/home/presentation/pages/utils/top_menu.dart';
 import 'package:liya/modules/home/presentation/pages/widget/home_card_widget.dart';
 import 'package:liya/core/test_modern_system.dart';
 import 'package:liya/core/test_beverages.dart';
-import 'package:liya/core/test_notifications.dart';
 import 'package:liya/modules/home/domain/entities/home_option.dart';
 import 'package:liya/core/test_users_management.dart';
 import 'package:liya/modules/delivery/presentation/pages/delivery_assignment_page.dart';
@@ -788,13 +787,13 @@ class HomePage extends ConsumerWidget {
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: () {
-                          Navigator.push(
+                          /*Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (context) =>
                                   const TestNotificationsPage(),
                             ),
-                          );
+                          );*/
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.purple,
