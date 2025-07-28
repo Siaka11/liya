@@ -6,29 +6,32 @@ import 'package:liya/core/ui/theme/theme.dart';
 import 'package:liya/modules/auth/auth_provider.dart';
 import 'package:liya/routes/app_router.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
-
+import 'package:liya/core/services/navigation_service.dart';
 
 final appNameProvider = Provider((_) => 'LIYA');
 
 GlobalKey<State<BottomNavigationBar>> bottomNavigationBar =
-GlobalKey<State<BottomNavigationBar>>();
+    GlobalKey<State<BottomNavigationBar>>();
 
 GlobalKey<NavigatorState> rootNavigatorKey =
     singleton<AppRouter>().navigatorKey;
 
 final GlobalKey<ScaffoldMessengerState> rootScaffoldMessengerKey =
-GlobalKey<ScaffoldMessengerState>();
+    GlobalKey<ScaffoldMessengerState>();
 
-class App extends ConsumerWidget{
+class App extends ConsumerWidget {
   App({super.key});
 
   final _appRouter = singleton<AppRouter>();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref){
-    final String appName= ref.read(appNameProvider);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final String appName = ref.read(appNameProvider);
     final authProviderInstance = ref.watch(authProvider.notifier);
     final appRouter = AppRouter(authProviderInstance);
+
+    // Initialiser le NavigationService avec le GlobalKey
+    NavigationService().initialize(rootNavigatorKey);
 
     return MaterialApp.router(
       title: appName,
@@ -38,19 +41,18 @@ class App extends ConsumerWidget{
       ),
       scaffoldMessengerKey: rootScaffoldMessengerKey,
       debugShowCheckedModeBanner: false,
-
       builder: (context, widget) {
-        EasyLoading .init();
-        return Stack(
-            children:[
-              widget!,
-              if(ref.watch(loadingProvider))
-                Container(
-                  color: Colors.white,
-                  child: const Center(child: CircularProgressIndicator(),),
-                )
-            ]
-        );
+        EasyLoading.init();
+        return Stack(children: [
+          widget!,
+          if (ref.watch(loadingProvider))
+            Container(
+              color: Colors.white,
+              child: const Center(
+                child: CircularProgressIndicator(),
+              ),
+            )
+        ]);
       },
     );
   }

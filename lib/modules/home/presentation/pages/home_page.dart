@@ -1,27 +1,23 @@
-import 'package:auto_route/auto_route.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:liya/modules/admin/features/dishes/presentation/pages/restaurant_select_page.dart';
-import 'package:liya/modules/home/presentation/pages/utils/top_menu.dart';
-import 'package:liya/modules/home/presentation/pages/widget/home_card_widget.dart';
-import 'package:liya/core/test_modern_system.dart';
-import 'package:liya/core/test_beverages.dart';
-import 'package:liya/modules/home/domain/entities/home_option.dart';
-import 'package:liya/core/test_users_management.dart';
-import 'package:liya/modules/delivery/presentation/pages/delivery_assignment_page.dart';
-import 'package:liya/core/test_maps_simple.dart';
-import 'package:liya/modules/delivery/presentation/pages/delivery_dashboard_page.dart';
-import 'package:liya/core/init_delivery_data.dart';
-import 'package:liya/core/init_restaurant_data.dart';
-import 'package:liya/core/local_storage_factory.dart';
-import 'package:liya/core/singletons.dart';
-import 'package:liya/core/clean_test_data.dart';
-import 'package:firebase_remote_config/firebase_remote_config.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
+import 'package:firebase_remote_config/firebase_remote_config.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:auto_route/auto_route.dart';
+import 'package:liya/modules/home/presentation/pages/widget/home_card_widget.dart';
 import 'package:liya/routes/app_router.gr.dart';
-import '../../application/home_provider.dart';
+import 'package:liya/modules/home/application/home_provider.dart';
+import 'package:liya/modules/home/presentation/pages/utils/top_menu.dart';
+import 'package:liya/core/ui/components/notification_button.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../../../core/clean_test_data.dart';
+import '../../../../core/init_delivery_data.dart';
+import '../../../../core/init_restaurant_data.dart';
+import '../../../../core/test_beverages.dart';
+import '../../../../core/test_modern_system.dart';
+import '../../../../core/test_users_management.dart';
+import '../../domain/entities/home_option.dart';
 
 // Nouveau widget CustomPromoDialog fidèle au design Yango, largeur max, image bord à bord, bouton collé en bas
 class CustomPromoDialog extends StatelessWidget {
@@ -533,15 +529,31 @@ class HomePage extends ConsumerWidget {
             Positioned(
               top: 10,
               right: 10,
-              child: IconButton(
-                icon: const Icon(
-                  Icons.account_circle,
-                  color: Colors.grey,
-                  size: 40,
-                ),
-                onPressed: () {
-                  showTopMenu(context, ref);
-                },
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Icône de notifications
+                  NotificationButton(
+                    backgroundColor: Colors.transparent,
+                    iconColor: Colors.grey,
+                    size: 40.0,
+                    onPressed: () {
+                      // Navigation vers la page de notifications
+                      context.router.push(const NotificationsRoute());
+                    },
+                  ),
+                  // Icône de profil
+                  IconButton(
+                    icon: const Icon(
+                      Icons.person,
+                      color: Colors.grey,
+                      size: 26.0,
+                    ),
+                    onPressed: () {
+                      showTopMenu(context, ref);
+                    },
+                  ),
+                ],
               ),
             ),
 

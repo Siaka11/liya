@@ -1,11 +1,14 @@
-import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:liya/modules/auth/firebase_auth_service.dart';
-import 'package:liya/core/singletons.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
-
-import '../local_storage_factory.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import '../storage/local_storage_factory.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:auto_route/auto_route.dart';
+import 'package:liya/routes/app_router.gr.dart';
+import 'package:flutter/material.dart';
+import 'navigation_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class FCMService {
   static final FCMService _instance = FCMService._internal();
@@ -13,13 +16,25 @@ class FCMService {
   FCMService._internal();
 
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseAuthService _authService = FirebaseAuthService();
+  final LocalStorageFactory _localStorage = LocalStorageFactory();
+  final FlutterLocalNotificationsPlugin _localNotifications =
+      FlutterLocalNotificationsPlugin();
+  final NavigationService _navigationService = NavigationService();
 
-  /// Initialiser FCM et demander les permissions
-  Future<void> initialize() async {
+  // URLs des Firebase Functions
+  static const String _baseUrl =
+      'https://us-central1-liya-a4a9f.cloudfunctions.net';
+  static const String _sendNotificationUrl = '$_baseUrl/sendNotification';
+  static const String _sendNotificationToRoleUrl =
+      '$_baseUrl/sendNotificationToRole';
+
+  /// Initialiser FCM après authentification
+  Future<void> initializeAfterAuth() async {
+    print('🚀 Début initialisation FCM...');
     try {
-      print('🚀 === DÉBUT INITIALISATION FCM ===');
+      // Initialiser les notifications locales
+      print('📱 Initialisation notifications locales...');
+      await _initializeLocalNotifications();
 
       // Demander les permissions
       print('🔐 Demande des permissions FCM...');
@@ -33,393 +48,527 @@ class FCMService {
         sound: true,
       );
 
-      print('📱 Permissions FCM: ${settings.authorizationStatus}');
+      print('📊 Statut des permissions: ${settings.authorizationStatus}');
 
       if (settings.authorizationStatus == AuthorizationStatus.authorized) {
         print('✅ Permissions FCM accordées');
 
-        // Configurer les handlers pour les notifications en arrière-plan
-        FirebaseMessaging.onBackgroundMessage(
-            _firebaseMessagingBackgroundHandler);
+        // Obtenir le token FCM
+        print('🔑 Tentative de récupération du token FCM...');
+        String? token = await _messaging.getToken();
+        print('🔑 Token FCM brut: $token');
 
-        // Configurer les handlers pour les notifications en premier plan
+        if (token != null) {
+          print('📱 Token FCM obtenu: ${token.substring(0, 20)}...');
+          print('📱 Token FCM complet: $token');
+          await _saveFCMTokenToFirestore(token);
+        } else {
+          print('❌ Token FCM est null !');
+        }
+
+        // Écouter les changements de token
+        _messaging.onTokenRefresh.listen((newToken) {
+          print('🔄 Token FCM renouvelé: ${newToken.substring(0, 20)}...');
+          _saveFCMTokenToFirestore(newToken);
+        });
+
+        // Configurer les handlers de messages
         FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
+        FirebaseMessaging.onMessageOpenedApp.listen(_handleBackgroundMessage);
 
-        // Configurer les handlers pour les notifications quand l'app est ouverte
-        FirebaseMessaging.onMessageOpenedApp.listen(_handleMessageOpenedApp);
-
-        print('✅ FCM initialisé avec succès');
-        print('⏳ Token FCM sera obtenu après authentification');
+        // Gérer les messages au démarrage
+        RemoteMessage? initialMessage = await _messaging.getInitialMessage();
+        if (initialMessage != null) {
+          _handleBackgroundMessage(initialMessage);
+        }
       } else {
         print('❌ Permissions FCM refusées: ${settings.authorizationStatus}');
       }
-
-      print('🚀 === FIN INITIALISATION FCM ===');
     } catch (e) {
       print('❌ Erreur initialisation FCM: $e');
       print('❌ Stack trace: ${StackTrace.current}');
     }
   }
 
-  /// Initialiser FCM après l'authentification de l'utilisateur
-  Future<void> initializeAfterAuth() async {
+  /// Initialiser les notifications locales
+  Future<void> _initializeLocalNotifications() async {
+    const AndroidInitializationSettings initializationSettingsAndroid =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+
+    const DarwinInitializationSettings initializationSettingsIOS =
+        DarwinInitializationSettings(
+      requestAlertPermission: true,
+      requestBadgePermission: true,
+      requestSoundPermission: true,
+    );
+
+    const InitializationSettings initializationSettings =
+        InitializationSettings(
+      android: initializationSettingsAndroid,
+      iOS: initializationSettingsIOS,
+    );
+
+    await _localNotifications.initialize(
+      initializationSettings,
+      onDidReceiveNotificationResponse: (NotificationResponse response) {
+        print('📱 Notification locale cliquée: ${response.payload}');
+        // Gérer le clic sur la notification locale
+        _handleNotificationClick(response.payload);
+      },
+    );
+
+    // Créer les canaux de notification pour Android
+    await _createNotificationChannels();
+  }
+
+  /// Créer les canaux de notification pour Android
+  Future<void> _createNotificationChannels() async {
+    const AndroidNotificationChannel defaultChannel =
+        AndroidNotificationChannel(
+      'default',
+      'Notifications par défaut',
+      description: 'Canal pour les notifications générales',
+      importance: Importance.high,
+      playSound: true,
+      enableVibration: true,
+    );
+
+    const AndroidNotificationChannel ordersChannel = AndroidNotificationChannel(
+      'orders',
+      'Commandes',
+      description: 'Canal pour les notifications de commandes',
+      importance: Importance.high,
+      playSound: true,
+      enableVibration: true,
+    );
+
+    const AndroidNotificationChannel deliveryChannel =
+        AndroidNotificationChannel(
+      'delivery',
+      'Livraisons',
+      description: 'Canal pour les notifications de livraison',
+      importance: Importance.high,
+      playSound: true,
+      enableVibration: true,
+    );
+
+    const AndroidNotificationChannel deliveryStatusChannel =
+        AndroidNotificationChannel(
+      'delivery_status',
+      'Statut de livraison',
+      description: 'Canal pour les mises à jour de statut de livraison',
+      importance: Importance.high,
+      playSound: true,
+      enableVibration: true,
+    );
+
+    await _localNotifications
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(defaultChannel);
+
+    await _localNotifications
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(ordersChannel);
+
+    await _localNotifications
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(deliveryChannel);
+
+    await _localNotifications
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(deliveryStatusChannel);
+  }
+
+  /// Test direct de sauvegarde du token FCM
+  Future<void> testDirectTokenSave() async {
     try {
-      print('🔐 === DÉBUT INITIALISATION FCM APRÈS AUTH ===');
+      print('🧪 Test direct de sauvegarde du token FCM...');
 
-      // Obtenir le token FCM maintenant que l'utilisateur est authentifié
-      await _getAndSaveFCMToken();
+      // Récupérer le token FCM
+      String? token = await _messaging.getToken();
+      if (token == null) {
+        print('❌ Impossible d\'obtenir le token FCM');
+        return;
+      }
 
-      print('🔐 === FIN INITIALISATION FCM APRÈS AUTH ===');
+      print('📱 Token FCM obtenu: ${token.substring(0, 20)}...');
+
+      // Récupérer les détails utilisateur
+      final userDetails = await _localStorage.getUserDetails();
+      print('👤 UserDetails: $userDetails');
+
+      if (userDetails == null || userDetails.isEmpty) {
+        print('❌ Aucun userDetails trouvé');
+        return;
+      }
+
+      final phone = userDetails['phoneNumber'];
+      if (phone == null) {
+        print('❌ Aucun numéro de téléphone trouvé dans userDetails');
+        return;
+      }
+
+      print('📞 Numéro de téléphone: $phone');
+
+      // Sauvegarder directement dans Firestore
+      await _saveFCMTokenDirectlyToFirestore(phone, token);
+
+      print('✅ Test de sauvegarde directe terminé');
     } catch (e) {
-      print('❌ Erreur initialisation FCM après authentification: $e');
-      print('❌ Stack trace: ${StackTrace.current}');
+      print('❌ Erreur test direct: $e');
     }
   }
 
-  /// Obtenir et sauvegarder le token FCM
-  Future<void> _getAndSaveFCMToken() async {
+  /// Vérifier si le token FCM est sauvegardé dans Firestore
+  Future<bool> checkFCMTokenInFirestore() async {
     try {
-      print('🔍 Début obtention token FCM...');
-      final token = await _messaging.getToken();
+      final userDetails = await _localStorage.getUserDetails();
+      if (userDetails != null && userDetails['phoneNumber'] != null) {
+        String phone = userDetails['phoneNumber'];
+        String normalizedPhone =
+            phone.startsWith('+225') ? phone : '+225$phone';
 
+        final firestore = FirebaseFirestore.instance;
+        final userDoc =
+            await firestore.collection('users').doc(normalizedPhone).get();
+
+        if (userDoc.exists) {
+          final userData = userDoc.data();
+          final hasToken = userData?['fcm_token'] != null;
+          print(
+              '🔍 Token FCM dans Firestore pour $normalizedPhone: ${hasToken ? "✅ Présent" : "❌ Absent"}');
+          return hasToken;
+        }
+      }
+      return false;
+    } catch (e) {
+      print('❌ Erreur vérification token FCM dans Firestore: $e');
+      return false;
+    }
+  }
+
+  /// Forcer la sauvegarde du token FCM avec le numéro de téléphone directement
+  Future<void> forceSaveFCMTokenWithPhone(String phoneNumber) async {
+    print('🔄 Force sauvegarde du token FCM avec phone: $phoneNumber');
+    try {
+      String? token = await _messaging.getToken();
       if (token != null) {
-        print('📱 Token FCM obtenu avec succès: ${token.substring(0, 20)}...');
-        print('📱 Token complet: $token');
+        print('📱 Token FCM obtenu: ${token.substring(0, 20)}...');
 
-        await _saveFCMTokenToFirestore(token);
-        await _saveFCMTokenLocally(token);
+        // Normaliser le numéro pour Firestore
+        String normalizedPhone =
+            phoneNumber.startsWith('+225') ? phoneNumber : '+225$phoneNumber';
+        print('📱 Phone normalisé: $normalizedPhone');
+
+        // Sauvegarder directement dans Firestore
+        await _saveFCMTokenDirectlyToFirestore(normalizedPhone, token);
+        print('✅ Token FCM sauvegardé avec succès');
       } else {
-        print('❌ Impossible d\'obtenir le token FCM - token est null');
+        print('❌ Impossible d\'obtenir le token FCM');
       }
     } catch (e) {
-      print('❌ Erreur obtention token FCM: $e');
-      print('❌ Stack trace: ${StackTrace.current}');
+      print('❌ Erreur force sauvegarde token FCM: $e');
+    }
+  }
+
+  /// Forcer la sauvegarde du token FCM (méthode publique)
+  Future<void> forceSaveFCMToken() async {
+    print('🔄 Force sauvegarde du token FCM...');
+    try {
+      String? token = await _messaging.getToken();
+      if (token != null) {
+        print('📱 Token FCM obtenu: ${token.substring(0, 20)}...');
+        await _saveFCMTokenToFirestore(token);
+      } else {
+        print('❌ Impossible d\'obtenir le token FCM');
+      }
+    } catch (e) {
+      print('❌ Erreur force sauvegarde token FCM: $e');
     }
   }
 
   /// Sauvegarder le token FCM dans Firestore
   Future<void> _saveFCMTokenToFirestore(String token) async {
+    print('🔄 Début sauvegarde token FCM...');
     try {
-      print('💾 === DÉBUT SAUVEGARDE TOKEN FCM ===');
+      // Récupérer le numéro de téléphone depuis LocalStorage
+      print('📱 Récupération userDetails depuis LocalStorage...');
+      final userDetails = await _localStorage.getUserDetails();
+      print('📱 userDetails récupéré: $userDetails');
 
-      // Essayer d'abord avec Firebase Auth
-      final currentUser = _authService.currentUser;
-      print('🔍 Utilisateur Firebase Auth: ${currentUser?.phoneNumber}');
+      if (userDetails != null && userDetails['phoneNumber'] != null) {
+        String phone = userDetails['phoneNumber'];
+        print('📱 Phone trouvé: $phone');
 
-      String? phoneNumber;
+        // Normaliser le numéro pour Firestore
+        String normalizedPhone =
+            phone.startsWith('+225') ? phone : '+225$phone';
+        print('📱 Phone normalisé: $normalizedPhone');
 
-      if (currentUser?.phoneNumber != null) {
-        phoneNumber = currentUser!.phoneNumber!;
-      } else {
-        // Si pas d'utilisateur Firebase Auth, essayer de récupérer depuis LocalStorage
-        print('🔍 Tentative de récupération depuis LocalStorage...');
-        try {
-          final localStorage = LocalStorageFactory();
-          final userDetails = localStorage.getUserDetails();
-          if (userDetails.isNotEmpty) {
-            final userJson = jsonDecode(userDetails) as Map<String, dynamic>;
-            phoneNumber = userJson['phoneNumber'] as String?;
-            print('🔍 Numéro trouvé dans LocalStorage: $phoneNumber');
-          }
-        } catch (e) {
-          print('❌ Erreur récupération LocalStorage: $e');
-        }
-      }
+        print('📱 Sauvegarde token FCM pour: $normalizedPhone');
+        print('📱 Token: ${token.substring(0, 20)}...');
 
-      if (phoneNumber != null) {
-        final firestorePhone =
-            _authService.normalizePhoneForFirestore(phoneNumber);
-        print('🔍 Numéro Firestore normalisé: $firestorePhone');
-
-        // Vérifier si l'utilisateur existe dans Firestore
-        final userDoc =
-            await _firestore.collection('users').doc(firestorePhone).get();
-        print('🔍 Document utilisateur existe: ${userDoc.exists}');
-
-        if (userDoc.exists) {
-          // Récupérer les tokens existants
-          final userData = userDoc.data()!;
-          final existingTokens =
-              List<String>.from(userData['fcm_tokens'] ?? []);
-          print('🔍 Tokens existants: $existingTokens');
-
-          // Ajouter le nouveau token s'il n'existe pas déjà
-          if (!existingTokens.contains(token)) {
-            existingTokens.add(token);
-            print('🔍 Nouveau token ajouté: ${token.substring(0, 20)}...');
-          } else {
-            print('🔍 Token déjà présent, pas d\'ajout nécessaire');
-          }
-
-          // Limiter à 5 tokens maximum (pour éviter une liste trop longue)
-          if (existingTokens.length > 5) {
-            existingTokens.removeRange(0, existingTokens.length - 5);
-            print('🔍 Liste limitée à 5 tokens maximum');
-          }
-
-          // Mettre à jour Firestore avec la nouvelle liste
-          await _firestore.collection('users').doc(firestorePhone).update({
-            'fcm_tokens': existingTokens,
-            'last_fcm_token_update': FieldValue.serverTimestamp(),
-          });
-
-          print('✅ Token FCM sauvegardé dans Firestore pour: $firestorePhone');
-          print('🔍 Tokens finaux: $existingTokens');
-        } else {
-          print('❌ Utilisateur non trouvé dans Firestore: $firestorePhone');
-          print('💡 Tentative de création du document utilisateur...');
-
-          // Créer le document utilisateur avec le token FCM
-          await _firestore.collection('users').doc(firestorePhone).set({
-            'phoneNumber': firestorePhone,
-            'fcm_tokens': [token],
-            'last_fcm_token_update': FieldValue.serverTimestamp(),
-            'created_at': FieldValue.serverTimestamp(),
-            'updated_at': FieldValue.serverTimestamp(),
-          });
-
-          print(
-              '✅ Document utilisateur créé avec token FCM pour: $firestorePhone');
-        }
+        // Mettre à jour le token dans Firestore
+        await _updateFCMTokenInFirestore(normalizedPhone, token);
+        print('✅ Token FCM sauvegardé dans Firestore');
       } else {
         print(
-            '⚠️ Aucun numéro de téléphone trouvé, sauvegarde du token en attente...');
-        // Sauvegarder le token localement pour une utilisation ultérieure
-        await _saveFCMTokenLocally(token);
+            '⚠️ Impossible de récupérer le numéro de téléphone pour sauvegarder le token FCM');
+        print('⚠️ userDetails: $userDetails');
+        print('⚠️ userDetails est null: ${userDetails == null}');
+        if (userDetails != null) {
+          print('⚠️ Clés disponibles: ${userDetails.keys.toList()}');
+        }
       }
-
-      print('💾 === FIN SAUVEGARDE TOKEN FCM ===');
     } catch (e) {
-      print('❌ Erreur sauvegarde token FCM dans Firestore: $e');
+      print('❌ Erreur sauvegarde token FCM: $e');
       print('❌ Stack trace: ${StackTrace.current}');
     }
   }
 
-  /// Sauvegarder le token FCM localement
-  Future<void> _saveFCMTokenLocally(String token) async {
+  /// Mettre à jour le token FCM dans Firestore via Firebase Function
+  Future<void> _updateFCMTokenInFirestore(String phone, String token) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('fcm_token', token);
-      print('✅ Token FCM sauvegardé localement');
+      final response = await http.post(
+        Uri.parse('$_baseUrl/updateFCMToken'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'phone': phone,
+          'fcm_token': token,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        print('✅ Token FCM mis à jour dans Firestore via Firebase Function');
+      } else {
+        print(
+            '❌ Erreur mise à jour token FCM via Firebase Function: ${response.statusCode}');
+        // Fallback: sauvegarde directe dans Firestore
+        await _saveFCMTokenDirectlyToFirestore(phone, token);
+      }
     } catch (e) {
-      print('❌ Erreur sauvegarde token FCM local: $e');
+      print('❌ Erreur mise à jour token FCM via Firebase Function: $e');
+      // Fallback: sauvegarde directe dans Firestore
+      await _saveFCMTokenDirectlyToFirestore(phone, token);
+    }
+  }
+
+  /// Sauvegarde directe du token FCM dans Firestore (fallback)
+  Future<void> _saveFCMTokenDirectlyToFirestore(
+      String phone, String token) async {
+    try {
+      final firestore = FirebaseFirestore.instance;
+      await firestore.collection('users').doc(phone).set({
+        'fcm_token': token,
+        'fcm_token_updated_at': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+      print('✅ Token FCM sauvegardé directement dans Firestore');
+    } catch (e) {
+      print('❌ Erreur sauvegarde directe token FCM: $e');
     }
   }
 
   /// Envoyer une notification à un utilisateur spécifique
-  Future<void> sendNotificationToUser({
-    required String userPhoneNumber,
+  Future<bool> sendNotificationToUser({
+    required String phone,
     required String title,
     required String body,
     Map<String, dynamic>? data,
   }) async {
     try {
-      final firestorePhone =
-          _authService.normalizePhoneForFirestore(userPhoneNumber);
+      final response = await http.post(
+        Uri.parse(_sendNotificationUrl),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'phone': phone,
+          'title': title,
+          'body': body,
+          'data': data ?? {},
+        }),
+      );
 
-      // Récupérer les tokens FCM de l'utilisateur
-      final userDoc =
-          await _firestore.collection('users').doc(firestorePhone).get();
-      if (!userDoc.exists) {
-        print('❌ Utilisateur non trouvé: $firestorePhone');
-        return;
-      }
-
-      final userData = userDoc.data()!;
-      final fcmTokens = List<String>.from(userData['fcm_tokens'] ?? []);
-
-      if (fcmTokens.isEmpty) {
-        print('⚠️ Aucun token FCM trouvé pour l\'utilisateur: $firestorePhone');
-        return;
-      }
-
-      print(
-          '📤 Envoi notification à ${fcmTokens.length} appareil(s) pour: $firestorePhone');
-
-      // Envoyer la notification à tous les appareils de l'utilisateur
-      for (String token in fcmTokens) {
-        await _sendNotificationToToken(
-          token: token,
-          title: title,
-          body: body,
-          data: data,
-        );
+      if (response.statusCode == 200) {
+        final result = jsonDecode(response.body);
+        print('✅ Notification envoyée: ${result['message']}');
+        return true;
+      } else {
+        print('❌ Erreur envoi notification: ${response.statusCode}');
+        return false;
       }
     } catch (e) {
       print('❌ Erreur envoi notification: $e');
+      return false;
     }
   }
 
-  /// Envoyer une notification à un token spécifique
-  Future<void> _sendNotificationToToken({
-    required String token,
-    required String title,
-    required String body,
-    Map<String, dynamic>? data,
-  }) async {
-    try {
-      // Ici, tu devras implémenter l'envoi via ton serveur ou Firebase Functions
-      // Pour l'instant, on simule l'envoi
-      print('📤 Notification envoyée à: ${token.substring(0, 20)}...');
-      print('   Titre: $title');
-      print('   Corps: $body');
-      print('   Données: $data');
-
-      // TODO: Implémenter l'envoi réel via HTTP ou Firebase Functions
-      // await http.post(
-      //   Uri.parse('https://fcm.googleapis.com/fcm/send'),
-      //   headers: {
-      //     'Authorization': 'key=YOUR_SERVER_KEY',
-      //     'Content-Type': 'application/json',
-      //   },
-      //   body: jsonEncode({
-      //     'to': token,
-      //     'notification': {
-      //       'title': title,
-      //       'body': body,
-      //     },
-      //     'data': data,
-      //   }),
-      // );
-    } catch (e) {
-      print('❌ Erreur envoi notification au token: $e');
-    }
-  }
-
-  /// Envoyer une notification à tous les utilisateurs d'un rôle spécifique
-  Future<void> sendNotificationToRole({
+  /// Envoyer une notification à tous les utilisateurs d'un rôle
+  Future<bool> sendNotificationToRole({
     required String role,
     required String title,
     required String body,
     Map<String, dynamic>? data,
   }) async {
     try {
-      print(
-          '📤 Envoi notification à tous les utilisateurs avec le rôle: $role');
+      final response = await http.post(
+        Uri.parse(_sendNotificationToRoleUrl),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'role': role,
+          'title': title,
+          'body': body,
+          'data': data ?? {},
+        }),
+      );
 
-      // Récupérer tous les utilisateurs avec le rôle spécifié
-      final usersSnapshot = await _firestore
-          .collection('users')
-          .where('role', isEqualTo: role)
-          .get();
-
-      for (var userDoc in usersSnapshot.docs) {
-        final userData = userDoc.data();
-        final fcmTokens = List<String>.from(userData['fcm_tokens'] ?? []);
-
-        if (fcmTokens.isNotEmpty) {
-          print(
-              '📤 Envoi à ${fcmTokens.length} appareil(s) pour: ${userDoc.id}');
-
-          for (String token in fcmTokens) {
-            await _sendNotificationToToken(
-              token: token,
-              title: title,
-              body: body,
-              data: data,
-            );
-          }
-        }
+      if (response.statusCode == 200) {
+        final result = jsonDecode(response.body);
+        print('✅ Notification envoyée au rôle $role: ${result['message']}');
+        return true;
+      } else {
+        print('❌ Erreur envoi notification par rôle: ${response.statusCode}');
+        return false;
       }
     } catch (e) {
       print('❌ Erreur envoi notification par rôle: $e');
+      return false;
     }
   }
 
-  /// Gérer les notifications en arrière-plan
-  static Future<void> _firebaseMessagingBackgroundHandler(
-      RemoteMessage message) async {
-    print(
-        '📱 Notification reçue en arrière-plan: ${message.notification?.title}');
-    print('📱 Données: ${message.data}');
-  }
-
-  /// Gérer les notifications en premier plan
+  /// Gérer les messages en premier plan
   void _handleForegroundMessage(RemoteMessage message) {
-    print(
-        '📱 Notification reçue en premier plan: ${message.notification?.title}');
-    print('📱 Données: ${message.data}');
+    print('📱 Message reçu en premier plan: ${message.notification?.title}');
 
-    // Ici tu peux afficher une notification locale ou mettre à jour l'UI
-    // _showLocalNotification(message);
+    // Afficher une notification locale pour les messages en premier plan
+    _showLocalNotification(message);
   }
 
-  /// Gérer les notifications quand l'app est ouverte
-  void _handleMessageOpenedApp(RemoteMessage message) {
-    print('📱 App ouverte via notification: ${message.notification?.title}');
-    print('📱 Données: ${message.data}');
-
-    // Ici tu peux naviguer vers une page spécifique selon les données
-    // _navigateToPage(message.data);
-  }
-
-  /// Nettoyer les tokens FCM obsolètes
-  Future<void> cleanupOldTokens() async {
+  /// Afficher une notification locale
+  Future<void> _showLocalNotification(RemoteMessage message) async {
     try {
-      final currentUser = _authService.currentUser;
-      if (currentUser?.phoneNumber != null) {
-        final firestorePhone =
-            _authService.normalizePhoneForFirestore(currentUser!.phoneNumber!);
-        final localToken = await _getLocalFCMToken();
+      const AndroidNotificationDetails androidPlatformChannelSpecifics =
+          AndroidNotificationDetails(
+        'default',
+        'Notifications par défaut',
+        channelDescription: 'Canal pour les notifications générales',
+        importance: Importance.high,
+        priority: Priority.high,
+        showWhen: true,
+        enableVibration: true,
+        playSound: true,
+      );
 
-        if (localToken != null) {
-          // Supprimer les tokens obsolètes (sauf le token local)
-          await _firestore.collection('users').doc(firestorePhone).update({
-            'fcm_tokens': [localToken], // Garder seulement le token actuel
-          });
-          print('🧹 Tokens FCM nettoyés pour: $firestorePhone');
-        }
-      }
+      const DarwinNotificationDetails iOSPlatformChannelSpecifics =
+          DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+      );
+
+      const NotificationDetails platformChannelSpecifics = NotificationDetails(
+        android: androidPlatformChannelSpecifics,
+        iOS: iOSPlatformChannelSpecifics,
+      );
+
+      await _localNotifications.show(
+        DateTime.now().millisecondsSinceEpoch ~/ 1000,
+        message.notification?.title ?? 'Nouvelle notification',
+        message.notification?.body ?? '',
+        platformChannelSpecifics,
+        payload: jsonEncode(message.data),
+      );
+
+      print('✅ Notification locale affichée');
     } catch (e) {
-      print('❌ Erreur nettoyage tokens FCM: $e');
+      print('❌ Erreur affichage notification locale: $e');
     }
   }
 
-  /// Supprimer le token FCM actuel lors de la déconnexion
+  /// Gérer les messages en arrière-plan
+  void _handleBackgroundMessage(RemoteMessage message) {
+    print('📱 Message reçu en arrière-plan: ${message.notification?.title}');
+
+    // Naviguer vers l'écran approprié selon le type de notification
+    _handleNotificationNavigation(message);
+  }
+
+  /// Gérer le clic sur une notification
+  void _handleNotificationClick(String? payload) {
+    if (payload != null) {
+      try {
+        final data = jsonDecode(payload);
+        final type = data['type'];
+
+        print('📱 Notification cliquée de type: $type');
+
+        // Naviguer selon le type de notification
+        _handleNotificationNavigation(null, data: data);
+      } catch (e) {
+        print('❌ Erreur parsing payload notification: $e');
+      }
+    }
+  }
+
+  /// Gérer la navigation selon le type de notification
+  void _handleNotificationNavigation(RemoteMessage? message,
+      {Map<String, dynamic>? data}) {
+    final notificationData = data ?? message?.data;
+    final type = notificationData?['type'];
+
+    switch (type) {
+      case 'new_order':
+        // Naviguer vers la page des commandes (admin)
+        print('🆕 Nouvelle commande reçue - Navigation vers notifications');
+        _navigationService.navigateToNotifications();
+        break;
+      case 'order_assigned':
+        // Naviguer vers la page de livraison (livreur)
+        print('📦 Commande assignée - Navigation vers notifications');
+        _navigationService.navigateToNotifications();
+        break;
+      case 'delivery_status':
+        // Naviguer vers la page de suivi (client)
+        print(
+            '🚚 Mise à jour statut livraison - Navigation vers notifications');
+        _navigationService.navigateToNotifications();
+        break;
+      case 'system_test':
+        // Navigation vers la page de notifications pour les tests
+        print('🧪 Test système - Navigation vers notifications');
+        _navigationService.navigateToNotifications();
+        break;
+      default:
+        // Par défaut, naviguer vers la page de notifications
+        print('📱 Notification reçue - Navigation vers notifications');
+        _navigationService.navigateToNotifications();
+    }
+  }
+
+  /// Supprimer le token FCM actuel (déconnexion)
   Future<void> removeCurrentToken() async {
     try {
-      final currentUser = _authService.currentUser;
-      if (currentUser?.phoneNumber != null) {
-        final firestorePhone =
-            _authService.normalizePhoneForFirestore(currentUser!.phoneNumber!);
-        final localToken = await _getLocalFCMToken();
-
-        if (localToken != null) {
-          // Supprimer le token actuel de la liste
-          final userDoc =
-              await _firestore.collection('users').doc(firestorePhone).get();
-          if (userDoc.exists) {
-            final userData = userDoc.data()!;
-            final existingTokens =
-                List<String>.from(userData['fcm_tokens'] ?? []);
-            existingTokens.remove(localToken);
-
-            await _firestore.collection('users').doc(firestorePhone).update({
-              'fcm_tokens': existingTokens,
-              'last_fcm_token_update': FieldValue.serverTimestamp(),
-            });
-
-            print('🗑️ Token FCM supprimé pour: $firestorePhone');
-          }
-        }
-
-        // Supprimer le token local
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.remove('fcm_token');
-        print('🗑️ Token FCM local supprimé');
-      }
+      await _messaging.deleteToken();
+      print('✅ Token FCM supprimé');
     } catch (e) {
       print('❌ Erreur suppression token FCM: $e');
     }
   }
 
-  /// Obtenir le token FCM local
-  Future<String?> _getLocalFCMToken() async {
+  /// Obtenir le token FCM actuel
+  Future<String?> getCurrentToken() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      return prefs.getString('fcm_token');
+      return await _messaging.getToken();
     } catch (e) {
-      print('❌ Erreur récupération token FCM local: $e');
+      print('❌ Erreur récupération token FCM: $e');
       return null;
     }
   }

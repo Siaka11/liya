@@ -5,6 +5,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:liya/core/ui/theme/theme.dart';
 import 'package:liya/core/services/notification_service.dart';
+import 'package:liya/core/local_storage_factory.dart';
+import 'package:liya/core/singletons.dart';
+import 'dart:convert';
 
 @RoutePage()
 class NotificationsPage extends ConsumerStatefulWidget {
@@ -17,35 +20,95 @@ class NotificationsPage extends ConsumerStatefulWidget {
 class _NotificationsPageState extends ConsumerState<NotificationsPage> {
   List<Map<String, dynamic>> _notifications = [];
   bool _isLoading = true;
+  String? _userPhone;
+  String? _userRole;
 
   @override
   void initState() {
     super.initState();
-    _loadNotifications();
+    _loadUserInfo();
+  }
+
+  Future<void> _loadUserInfo() async {
+    try {
+      // Récupérer les informations utilisateur depuis LocalStorage
+      final userDetailsJson = singleton<LocalStorageFactory>().getUserDetails();
+      Map<String, dynamic> userDetails;
+
+      try {
+        userDetails = userDetailsJson is String
+            ? jsonDecode(userDetailsJson)
+            : userDetailsJson;
+      } catch (e) {
+        print('❌ Erreur parsing userDetails: $e');
+        userDetails = {};
+      }
+
+      setState(() {
+        _userPhone = userDetails['phone'] ?? userDetails['phoneNumber'];
+        _userRole = userDetails['role'];
+      });
+
+      print('📱 Phone: $_userPhone, Role: $_userRole');
+
+      // Charger les notifications après avoir récupéré les infos utilisateur
+      await _loadNotifications();
+    } catch (e) {
+      print('❌ Erreur chargement infos utilisateur: $e');
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   Future<void> _loadNotifications() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final userId = prefs.getString('user_id') ?? 'default_user';
+      if (_userPhone == null) {
+        print('❌ Phone number non disponible');
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
 
-      // Récupérer les notifications depuis Firestore
-      final notificationsSnapshot = await FirebaseFirestore.instance
-          .collection('notifications')
-          .where('userId', isEqualTo: userId)
-          .orderBy('createdAt', descending: true)
-          .limit(50)
-          .get();
+      // Normaliser le numéro de téléphone pour Firestore
+      String normalizedPhone =
+          _userPhone!.startsWith('+225') ? _userPhone! : '+225$_userPhone';
+
+      Query notificationsQuery;
+
+      if (_userRole == 'admin') {
+        // Pour les admins : récupérer toutes les notifications de type admin
+        print('👨‍💼 Chargement notifications admin');
+        notificationsQuery = FirebaseFirestore.instance
+            .collection('notifications')
+            .where('recipient_role', isEqualTo: 'admin')
+            .orderBy('sent_at', descending: true)
+            .limit(50);
+      } else {
+        // Pour les autres utilisateurs : récupérer leurs notifications personnelles
+        print('👤 Chargement notifications pour: $normalizedPhone');
+        notificationsQuery = FirebaseFirestore.instance
+            .collection('notifications')
+            .where('recipient_phone', isEqualTo: normalizedPhone)
+            .orderBy('sent_at', descending: true)
+            .limit(50);
+      }
+
+      final notificationsSnapshot = await notificationsQuery.get();
 
       setState(() {
-        _notifications = notificationsSnapshot.docs
-            .map((doc) => {
-                  'id': doc.id,
-                  ...doc.data(),
-                })
-            .toList();
+        _notifications = notificationsSnapshot.docs.map((doc) {
+          final data = doc.data() as Map<String, dynamic>?;
+          return <String, dynamic>{
+            'id': doc.id,
+            ...(data ?? {}),
+          };
+        }).toList();
         _isLoading = false;
       });
+
+      print('✅ ${_notifications.length} notifications chargées');
     } catch (e) {
       print('❌ Erreur chargement notifications: $e');
       setState(() {
@@ -99,9 +162,12 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
       case 'delivery_completed':
         return Colors.green;
       case 'new_restaurant_order':
+      case 'new_order':
         return Colors.purple;
       case 'new_parcel':
         return Colors.teal;
+      case 'system_test':
+        return Colors.indigo;
       default:
         return Colors.grey;
     }
@@ -116,9 +182,12 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
       case 'delivery_completed':
         return Icons.check_circle;
       case 'new_restaurant_order':
+      case 'new_order':
         return Icons.restaurant;
       case 'new_parcel':
         return Icons.local_shipping;
+      case 'system_test':
+        return Icons.science;
       default:
         return Icons.notifications;
     }
@@ -129,13 +198,16 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
       case 'order_assigned':
         return 'Commande assignée';
       case 'delivery_started':
-        return 'Livraison en cours';
+        return 'Livraison commencée';
       case 'delivery_completed':
         return 'Livraison terminée';
       case 'new_restaurant_order':
+      case 'new_order':
         return 'Nouvelle commande';
       case 'new_parcel':
         return 'Nouveau colis';
+      case 'system_test':
+        return 'Test système';
       default:
         return 'Notification';
     }
@@ -145,158 +217,142 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Notifications'),
-        backgroundColor: UIColors.primary,
+        title: Text('Notifications'),
+        backgroundColor: UIColors.orange,
         foregroundColor: Colors.white,
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadNotifications,
+            icon: Icon(Icons.refresh),
+            onPressed: () {
+              setState(() {
+                _isLoading = true;
+              });
+              _loadNotifications();
+            },
           ),
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(child: CircularProgressIndicator())
           : _notifications.isEmpty
-              ? _buildEmptyState()
-              : _buildNotificationsList(),
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.notifications_none,
-            size: 64,
-            color: Colors.grey[400],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Aucune notification',
-            style: TextStyle(
-              fontSize: 18,
-              color: Colors.grey[600],
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Vous recevrez des notifications ici\nquand vous passerez des commandes',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[500],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNotificationsList() {
-    return RefreshIndicator(
-      onRefresh: _loadNotifications,
-      child: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: _notifications.length,
-        itemBuilder: (context, index) {
-          final notification = _notifications[index];
-          final isRead = notification['read'] ?? false;
-          final type = notification['type'] ?? 'unknown';
-          final title = notification['title'] ?? _getNotificationTitle(type);
-          final body = notification['body'] ?? '';
-          final createdAt = notification['createdAt'] as Timestamp?;
-          final orderId = notification['orderId'];
-
-          return Card(
-            margin: const EdgeInsets.only(bottom: 12),
-            elevation: isRead ? 1 : 3,
-            color: isRead ? Colors.white : Colors.blue[50],
-            child: ListTile(
-              leading: CircleAvatar(
-                backgroundColor: _getNotificationColor(type),
-                child: Icon(
-                  _getNotificationIcon(type),
-                  color: Colors.white,
-                ),
-              ),
-              title: Text(
-                title,
-                style: TextStyle(
-                  fontWeight: isRead ? FontWeight.normal : FontWeight.bold,
-                  color: isRead ? Colors.grey[600] : Colors.black,
-                ),
-              ),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    body,
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 14,
-                    ),
-                  ),
-                  if (createdAt != null) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      _formatDate(createdAt.toDate()),
-                      style: TextStyle(
-                        color: Colors.grey[500],
-                        fontSize: 12,
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.notifications_none,
+                        size: 64,
+                        color: Colors.grey,
                       ),
-                    ),
-                  ],
-                ],
-              ),
-              trailing: PopupMenuButton<String>(
-                onSelected: (value) {
-                  if (value == 'mark_read' && !isRead) {
-                    _markAsRead(notification['id']);
-                  } else if (value == 'delete') {
-                    _deleteNotification(notification['id']);
-                  }
-                },
-                itemBuilder: (context) => [
-                  if (!isRead)
-                    const PopupMenuItem(
-                      value: 'mark_read',
-                      child: Row(
-                        children: [
-                          Icon(Icons.check, size: 20),
-                          SizedBox(width: 8),
-                          Text('Marquer comme lu'),
-                        ],
+                      SizedBox(height: 16),
+                      Text(
+                        'Aucune notification',
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: Colors.grey,
+                        ),
                       ),
-                    ),
-                  const PopupMenuItem(
-                    value: 'delete',
-                    child: Row(
-                      children: [
-                        Icon(Icons.delete, size: 20, color: Colors.red),
-                        SizedBox(width: 8),
-                        Text('Supprimer', style: TextStyle(color: Colors.red)),
-                      ],
-                    ),
+                      SizedBox(height: 8),
+                      Text(
+                        _userRole == 'admin'
+                            ? 'Aucune notification admin pour le moment'
+                            : 'Vous n\'avez pas encore reçu de notifications',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[600],
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
                   ),
-                ],
-              ),
-              onTap: () {
-                if (!isRead) {
-                  _markAsRead(notification['id']);
-                }
-                // TODO: Navigation vers la page appropriée selon le type
-                if (orderId != null) {
-                  // Naviguer vers la page de détail de commande
-                }
-              },
-            ),
-          );
-        },
-      ),
+                )
+              : ListView.builder(
+                  itemCount: _notifications.length,
+                  itemBuilder: (context, index) {
+                    final notification = _notifications[index];
+                    final type = notification['type'] ?? 'default';
+                    final title =
+                        notification['title'] ?? _getNotificationTitle(type);
+                    final body = notification['body'] ?? '';
+                    final isRead = notification['read'] ?? false;
+                    final sentAt =
+                        notification['sent_at']?.toDate() ?? DateTime.now();
+
+                    return Card(
+                      margin: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      color: isRead ? Colors.grey[50] : Colors.white,
+                      child: ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor: _getNotificationColor(type),
+                          child: Icon(
+                            _getNotificationIcon(type),
+                            color: Colors.white,
+                          ),
+                        ),
+                        title: Text(
+                          title,
+                          style: TextStyle(
+                            fontWeight:
+                                isRead ? FontWeight.normal : FontWeight.bold,
+                          ),
+                        ),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(body),
+                            SizedBox(height: 4),
+                            Text(
+                              _formatDate(sentAt),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                        trailing: PopupMenuButton(
+                          itemBuilder: (context) => [
+                            if (!isRead)
+                              PopupMenuItem(
+                                value: 'mark_read',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.check, size: 16),
+                                    SizedBox(width: 8),
+                                    Text('Marquer comme lu'),
+                                  ],
+                                ),
+                              ),
+                            PopupMenuItem(
+                              value: 'delete',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.delete,
+                                      size: 16, color: Colors.red),
+                                  SizedBox(width: 8),
+                                  Text('Supprimer',
+                                      style: TextStyle(color: Colors.red)),
+                                ],
+                              ),
+                            ),
+                          ],
+                          onSelected: (value) {
+                            if (value == 'mark_read') {
+                              _markAsRead(notification['id']);
+                            } else if (value == 'delete') {
+                              _deleteNotification(notification['id']);
+                            }
+                          },
+                        ),
+                        onTap: () {
+                          if (!isRead) {
+                            _markAsRead(notification['id']);
+                          }
+                        },
+                      ),
+                    );
+                  },
+                ),
     );
   }
 

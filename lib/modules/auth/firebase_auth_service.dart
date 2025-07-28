@@ -369,6 +369,12 @@ class FirebaseAuthService {
 
         // Initialiser FCM après la création de l'utilisateur
         await FCMService().initializeAfterAuth();
+
+        // Forcer la sauvegarde du token FCM après un délai
+        print(
+            '🔄 Forçage de la sauvegarde du token FCM (nouvel utilisateur)...');
+        await Future.delayed(Duration(seconds: 2));
+        await FCMService().forceSaveFCMToken();
       } else {
         print(
             '✅ Utilisateur existant trouvé dans Firestore pour: $firestorePhone');
@@ -641,8 +647,33 @@ class FirebaseAuthService {
       // Marquer comme authentifié dans SharedPreferences
       await singleton<SharedPreferences>().setBool(Config.ISAUTH, true);
 
-      // Initialiser FCM après l'authentification
+      // Attendre plus longtemps et vérifier que les données sont bien sauvegardées
+      print('⏳ Attente de la persistance des données...');
+      await Future.delayed(Duration(seconds: 1));
+
+      // Vérifier à nouveau que les données sont bien sauvegardées
+      final finalCheck = localStorage.getUserDetails();
+      print('🔍 Vérification finale LocalStorage: $finalCheck');
+
+      if (finalCheck == null || finalCheck.isEmpty) {
+        print(
+            '⚠️ Les données ne sont pas encore persistées, nouvelle tentative...');
+        await Future.delayed(Duration(seconds: 2));
+        final finalCheck2 = localStorage.getUserDetails();
+        print(
+            '🔍 Vérification finale après délai supplémentaire: $finalCheck2');
+      }
+
+      // Initialiser FCM APRÈS la sauvegarde des données utilisateur
+      print(
+          '🚀 Initialisation FCM après sauvegarde des données utilisateur...');
       await FCMService().initializeAfterAuth();
+
+      // Forcer la sauvegarde du token FCM avec le numéro de téléphone directement
+      print('🔄 Forçage de la sauvegarde du token FCM...');
+      await Future.delayed(Duration(seconds: 2));
+      await FCMService()
+          .forceSaveFCMTokenWithPhone(cleanUserInfo['phoneNumber']);
 
       print(
           '✅ Utilisateur existant connecté directement (authentification locale)');

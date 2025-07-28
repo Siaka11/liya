@@ -1,13 +1,12 @@
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:liya/core/singletons.dart';
-import 'package:liya/core/providers.dart';
-import 'package:liya/core/services/firebase_storage_helper.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:liya/core/services/notification_service.dart';
+import 'core/singletons.dart';
 import 'firebase_options.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:liya/modules/auth/firebase_auth_service.dart';
@@ -52,12 +51,6 @@ void main() async {
 
   // Initialiser les singletons
   await initSingletons();
-
-  // Initialiser FCM
-  await FCMService().initialize();
-
-  // Nettoyer les anciens tokens FCM
-  await FCMService().cleanupOldTokens();
 
   // Forcer le nettoyage des verification_id au démarrage
   FirebaseAuthService().forceClearVerificationId();

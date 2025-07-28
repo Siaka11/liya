@@ -6,6 +6,7 @@ import 'dart:convert'; // Added for jsonDecode
 import '../../../../core/local_storage_factory.dart';
 import '../../../../core/singletons.dart';
 import '../../domain/entities/delivery_user.dart';
+import '../../../../core/services/notification_service.dart';
 
 class DeliveryLocationService {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -278,6 +279,21 @@ class DeliveryLocationService {
           },
         });
 
+        // Envoyer une notification au livreur
+        try {
+          await NotificationService().notifyOrderAssignedToDelivery(
+            orderId: orderId,
+            deliveryUserPhone: nearestDriver.phoneNumber,
+            customerAddress:
+                'Adresse de livraison', // À récupérer depuis la commande
+            total: 0.0, // À récupérer depuis la commande
+          );
+          print(
+              '✅ Notification envoyée au livreur ${nearestDriver.phoneNumber}');
+        } catch (e) {
+          print('⚠️ Erreur envoi notification: $e');
+        }
+
         print(
             '✅ Commande assignée avec succès avec position ACTUELLE du livreur');
         return nearestDriver;
@@ -351,6 +367,20 @@ class DeliveryLocationService {
           'longitude': destinationLon,
         },
       });
+
+      // Envoyer une notification au livreur
+      try {
+        await NotificationService().notifyOrderAssignedToDelivery(
+          orderId: orderId,
+          deliveryUserPhone: driverPhoneNumber,
+          customerAddress:
+              'Adresse de livraison', // À récupérer depuis la commande
+          total: 0.0, // À récupérer depuis la commande
+        );
+        print('✅ Notification envoyée au livreur $driverPhoneNumber');
+      } catch (e) {
+        print('⚠️ Erreur envoi notification: $e');
+      }
 
       print('✅ Commande assignée avec succès au livreur spécifique');
       return true;
@@ -789,7 +819,9 @@ class DeliveryLocationService {
                 orderData['driver_coordinates']?['latitude'] ?? 0.0,
             currentLongitude:
                 orderData['driver_coordinates']?['longitude'] ?? 0.0,
-            lastLocationUpdate: orderData['assigned_at'],
+            lastLocationUpdate: orderData['assigned_at'] is Timestamp
+                ? (orderData['assigned_at'] as Timestamp).toDate()
+                : null,
           ));
         }
       }
@@ -820,8 +852,8 @@ class DeliveryLocationService {
         final userData = doc.data();
 
         // Vérifier si le livreur a une position
-        final hasLocation = userData['currentLatitude'] != null &&
-            userData['currentLongitude'] != null;
+        final hasLocation = userData['current_latitude'] != null &&
+            userData['current_longitude'] != null;
 
         availableUsers.add(DeliveryUser(
           id: userData['phoneNumber'] ?? doc.id,
@@ -833,9 +865,11 @@ class DeliveryLocationService {
           role: userData['role'] ?? 'livreur',
           isOnline: hasLocation,
           active: userData['active'] ?? false,
-          currentLatitude: userData['currentLatitude']?.toDouble(),
-          currentLongitude: userData['currentLongitude']?.toDouble(),
-          lastLocationUpdate: userData['lastLocationUpdate'],
+          currentLatitude: userData['current_latitude']?.toDouble(),
+          currentLongitude: userData['current_longitude']?.toDouble(),
+          lastLocationUpdate: userData['last_location_update'] is Timestamp
+              ? (userData['last_location_update'] as Timestamp).toDate()
+              : null,
         ));
       }
 

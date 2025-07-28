@@ -113,7 +113,7 @@ class _AuthPageState extends ConsumerState<AuthPage>
     }
 
     // Vérifier que le numéro commence par 0
-    if (!phoneNumber.startsWith('0')) {
+    /* if (!phoneNumber.startsWith('0')) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content:
@@ -123,7 +123,7 @@ class _AuthPageState extends ConsumerState<AuthPage>
         ),
       );
       return;
-    }
+    }*/
 
     setState(() => _isSubmitting = true);
     try {
@@ -230,6 +230,8 @@ class _AuthPageState extends ConsumerState<AuthPage>
     final authState = ref.watch(authProvider);
 
     return Scaffold(
+      resizeToAvoidBottomInset:
+          true, // Permet au contenu de se redimensionner quand le clavier s'ouvre
       body: Stack(
         children: [
           Container(
@@ -258,95 +260,104 @@ class _AuthPageState extends ConsumerState<AuthPage>
               );
             },
           ),
-          Padding(
-            padding: const EdgeInsets.all(26.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Image.asset(
-                  'assets/logo.png',
-                  fit: BoxFit.cover,
-                  height: 180.0,
-                  width: 180.0,
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 200, horizontal: 20),
+          SingleChildScrollView(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  "VEUILLEZ SAISIR VOTRE NUMERO S'IL VOUS PLAÎT",
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 21,
-                      fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 10),
-                const Text(
-                  "Ce numéro recevra un code de confirmation",
-                  style: TextStyle(color: Colors.white, fontSize: 13),
-                ),
-                const SizedBox(height: 30),
-                SizedBox(
-                  width: double.infinity,
-                  height: 55,
-                  child: CustomField(
-                    controller: _phoneController,
-                    fontSize: 21,
-                    prefixText:
-                        "", // Pas de préfixe pour éviter la suppression du 0
-                    paddingLeft: 12,
-                    keyboardType: TextInputType.phone,
-                    placeholder:
-                        "0701234567", // Placeholder pour guider l'utilisateur
+                Padding(
+                  padding: const EdgeInsets.all(26.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Image.asset(
+                        'assets/logo.png',
+                        fit: BoxFit.cover,
+                        height: 180.0,
+                        width: 180.0,
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 10),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 20.0),
-                  child: Text(
-                    "Saisissez votre numéro complet (ex: 0701234567)",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        "VEUILLEZ SAISIR VOTRE NUMERO S'IL VOUS PLAÎT",
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 21,
+                            fontWeight: FontWeight.bold),
+                      ),
+                      const Text(
+                        "Ce numéro recevra un code de confirmation",
+                        style: TextStyle(color: Colors.white, fontSize: 13),
+                      ),
+                      const SizedBox(height: 30),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 55,
+                        child: CustomField(
+                          controller: _phoneController,
+                          fontSize: 21,
+                          prefixText:
+                              "", // Pas de préfixe pour éviter la suppression du 0
+                          paddingLeft: 12,
+                          keyboardType: TextInputType.phone,
+                          placeholder:
+                              "0701234567", // Placeholder pour guider l'utilisateur
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 20.0),
+                        child: Text(
+                          "Saisissez votre numéro complet (ex: 0701234567)",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      if (authState.errorMessage != null)
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            borderRadius: BorderRadius.circular(5),
+                          ),
+                          padding: const EdgeInsets.all(8),
+                          child: Text(
+                            authState.errorMessage!,
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 80, horizontal: 20),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: CustomButton(
+                        text: _isSubmitting ? "Envoi en cours..." : "Envoyer",
+                        borderRadius: 50,
+                        onPressedButton: _isSubmitting ? null : _handleSubmit,
+                        bgColor: UIColors.white,
+                        fontSize: 18,
+                        paddingVertical: 18,
+                        width: 120,
+                      ),
                     ),
                   ),
                 ),
-                const SizedBox(height: 20),
-                if (authState.errorMessage != null)
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.red,
-                      borderRadius: BorderRadius.circular(5),
-                    ),
-                    padding: const EdgeInsets.all(8),
-                    child: Text(
-                      authState.errorMessage!,
-                      style: const TextStyle(color: Colors.white),
-                    ),
-                  ),
+                // Espace en bas pour éviter que le contenu soit caché par le clavier
+                SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
               ],
-            ),
-          ),
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 80, horizontal: 20),
-              child: SizedBox(
-                width: double.infinity,
-                child: CustomButton(
-                  text: _isSubmitting ? "Envoi en cours..." : "Envoyer",
-                  borderRadius: 50,
-                  onPressedButton: _isSubmitting ? null : _handleSubmit,
-                  bgColor: UIColors.white,
-                  fontSize: 18,
-                  paddingVertical: 18,
-                  width: 120,
-                ),
-              ),
             ),
           ),
         ],

@@ -104,6 +104,7 @@ class HomeNotifier extends StateNotifier<HomeState> {
   Future<void> refreshUser() async {
     print('Refreshing user data');
     await _loadUserData(); // ça recharge depuis LocalStorage et update state
+    await fetchOptions(); // Rafraîchir aussi les options basées sur le rôle
   }
 
   Future<void> fetchOptions() async {

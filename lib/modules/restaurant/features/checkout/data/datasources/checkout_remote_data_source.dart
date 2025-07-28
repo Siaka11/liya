@@ -56,13 +56,13 @@ class CheckoutRemoteDataSourceImpl implements CheckoutRemoteDataSource {
       throw Exception('DeliveryInfo must be a DeliveryInfoModel');
     }
 
+    final orderRef = _firestore.collection('orders').doc();
     final orderId = orderRef.id;
     final total = cartItems.fold(
         0.0,
         (sum, item) =>
             sum + (double.tryParse(item.price) ?? 0) * item.quantity);
 
-    final orderRef = _firestore.collection('orders').doc();
     final batch = _firestore.batch();
 
     // Create order
@@ -79,20 +79,33 @@ class CheckoutRemoteDataSourceImpl implements CheckoutRemoteDataSource {
     // Execute batch
     await batch.commit();
 
+    print('✅ Commande créée avec succès: $orderId');
+
     // Envoyer notification aux admins
-    await _notificationService.notifyNewOrderToAdmin(
-      orderId: orderId,
-      customerName: deliveryInfo.customerName,
-      customerPhone: userId,
-      restaurantName: 'Restaurant', // TODO: Récupérer le nom du restaurant
-      total: total,
-      items: cartItems
-          .map((item) => {
-                'name': item.name,
-                'price': double.tryParse(item.price) ?? 0,
-                'quantity': item.quantity,
-              })
-          .toList(),
-    );
+    print('📤 === DÉBUT ENVOI NOTIFICATION ADMIN ===');
+    print('📤 OrderId: $orderId');
+    print('📤 CustomerPhone: $userId');
+    print('📤 Total: $total');
+    print('📤 Items: ${cartItems.length}');
+
+    try {
+      // Récupérer le nom de l'utilisateur depuis Firestore
+      final userDoc = await _firestore.collection('users').doc(userId).get();
+      final userData = userDoc.data();
+      final customerName = userData?['name'] ?? 'Client';
+
+      print('📤 CustomerName: $customerName');
+
+      await _notificationService.notifyNewOrderToAdmin(
+        orderId: orderId,
+        customerName: customerName,
+        total: total,
+      );
+      print('✅ Notification envoyée aux admins pour la commande: $orderId');
+    } catch (e) {
+      print('❌ Erreur envoi notification admin: $e');
+      print('❌ Stack trace: ${StackTrace.current}');
+    }
+    print('📤 === FIN ENVOI NOTIFICATION ADMIN ===');
   }
 }

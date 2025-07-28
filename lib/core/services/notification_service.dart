@@ -1,6 +1,7 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:liya/core/services/fcm_service.dart';
-import 'package:liya/modules/auth/firebase_auth_service.dart';
+import 'fcm_service.dart';
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -9,337 +10,336 @@ class NotificationService {
 
   final FCMService _fcmService = FCMService();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseAuthService _authService = FirebaseAuthService();
 
-  /// Notification: Nouvelle commande de plat → Admin
-  Future<void> notifyNewOrderToAdmin({
+  // URLs des Firebase Functions
+  static const String _baseUrl =
+      'https://us-central1-liya-a4a9f.cloudfunctions.net';
+  static const String _sendNotificationUrl = '$_baseUrl/sendNotification';
+  static const String _sendNotificationToRoleUrl =
+      '$_baseUrl/sendNotificationToRole';
+
+  /// Notifier les admins d'une nouvelle commande
+  Future<bool> notifyNewOrderToAdmin({
     required String orderId,
     required String customerName,
-    required String customerPhone,
-    required String restaurantName,
     required double total,
-    required List<Map<String, dynamic>> items,
   }) async {
     try {
-      print('📤 Notification nouvelle commande → Admin');
-
-      final title = '🆕 Nouvelle commande reçue';
-      final body =
-          '$customerName a commandé ${items.length} article(s) pour ${total.toStringAsFixed(0)} FCFA';
-
-      final data = {
-        'type': 'new_order',
-        'orderId': orderId,
-        'customerName': customerName,
-        'customerPhone': customerPhone,
-        'restaurantName': restaurantName,
-        'total': total.toString(),
-        'items': items.toString(),
-      };
-
-      await _fcmService.sendNotificationToRole(
-        role: 'admin',
-        title: title,
-        body: body,
-        data: data,
+      final response = await http.post(
+        Uri.parse(_sendNotificationToRoleUrl),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'role': 'admin',
+          'title': '🆕 Nouvelle commande reçue',
+          'body':
+              'Commande #$orderId de $customerName - ${total.toStringAsFixed(0)} FCFA',
+          'data': {
+            'type': 'new_order',
+            'order_id': orderId,
+            'customer_name': customerName,
+            'total': total.toString(),
+          },
+        }),
       );
 
-      // Sauvegarder la notification dans Firestore pour l'historique
-      await _saveNotificationToFirestore(
-        type: 'new_order',
-        title: title,
-        body: body,
-        data: data,
-        targetRole: 'admin',
-      );
-
-      print('✅ Notification nouvelle commande envoyée aux admins');
+      if (response.statusCode == 200) {
+        final result = jsonDecode(response.body);
+        print(
+            '✅ Notification nouvelle commande envoyée aux admins: ${result['message']}');
+        await _saveNotificationToFirestore(
+          recipientType: 'admin',
+          recipientRole: 'admin',
+          notificationType: 'new_order',
+          title: '🆕 Nouvelle commande reçue',
+          body:
+              'Commande #$orderId de $customerName - ${total.toStringAsFixed(0)} FCFA',
+          data: {
+            'type': 'new_order',
+            'order_id': orderId,
+            'customer_name': customerName,
+            'total': total.toString(),
+          },
+        );
+        return true;
+      } else {
+        print(
+            '❌ Erreur notification nouvelle commande: ${response.statusCode}');
+        return false;
+      }
     } catch (e) {
       print('❌ Erreur notification nouvelle commande: $e');
+      return false;
     }
   }
 
-  /// Notification: Nouveau colis → Admin
-  Future<void> notifyNewParcelToAdmin({
-    required String parcelId,
-    required String customerName,
-    required String customerPhone,
-    required String destination,
-    required double total,
-  }) async {
-    try {
-      print('📤 Notification nouveau colis → Admin');
-
-      final title = '📦 Nouveau colis à expédier';
-      final body =
-          '$customerName veut expédier un colis vers $destination pour ${total.toStringAsFixed(0)} FCFA';
-
-      final data = {
-        'type': 'new_parcel',
-        'parcelId': parcelId,
-        'customerName': customerName,
-        'customerPhone': customerPhone,
-        'destination': destination,
-        'total': total.toString(),
-      };
-
-      await _fcmService.sendNotificationToRole(
-        role: 'admin',
-        title: title,
-        body: body,
-        data: data,
-      );
-
-      await _saveNotificationToFirestore(
-        type: 'new_parcel',
-        title: title,
-        body: body,
-        data: data,
-        targetRole: 'admin',
-      );
-
-      print('✅ Notification nouveau colis envoyée aux admins');
-    } catch (e) {
-      print('❌ Erreur notification nouveau colis: $e');
-    }
-  }
-
-  /// Notification: Commande assignée → Livreur
-  Future<void> notifyOrderAssignedToDelivery({
+  /// Notifier un livreur d'une commande assignée
+  Future<bool> notifyOrderAssignedToDelivery({
     required String orderId,
-    required String deliveryPhone,
-    required String customerName,
-    required String customerPhone,
-    required String address,
+    required String deliveryUserPhone,
+    required String customerAddress,
     required double total,
-    required double deliveryFee,
   }) async {
     try {
-      print('📤 Notification commande assignée → Livreur: $deliveryPhone');
-
-      final title = '🚚 Nouvelle livraison assignée';
-      final body =
-          'Livraison pour $customerName - ${total.toStringAsFixed(0)} FCFA + ${deliveryFee.toStringAsFixed(0)} FCFA de frais';
-
-      final data = {
-        'type': 'order_assigned',
-        'orderId': orderId,
-        'customerName': customerName,
-        'customerPhone': customerPhone,
-        'address': address,
-        'total': total.toString(),
-        'deliveryFee': deliveryFee.toString(),
-      };
-
-      await _fcmService.sendNotificationToUser(
-        userPhoneNumber: deliveryPhone,
-        title: title,
-        body: body,
-        data: data,
+      final response = await http.post(
+        Uri.parse(_sendNotificationUrl),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'phone': deliveryUserPhone,
+          'title': '📦 Nouvelle livraison assignée',
+          'body': 'Commande #$orderId - $customerAddress',
+          'data': {
+            'type': 'order_assigned',
+            'order_id': orderId,
+            'customer_address': customerAddress,
+            'total': total.toString(),
+          },
+        }),
       );
 
-      await _saveNotificationToFirestore(
-        type: 'order_assigned',
-        title: title,
-        body: body,
-        data: data,
-        targetUser: deliveryPhone,
-      );
-
-      print('✅ Notification commande assignée envoyée au livreur');
+      if (response.statusCode == 200) {
+        final result = jsonDecode(response.body);
+        print(
+            '✅ Notification commande assignée envoyée au livreur: ${result['message']}');
+        await _saveNotificationToFirestore(
+          recipientType: 'individual',
+          recipientPhone: deliveryUserPhone,
+          notificationType: 'order_assigned',
+          title: '📦 Nouvelle livraison assignée',
+          body: 'Commande #$orderId - $customerAddress',
+          data: {
+            'type': 'order_assigned',
+            'order_id': orderId,
+            'customer_address': customerAddress,
+            'total': total.toString(),
+          },
+        );
+        return true;
+      } else {
+        print(
+            '❌ Erreur notification commande assignée: ${response.statusCode}');
+        return false;
+      }
     } catch (e) {
       print('❌ Erreur notification commande assignée: $e');
+      return false;
     }
   }
 
-  /// Notification: Colis assigné → Livreur
-  Future<void> notifyParcelAssignedToDelivery({
-    required String parcelId,
-    required String deliveryPhone,
-    required String customerName,
+  /// Notifier un client du statut de sa livraison
+  Future<bool> notifyDeliveryStatusToCustomer({
+    required String orderId,
     required String customerPhone,
-    required String destination,
+    required String status,
+    required String deliveryUser,
+  }) async {
+    try {
+      String title, body;
+      switch (status) {
+        case 'started':
+          title = '🚚 Livraison commencée';
+          body =
+              'Votre commande #$orderId est en cours de livraison par $deliveryUser';
+          break;
+        case 'completed':
+          title = '✅ Livraison terminée';
+          body = 'Votre commande #$orderId a été livrée avec succès';
+          break;
+        default:
+          title = '📦 Mise à jour livraison';
+          body = 'Statut de votre commande #$orderId: $status';
+      }
+
+      final response = await http.post(
+        Uri.parse(_sendNotificationUrl),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'phone': customerPhone,
+          'title': title,
+          'body': body,
+          'data': {
+            'type': 'delivery_status',
+            'order_id': orderId,
+            'status': status,
+            'delivery_user': deliveryUser,
+          },
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final result = jsonDecode(response.body);
+        print(
+            '✅ Notification statut livraison envoyée au client: ${result['message']}');
+        await _saveNotificationToFirestore(
+          recipientType: 'individual',
+          recipientPhone: customerPhone,
+          notificationType: 'delivery_status',
+          title: title,
+          body: body,
+          data: {
+            'type': 'delivery_status',
+            'order_id': orderId,
+            'status': status,
+            'delivery_user': deliveryUser,
+          },
+        );
+        return true;
+      } else {
+        print('❌ Erreur notification statut livraison: ${response.statusCode}');
+        return false;
+      }
+    } catch (e) {
+      print('❌ Erreur notification statut livraison: $e');
+      return false;
+    }
+  }
+
+  /// Notifier les admins d'un nouveau colis
+  Future<bool> notifyNewParcelToAdmin({
+    required String parcelId,
+    required String senderName,
     required double total,
   }) async {
     try {
-      print('📤 Notification colis assigné → Livreur: $deliveryPhone');
-
-      final title = '📦 Nouveau colis à livrer';
-      final body =
-          'Colis de $customerName vers $destination - ${total.toStringAsFixed(0)} FCFA';
-
-      final data = {
-        'type': 'parcel_assigned',
-        'parcelId': parcelId,
-        'customerName': customerName,
-        'customerPhone': customerPhone,
-        'destination': destination,
-        'total': total.toString(),
-      };
-
-      await _fcmService.sendNotificationToUser(
-        userPhoneNumber: deliveryPhone,
-        title: title,
-        body: body,
-        data: data,
+      final response = await http.post(
+        Uri.parse(_sendNotificationToRoleUrl),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'role': 'admin',
+          'title': '📦 Nouveau colis reçu',
+          'body':
+              'Colis #$parcelId de $senderName - ${total.toStringAsFixed(0)} FCFA',
+          'data': {
+            'type': 'new_parcel',
+            'parcel_id': parcelId,
+            'sender_name': senderName,
+            'total': total.toString(),
+          },
+        }),
       );
 
-      await _saveNotificationToFirestore(
-        type: 'parcel_assigned',
-        title: title,
-        body: body,
-        data: data,
-        targetUser: deliveryPhone,
+      if (response.statusCode == 200) {
+        final result = jsonDecode(response.body);
+        print(
+            '✅ Notification nouveau colis envoyée aux admins: ${result['message']}');
+        await _saveNotificationToFirestore(
+          recipientType: 'admin',
+          recipientRole: 'admin',
+          notificationType: 'new_parcel',
+          title: '📦 Nouveau colis reçu',
+          body:
+              'Colis #$parcelId de $senderName - ${total.toStringAsFixed(0)} FCFA',
+          data: {
+            'type': 'new_parcel',
+            'parcel_id': parcelId,
+            'sender_name': senderName,
+            'total': total.toString(),
+          },
+        );
+        return true;
+      } else {
+        print('❌ Erreur notification nouveau colis: ${response.statusCode}');
+        return false;
+      }
+    } catch (e) {
+      print('❌ Erreur notification nouveau colis: $e');
+      return false;
+    }
+  }
+
+  /// Notifier un livreur d'un colis assigné
+  Future<bool> notifyParcelAssignedToDelivery({
+    required String parcelId,
+    required String deliveryUserPhone,
+    required String senderAddress,
+    required double total,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse(_sendNotificationUrl),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'phone': deliveryUserPhone,
+          'title': '📦 Nouveau colis à livrer',
+          'body': 'Colis #$parcelId - $senderAddress',
+          'data': {
+            'type': 'parcel_assigned',
+            'parcel_id': parcelId,
+            'sender_address': senderAddress,
+            'total': total.toString(),
+          },
+        }),
       );
 
-      print('✅ Notification colis assigné envoyée au livreur');
+      if (response.statusCode == 200) {
+        final result = jsonDecode(response.body);
+        print(
+            '✅ Notification colis assigné envoyée au livreur: ${result['message']}');
+        await _saveNotificationToFirestore(
+          recipientType: 'individual',
+          recipientPhone: deliveryUserPhone,
+          notificationType: 'parcel_assigned',
+          title: '📦 Nouveau colis à livrer',
+          body: 'Colis #$parcelId - $senderAddress',
+          data: {
+            'type': 'parcel_assigned',
+            'parcel_id': parcelId,
+            'sender_address': senderAddress,
+            'total': total.toString(),
+          },
+        );
+        return true;
+      } else {
+        print('❌ Erreur notification colis assigné: ${response.statusCode}');
+        return false;
+      }
     } catch (e) {
       print('❌ Erreur notification colis assigné: $e');
+      return false;
     }
   }
 
-  /// Notification: Livraison en cours → Client
-  Future<void> notifyDeliveryStartedToCustomer({
-    required String orderId,
-    required String customerPhone,
-    required String deliveryName,
-    required String deliveryPhone,
-    required String estimatedTime,
-  }) async {
-    try {
-      print('📤 Notification livraison en cours → Client: $customerPhone');
-
-      final title = '🚚 Votre commande est en route';
-      final body =
-          '$deliveryName a commencé la livraison. Arrivée estimée: $estimatedTime';
-
-      final data = {
-        'type': 'delivery_started',
-        'orderId': orderId,
-        'deliveryName': deliveryName,
-        'deliveryPhone': deliveryPhone,
-        'estimatedTime': estimatedTime,
-      };
-
-      await _fcmService.sendNotificationToUser(
-        userPhoneNumber: customerPhone,
-        title: title,
-        body: body,
-        data: data,
-      );
-
-      await _saveNotificationToFirestore(
-        type: 'delivery_started',
-        title: title,
-        body: body,
-        data: data,
-        targetUser: customerPhone,
-      );
-
-      print('✅ Notification livraison en cours envoyée au client');
-    } catch (e) {
-      print('❌ Erreur notification livraison en cours: $e');
-    }
-  }
-
-  /// Notification: Livraison terminée → Client
-  Future<void> notifyDeliveryCompletedToCustomer({
-    required String orderId,
-    required String customerPhone,
-    required String deliveryName,
-  }) async {
-    try {
-      print('📤 Notification livraison terminée → Client: $customerPhone');
-
-      final title = '✅ Livraison terminée';
-      final body =
-          '$deliveryName a livré votre commande. Merci de votre confiance !';
-
-      final data = {
-        'type': 'delivery_completed',
-        'orderId': orderId,
-        'deliveryName': deliveryName,
-      };
-
-      await _fcmService.sendNotificationToUser(
-        userPhoneNumber: customerPhone,
-        title: title,
-        body: body,
-        data: data,
-      );
-
-      await _saveNotificationToFirestore(
-        type: 'delivery_completed',
-        title: title,
-        body: body,
-        data: data,
-        targetUser: customerPhone,
-      );
-
-      print('✅ Notification livraison terminée envoyée au client');
-    } catch (e) {
-      print('❌ Erreur notification livraison terminée: $e');
-    }
-  }
-
-  /// Sauvegarder une notification dans Firestore pour l'historique
+  /// Sauvegarder l'historique des notifications dans Firestore
   Future<void> _saveNotificationToFirestore({
-    required String type,
+    required String recipientType,
+    String? recipientRole,
+    String? recipientPhone,
+    required String notificationType,
     required String title,
     required String body,
     required Map<String, dynamic> data,
-    String? targetRole,
-    String? targetUser,
   }) async {
     try {
-      await _firestore.collection('notifications').add({
-        'type': type,
+      final notificationData = <String, dynamic>{
+        'type': notificationType,
         'title': title,
         'body': body,
         'data': data,
-        'targetRole': targetRole,
-        'targetUser': targetUser,
-        'createdAt': FieldValue.serverTimestamp(),
+        'sent_at': FieldValue.serverTimestamp(),
         'read': false,
-      });
+        'success': true,
+      };
 
-      print('💾 Notification sauvegardée dans Firestore');
+      // Ajouter les champs spécifiques selon le type de destinataire
+      if (recipientType == 'admin') {
+        notificationData['recipient_role'] = recipientRole ?? 'admin';
+      } else {
+        notificationData['recipient_phone'] = recipientPhone ?? '';
+      }
+
+      await _firestore.collection('notifications').add(notificationData);
+      print('✅ Notification sauvegardée dans Firestore: $notificationType');
     } catch (e) {
-      print('❌ Erreur sauvegarde notification: $e');
+      print('❌ Erreur sauvegarde notification dans Firestore: $e');
     }
-  }
-
-  /// Marquer une notification comme lue
-  Future<void> markNotificationAsRead(String notificationId) async {
-    try {
-      await _firestore.collection('notifications').doc(notificationId).update({
-        'read': true,
-        'readAt': FieldValue.serverTimestamp(),
-      });
-
-      print('✅ Notification marquée comme lue: $notificationId');
-    } catch (e) {
-      print('❌ Erreur marquage notification: $e');
-    }
-  }
-
-  /// Obtenir les notifications d'un utilisateur
-  Stream<QuerySnapshot> getUserNotifications(String userPhone) {
-    return _firestore
-        .collection('notifications')
-        .where('targetUser', isEqualTo: userPhone)
-        .orderBy('createdAt', descending: true)
-        .limit(50)
-        .snapshots();
-  }
-
-  /// Obtenir les notifications d'un rôle
-  Stream<QuerySnapshot> getRoleNotifications(String role) {
-    return _firestore
-        .collection('notifications')
-        .where('targetRole', isEqualTo: role)
-        .orderBy('createdAt', descending: true)
-        .limit(50)
-        .snapshots();
   }
 }

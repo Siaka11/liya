@@ -801,11 +801,27 @@ class _DeliveryAdminDashboardPageState
     );
   }
 
+  // Forcer la mise à jour de position des livreurs
+  void _forceUpdateDriverPositions(List<DeliveryUser> drivers) async {
+    for (final driver in drivers) {
+      try {
+        await DeliveryLocationService.forceUpdateDriverPosition(
+            driver.phoneNumber);
+        print('✅ Position mise à jour pour ${driver.name} ${driver.lastname}');
+      } catch (e) {
+        print('❌ Erreur mise à jour position pour ${driver.name}: $e');
+      }
+    }
+  }
+
   void _showAssignOrderDialog(
       Map<String, dynamic> order, DeliveryLocationNotifier locationNotifier) {
     final locationState = ref.watch(deliveryLocationProvider);
     final availableDrivers =
-        locationState.availableDeliveryUsers.where((d) => d.active).toList();
+        locationState.availableDeliveryUsers.where((d) => d.isOnline).toList();
+
+    // Forcer la mise à jour de position des livreurs avant affichage
+    _forceUpdateDriverPositions(availableDrivers);
 
     showDialog(
       context: context,
@@ -946,13 +962,11 @@ class _DeliveryAdminDashboardPageState
                               ),
                             ],
                           ),
-                          onTap: hasLocation
-                              ? () {
-                                  Navigator.pop(context);
-                                  _assignOrderToSpecificDriver(
-                                      order, driver, locationNotifier);
-                                }
-                              : null,
+                          onTap: () {
+                            Navigator.pop(context);
+                            _assignOrderToSpecificDriver(
+                                order, driver, locationNotifier);
+                          },
                         ),
                       );
                     }).toList(),
