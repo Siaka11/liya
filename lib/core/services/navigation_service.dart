@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:auto_route/auto_route.dart';
-import 'package:liya/routes/app_router.gr.dart';
+import '../../routes/app_router.gr.dart';
+import '../../modules/parcel/feature/presentation/pages/parcel_home_page.dart';
 
 class NavigationService {
   static final NavigationService _instance = NavigationService._internal();
@@ -50,6 +51,37 @@ class NavigationService {
       }
     } else {
       print('❌ Impossible d\'obtenir le contexte de navigation');
+    }
+  }
+
+  // Méthode pour forcer la navigation vers ParcelHomePage
+  static void navigateToParcelHome(BuildContext context) {
+    print(
+        '🚀 NavigationService: Tentative de navigation vers ParcelHomePage...');
+
+    try {
+      // Méthode 1: Navigation directe sans popUntil
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (context) => const ParcelHomePage(),
+        ),
+        (route) => false, // Supprimer toutes les routes
+      );
+      print('✅ NavigationService: Navigation directe réussie');
+    } catch (e) {
+      print('❌ NavigationService: Erreur navigation - $e');
+
+      // Méthode 2: Fallback avec pushReplacement
+      try {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => const ParcelHomePage(),
+          ),
+        );
+        print('✅ NavigationService: Fallback réussi');
+      } catch (e2) {
+        print('❌ NavigationService: Toutes les méthodes ont échoué - $e2');
+      }
     }
   }
 }

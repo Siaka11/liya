@@ -25,6 +25,15 @@ class ParcelRepositoryImpl implements ParcelRepository {
       phoneNumber: parcel.phoneNumber,
       instructions: parcel.instructions,
       ville: parcel.ville,
+      prix: parcel.prix,
+      colisDescription: parcel.colisDescription,
+      colisList: parcel.colisList,
+      expediteurNom: parcel.expediteurNom,
+      expediteurLieu: parcel.expediteurLieu,
+      destinataireNom: parcel.destinataireNom,
+      destinataireLieu: parcel.destinataireLieu,
+      descriptionColis: parcel.descriptionColis,
+      typeProduit: parcel.typeProduit,
     ));
   }
 

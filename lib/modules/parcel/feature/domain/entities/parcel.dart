@@ -13,6 +13,14 @@ class Parcel {
   final String? colisDescription;
   final List<Map<String, dynamic>>? colisList;
 
+  // Nouveaux champs pour les informations complètes
+  final String? expediteurNom;
+  final String? expediteurLieu;
+  final String? destinataireNom;
+  final String? destinataireLieu;
+  final String? descriptionColis;
+  final String? typeProduit;
+
   Parcel({
     required this.id,
     required this.senderName,
@@ -27,5 +35,11 @@ class Parcel {
     this.prix,
     this.colisDescription,
     this.colisList,
+    this.expediteurNom,
+    this.expediteurLieu,
+    this.destinataireNom,
+    this.destinataireLieu,
+    this.descriptionColis,
+    this.typeProduit,
   });
 }

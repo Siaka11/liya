@@ -16,6 +16,12 @@ class ParcelModel extends Parcel {
     double? prix,
     String? colisDescription,
     List<Map<String, dynamic>>? colisList,
+    String? expediteurNom,
+    String? expediteurLieu,
+    String? destinataireNom,
+    String? destinataireLieu,
+    String? descriptionColis,
+    String? typeProduit,
   }) : super(
           id: id,
           senderName: senderName,
@@ -30,6 +36,12 @@ class ParcelModel extends Parcel {
           prix: prix,
           colisDescription: colisDescription,
           colisList: colisList,
+          expediteurNom: expediteurNom,
+          expediteurLieu: expediteurLieu,
+          destinataireNom: destinataireNom,
+          destinataireLieu: destinataireLieu,
+          descriptionColis: descriptionColis,
+          typeProduit: typeProduit,
         );
 
   factory ParcelModel.fromMap(Map<String, dynamic> map, String id) {
@@ -49,6 +61,12 @@ class ParcelModel extends Parcel {
       colisList: map['colisList'] != null
           ? List<Map<String, dynamic>>.from(map['colisList'])
           : null,
+      expediteurNom: map['expediteurNom'],
+      expediteurLieu: map['expediteurLieu'],
+      destinataireNom: map['destinataireNom'],
+      destinataireLieu: map['destinataireLieu'],
+      descriptionColis: map['descriptionColis'],
+      typeProduit: map['typeProduit'],
     );
   }
 
@@ -67,6 +85,12 @@ class ParcelModel extends Parcel {
       'prix': prix,
       'colisDescription': colisDescription,
       'colisList': colisList,
+      'expediteurNom': expediteurNom,
+      'expediteurLieu': expediteurLieu,
+      'destinataireNom': destinataireNom,
+      'destinataireLieu': destinataireLieu,
+      'descriptionColis': descriptionColis,
+      'typeProduit': typeProduit,
     };
 
     // S'assurer que tous les champs sont présents dans Firestore
@@ -77,6 +101,12 @@ class ParcelModel extends Parcel {
     if (prix == null) map['prix'] = null;
     if (colisDescription == null) map['colisDescription'] = null;
     if (colisList == null) map['colisList'] = null;
+    if (expediteurNom == null) map['expediteurNom'] = null;
+    if (expediteurLieu == null) map['expediteurLieu'] = null;
+    if (destinataireNom == null) map['destinataireNom'] = null;
+    if (destinataireLieu == null) map['destinataireLieu'] = null;
+    if (descriptionColis == null) map['descriptionColis'] = null;
+    if (typeProduit == null) map['typeProduit'] = null;
 
     return map;
   }

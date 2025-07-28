@@ -938,8 +938,18 @@ class DeliveryLocationService {
         final data = doc.data();
         data['id'] = doc.id;
 
-        // Récupérer les informations du client
-        final clientPhone = data['phoneNumber'] as String?;
+        // Debug: afficher les clés disponibles
+        print(
+            '🔍 Clés disponibles dans la commande ${doc.id}: ${data.keys.toList()}');
+
+        // Récupérer les informations du client - essayer plusieurs clés possibles
+        String? clientPhone = data['phone'] ??
+            data['phoneNumber'] ??
+            data['customer_phone'] ??
+            data['client_phone'];
+
+        print('📱 Numéro de téléphone client trouvé: $clientPhone');
+
         if (clientPhone != null) {
           final clientInfo = await getClientInfo(clientPhone);
           if (clientInfo != null) {
@@ -947,7 +957,13 @@ class DeliveryLocationService {
             data['customer_phone'] = clientInfo['phoneNumber'];
             data['customer_email'] = clientInfo['email'];
             data['customer_address'] = clientInfo['address'];
+            print('✅ Informations client ajoutées: ${clientInfo['fullName']}');
+          } else {
+            print(
+                '❌ Impossible de récupérer les informations du client pour: $clientPhone');
           }
+        } else {
+          print('❌ Aucun numéro de téléphone client trouvé dans la commande');
         }
 
         pendingOrders.add(data);
