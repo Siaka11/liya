@@ -162,7 +162,7 @@ class _OtpPageState extends ConsumerState<OtpPage> {
                     width: 120,
                     height: 30,
                     child: CustomButton(
-                      text: 'Renvoie SMS',
+                      text: 'Renvoyer SMS',
                       onPressedButton: () {},
                       bgColor: UIColors.orange,
                       fontSize: 10,

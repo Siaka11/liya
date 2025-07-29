@@ -105,7 +105,7 @@ class _UserManagementPageState extends ConsumerState<UserManagementPage> {
                 TextField(
                   onChanged: (value) => setState(() => searchQuery = value),
                   decoration: InputDecoration(
-                    hintText: 'Rechercher un utilisateur...',
+                    hintText: 'Rechercher un utilisateur',
                     prefixIcon: const Icon(Icons.search),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -133,7 +133,7 @@ class _UserManagementPageState extends ConsumerState<UserManagementPage> {
                     const DropdownMenuItem(
                         value: 'admin', child: Text('Admin')),
                     const DropdownMenuItem(
-                        value: 'delivery', child: Text('Livreur')),
+                        value: 'livreur', child: Text('Livreur')),
                   ],
                   onChanged: (value) => setState(() => selectedRole = value!),
                 ),
@@ -173,9 +173,9 @@ class _UserManagementPageState extends ConsumerState<UserManagementPage> {
                 ),
                 _buildStatCard(
                   'Livreurs',
-                  users.where((u) => u['role'] == 'delivery').length.toString(),
+                  users.where((u) => u['role'] == 'livreur').length.toString(),
                   Icons.delivery_dining,
-                  Colors.orange,
+                  Colors.red,
                 ),
                 _buildStatCard(
                   'Admins',
@@ -252,8 +252,8 @@ class _UserManagementPageState extends ConsumerState<UserManagementPage> {
         roleColor = Colors.purple;
         roleIcon = Icons.admin_panel_settings;
         break;
-      case 'delivery':
-        roleColor = Colors.orange;
+      case 'livreur':
+        roleColor = Colors.red;
         roleIcon = Icons.delivery_dining;
         break;
       default:
@@ -424,7 +424,7 @@ class _UserManagementPageState extends ConsumerState<UserManagementPage> {
     switch (role) {
       case 'admin':
         return 'Admin';
-      case 'delivery':
+      case 'Livreur':
         return 'Livreur';
       case 'client':
         return 'Client';
@@ -490,7 +490,7 @@ class _UserManagementPageState extends ConsumerState<UserManagementPage> {
                   const DropdownMenuItem(
                       value: 'client', child: Text('Client')),
                   const DropdownMenuItem(
-                      value: 'delivery', child: Text('Livreur')),
+                      value: 'livreur', child: Text('Livreur')),
                   const DropdownMenuItem(value: 'admin', child: Text('Admin')),
                 ],
                 onChanged: (value) => selectedRole = value!,

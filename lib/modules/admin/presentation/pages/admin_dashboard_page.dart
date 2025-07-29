@@ -101,7 +101,7 @@ class AdminDashboardPage extends StatelessWidget {
                   icon: Icons.restaurant_menu,
                   color: Colors.green,
                   onTap: () {
-                    AutoRouter.of(context).push(const AddDishRoute());
+                    AutoRouter.of(context).push(const DishManagementRoute());
                   },
                 ),
                 AdminMenuCard(
