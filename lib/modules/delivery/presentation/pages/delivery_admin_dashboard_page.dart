@@ -5,6 +5,7 @@ import '../../../../core/ui/theme/theme.dart';
 import '../../application/delivery_location_provider.dart';
 import '../../domain/entities/delivery_user.dart';
 import '../../data/services/delivery_location_service.dart';
+import '../../data/services/delivery_existing_service.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 @RoutePage()
@@ -50,14 +51,38 @@ class _DeliveryAdminDashboardPageState
     try {
       final orders = await DeliveryLocationService
           .getPendingRestaurantOrdersWithClientInfo();
-      final parcels = await DeliveryLocationService.getPendingParcelOrders();
+      final parcelOrders =
+          await DeliveryExistingService.getPendingParcelOrders();
+
+      // Convertir les DeliveryOrder en Map pour les colis
+      final parcels = parcelOrders
+          .map((parcel) => {
+                'id': parcel.id,
+                'customer_name': parcel.customerName,
+                'customer_address': parcel.customerAddress,
+                'customer_phone_number': parcel.customerPhoneNumber,
+                'description': parcel.description,
+                'amount': parcel.amount,
+                'delivery_fee': parcel.deliveryFee,
+                'status': parcel.status.name,
+                'created_at': parcel.createdAt,
+                'type': 'parcel',
+              })
+          .toList();
 
       setState(() {
         pendingOrders = orders;
         pendingParcels = parcels;
         isLoadingOrders = false;
       });
+
+      print('📦 Colis chargés: ${parcels.length}');
+      for (final parcel in parcels) {
+        print(
+            '📦 ${parcel['id']}: ${parcel['customer_name']} - ${parcel['customer_address']}');
+      }
     } catch (e) {
+      print('❌ Erreur chargement commandes: $e');
       setState(() {
         isLoadingOrders = false;
       });
@@ -548,6 +573,30 @@ class _DeliveryAdminDashboardPageState
                 color: Colors.grey.shade600,
               ),
             ),
+            if (parcel['customer_phone_number'] != null &&
+                parcel['customer_phone_number'].isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  '📞 ${parcel['customer_phone_number']}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+              ),
+            if (parcel['description'] != null &&
+                parcel['description'].isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  '📝 ${parcel['description']}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+              ),
             const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
@@ -1213,23 +1262,18 @@ class _DeliveryAdminDashboardPageState
     DeliveryLocationNotifier locationNotifier,
   ) async {
     try {
-      // Utiliser les coordonnées du colis ou des coordonnées par défaut
-      final lat = parcel['latitude']?.toDouble() ?? 6.8270;
-      final lon = parcel['longitude']?.toDouble() ?? -5.2890;
+      print(
+          '📦 Assignation colis ${parcel['id']} à ${driver.name} ${driver.lastname}');
 
-      final success = await locationNotifier.assignOrderToSpecificDriver(
+      // Utiliser la méthode d'assignation des colis
+      await DeliveryExistingService.assignParcelToDeliveryUser(
         parcel['id'],
         driver.phoneNumber,
-        lat,
-        lon,
+        '${driver.name} ${driver.lastname}',
       );
 
-      if (success) {
-        _showSuccessDialog(driver, parcel['id']);
-        _loadPendingOrders();
-      } else {
-        _showErrorDialog();
-      }
+      _showSuccessDialog(driver, parcel['id']);
+      _loadPendingOrders();
     } catch (e) {
       print('❌ Erreur assignation colis spécifique: $e');
       _showErrorDialog();
@@ -1241,31 +1285,59 @@ class _DeliveryAdminDashboardPageState
     DeliveryLocationNotifier locationNotifier,
   ) async {
     try {
-      // Utiliser les coordonnées réelles du colis
-      final lat = parcel['latitude']?.toDouble();
-      final lon = parcel['longitude']?.toDouble();
+      print('📦 Assignation colis ${parcel['id']} au livreur le plus proche');
 
-      if (lat == null || lon == null) {
-        print(
-            '❌ Coordonnées de destination manquantes pour le colis ${parcel['id']}');
+      // Pour les colis, on peut assigner au premier livreur disponible
+      final locationState = ref.read(deliveryLocationProvider);
+      final availableDrivers = locationState.availableDeliveryUsers
+          .where((d) =>
+              d.isOnline &&
+              d.currentLatitude != null &&
+              d.currentLongitude != null)
+          .toList();
+
+      if (availableDrivers.isEmpty) {
+        print('❌ Aucun livreur disponible pour le colis ${parcel['id']}');
         _showErrorDialog();
         return;
       }
 
-      final assignedDriver = await locationNotifier.assignOrderToNearestDriver(
+      // Assigner au premier livreur disponible
+      final driver = availableDrivers.first;
+      await DeliveryExistingService.assignParcelToDeliveryUser(
         parcel['id'],
-        lat,
-        lon,
+        driver.phoneNumber,
+        '${driver.name} ${driver.lastname}',
       );
 
-      if (assignedDriver != null) {
-        _showSuccessDialog(assignedDriver, parcel['id']);
-        _loadPendingOrders();
-      } else {
-        _showErrorDialog();
-      }
+      _showSuccessDialog(driver, parcel['id']);
+      _loadPendingOrders();
     } catch (e) {
       print('❌ Erreur assignation colis au plus proche: $e');
+      _showErrorDialog();
+    }
+  }
+
+  void _assignParcelToDriver(Map<String, dynamic> parcel, DeliveryUser driver,
+      DeliveryLocationNotifier locationNotifier) async {
+    try {
+      print(
+          '📦 Assignation colis ${parcel['id']} à ${driver.name} ${driver.lastname}');
+
+      // Utiliser la méthode d'assignation des colis
+      await DeliveryExistingService.assignParcelToDeliveryUser(
+        parcel['id'],
+        driver.phoneNumber,
+        '${driver.name} ${driver.lastname}',
+      );
+
+      // Afficher le dialog de succès
+      _showSuccessDialog(driver, parcel['id']);
+
+      // Recharger les données
+      _loadPendingOrders();
+    } catch (e) {
+      print('❌ Erreur assignation colis: $e');
       _showErrorDialog();
     }
   }

@@ -2,9 +2,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/entities/delivery_user.dart';
 import '../../domain/entities/delivery_order.dart';
 import 'package:geolocator/geolocator.dart';
+import '../../../../core/services/notification_service.dart';
 
 class DeliveryExistingService {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  static final NotificationService _notificationService = NotificationService();
 
   // ===== GESTION DES LIVREURS =====
 
@@ -173,16 +175,46 @@ class DeliveryExistingService {
 
       return querySnapshot.docs.map((doc) {
         final data = doc.data();
+
+        // Récupérer les informations correctes du colis
+        final expediteurNom = data['expediteurNom'] ?? data['senderName'] ?? '';
+        final destinataireNom =
+            data['destinataireNom'] ?? data['receiverName'] ?? '';
+        final expediteurLieu = data['expediteurLieu'] ?? '';
+        final destinataireLieu = data['destinataireLieu'] ?? '';
+        final phoneNumber = data['phoneNumber'] ?? '';
+
+        // Construire l'adresse complète
+        String customerAddress = '';
+        if (expediteurLieu.isNotEmpty && destinataireLieu.isNotEmpty) {
+          customerAddress = 'De: $expediteurLieu → À: $destinataireLieu';
+        } else if (expediteurLieu.isNotEmpty) {
+          customerAddress = 'Lieu: $expediteurLieu';
+        } else if (destinataireLieu.isNotEmpty) {
+          customerAddress = 'Lieu: $destinataireLieu';
+        } else {
+          customerAddress = 'Adresse non spécifiée';
+        }
+
+        // Nom du client (utiliser le destinataire ou l'expéditeur)
+        String customerName =
+            destinataireNom.isNotEmpty ? destinataireNom : expediteurNom;
+        if (customerName.isEmpty) {
+          customerName = 'Client inconnu';
+        }
+
+        print('📦 Colis ${doc.id}: $customerName - $customerAddress');
+
         return DeliveryOrder(
           id: doc.id,
-          customerPhoneNumber: data['phone'] ?? '',
-          customerName: data['receiverName'] ?? '',
-          customerAddress: data['address'] ?? '',
+          customerPhoneNumber: phoneNumber,
+          customerName: customerName,
+          customerAddress: customerAddress,
           type: DeliveryType.parcel,
           status: DeliveryStatus.reception,
           amount: (data['prix'] ?? 0.0).toDouble(),
           deliveryFee: 800.0, // Frais de livraison fixe pour les colis
-          description: data['instructions'] ?? 'Colis',
+          description: data['instructions'] ?? data['typeProduit'] ?? 'Colis',
           createdAt: data['createdAt'] is Timestamp
               ? (data['createdAt'] as Timestamp).toDate()
               : DateTime.now(),
@@ -201,14 +233,53 @@ class DeliveryExistingService {
     String deliveryName,
   ) async {
     try {
+      print(
+          '📦 Assignation colis $parcelId à $deliveryName ($deliveryPhoneNumber)');
+
+      // Récupérer les informations du colis pour la notification
+      final parcelDoc =
+          await _firestore.collection('parcels').doc(parcelId).get();
+      if (!parcelDoc.exists) {
+        throw Exception('Colis non trouvé');
+      }
+
+      final parcelData = parcelDoc.data()!;
+      final expediteurLieu = parcelData['expediteurLieu'] ?? '';
+      final destinataireLieu = parcelData['destinataireLieu'] ?? '';
+      final prix = (parcelData['prix'] ?? 0.0).toDouble();
+
+      // Construire l'adresse pour la notification
+      String senderAddress = '';
+      if (expediteurLieu.isNotEmpty && destinataireLieu.isNotEmpty) {
+        senderAddress = 'De: $expediteurLieu → À: $destinataireLieu';
+      } else if (expediteurLieu.isNotEmpty) {
+        senderAddress = 'Lieu: $expediteurLieu';
+      } else if (destinataireLieu.isNotEmpty) {
+        senderAddress = 'Lieu: $destinataireLieu';
+      } else {
+        senderAddress = 'Adresse non spécifiée';
+      }
+
       await _firestore.collection('parcels').doc(parcelId).update({
-        'delivery_phone': deliveryPhoneNumber,
+        'delivery_phone_number': deliveryPhoneNumber,
         'delivery_name': deliveryName,
         'status': 'enRoute',
-        'assigned_at': DateTime.now().toIso8601String(),
+        'assigned_at': FieldValue.serverTimestamp(),
       });
+
+      print('✅ Colis $parcelId assigné avec succès');
+
+      // Envoyer la notification au livreur
+      await _notificationService.notifyParcelAssignedToDelivery(
+        parcelId: parcelId,
+        deliveryUserPhone: deliveryPhoneNumber,
+        senderAddress: senderAddress,
+        total: prix,
+      );
+
+      print('📱 Notification envoyée au livreur $deliveryName');
     } catch (e) {
-      print('Erreur lors de l\'assignation du colis: $e');
+      print('❌ Erreur lors de l\'assignation du colis: $e');
       rethrow;
     }
   }
@@ -340,39 +411,79 @@ class DeliveryExistingService {
 
   // Mettre à jour le statut d'une commande restaurant
   static Future<void> updateRestaurantOrderStatus(
-    String orderId,
-    DeliveryStatus status,
-  ) async {
+      String orderId, DeliveryStatus status) async {
     try {
-      final updateData = {'status': _mapDeliveryStatusToOrderStatus(status)};
+      print('🔄 Mise à jour statut commande restaurant $orderId: $status');
 
-      if (status == DeliveryStatus.livre) {
-        updateData['completed_at'] = DateTime.now().toIso8601String();
+      // Récupérer les informations de la commande pour la notification
+      final orderDoc = await _firestore.collection('orders').doc(orderId).get();
+      if (!orderDoc.exists) {
+        throw Exception('Commande non trouvée');
       }
 
-      await _firestore.collection('orders').doc(orderId).update(updateData);
+      final orderData = orderDoc.data()!;
+      final customerPhone = orderData['phone'] ?? '';
+      final deliveryName = orderData['delivery_name'] ?? 'Livreur';
+
+      await _firestore.collection('orders').doc(orderId).update({
+        'status': _mapDeliveryStatusToString(status),
+        'updated_at': FieldValue.serverTimestamp(),
+      });
+
+      print('✅ Statut commande restaurant mis à jour');
+
+      // Envoyer la notification au client
+      if (customerPhone.isNotEmpty) {
+        await _notificationService.notifyDeliveryStatusToCustomer(
+          orderId: orderId,
+          customerPhone: customerPhone,
+          status: _mapDeliveryStatusToString(status),
+          deliveryUser: deliveryName,
+        );
+        print('📱 Notification statut envoyée au client');
+      }
     } catch (e) {
-      print(
-          'Erreur lors de la mise à jour du statut de la commande restaurant: $e');
+      print('❌ Erreur mise à jour statut commande restaurant: $e');
       rethrow;
     }
   }
 
   // Mettre à jour le statut d'un colis
   static Future<void> updateParcelStatus(
-    String parcelId,
-    DeliveryStatus status,
-  ) async {
+      String parcelId, DeliveryStatus status) async {
     try {
-      final updateData = {'status': _mapDeliveryStatusToParcelStatus(status)};
+      print('🔄 Mise à jour statut colis $parcelId: $status');
 
-      if (status == DeliveryStatus.livre) {
-        updateData['completed_at'] = DateTime.now().toIso8601String();
+      // Récupérer les informations du colis pour la notification
+      final parcelDoc =
+          await _firestore.collection('parcels').doc(parcelId).get();
+      if (!parcelDoc.exists) {
+        throw Exception('Colis non trouvé');
       }
 
-      await _firestore.collection('parcels').doc(parcelId).update(updateData);
+      final parcelData = parcelDoc.data()!;
+      final customerPhone = parcelData['phoneNumber'] ?? '';
+      final deliveryName = parcelData['delivery_name'] ?? 'Livreur';
+
+      await _firestore.collection('parcels').doc(parcelId).update({
+        'status': _mapDeliveryStatusToString(status),
+        'updated_at': FieldValue.serverTimestamp(),
+      });
+
+      print('✅ Statut colis mis à jour');
+
+      // Envoyer la notification au client
+      if (customerPhone.isNotEmpty) {
+        await _notificationService.notifyDeliveryStatusToCustomer(
+          orderId: parcelId,
+          customerPhone: customerPhone,
+          status: _mapDeliveryStatusToString(status),
+          deliveryUser: deliveryName,
+        );
+        print('📱 Notification statut colis envoyée au client');
+      }
     } catch (e) {
-      print('Erreur lors de la mise à jour du statut du colis: $e');
+      print('❌ Erreur mise à jour statut colis: $e');
       rethrow;
     }
   }
@@ -508,6 +619,19 @@ class DeliveryExistingService {
   }
 
   static String _mapDeliveryStatusToParcelStatus(DeliveryStatus status) {
+    switch (status) {
+      case DeliveryStatus.reception:
+        return 'reception';
+      case DeliveryStatus.enRoute:
+        return 'enRoute';
+      case DeliveryStatus.livre:
+        return 'livre';
+      case DeliveryStatus.nonLivre:
+        return 'nonLivre';
+    }
+  }
+
+  static String _mapDeliveryStatusToString(DeliveryStatus status) {
     switch (status) {
       case DeliveryStatus.reception:
         return 'reception';
