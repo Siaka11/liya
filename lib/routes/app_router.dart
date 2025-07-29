@@ -8,6 +8,9 @@ import 'package:liya/modules/delivery/presentation/pages/delivery_navigation_pag
 import 'package:liya/modules/admin/presentation/pages/restaurant_management_page.dart';
 import 'package:liya/modules/admin/presentation/pages/dish_management_page.dart';
 import 'package:liya/modules/admin/presentation/pages/delivery_user_management_page.dart';
+import 'package:liya/modules/admin/presentation/pages/image_management_page.dart';
+import 'package:liya/modules/admin/presentation/pages/assignment_management_page.dart';
+import 'package:liya/modules/admin/presentation/pages/role_permission_management_page.dart';
 import 'package:liya/modules/restaurant/features/notifications/presentation/pages/notifications_page.dart';
 import 'package:liya/routes/app_router.gr.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -16,6 +19,27 @@ import '../config/app_information.dart';
 import '../core/singletons.dart';
 import '../core/test_delivery_tracking.dart';
 import '../modules/auth/auth_provider.dart';
+import '../modules/auth/auth_page.dart';
+import '../modules/auth/otp_page.dart';
+import '../modules/auth/info_user_page.dart';
+import '../modules/share_location_page.dart';
+import '../modules/home/presentation/pages/home_page.dart';
+import '../modules/admin/presentation/pages/admin_dashboard_page.dart';
+import '../modules/parcel/feature/presentation/pages/lieu_page.dart';
+import '../modules/parcel/feature/presentation/pages/parcel_status_list_page.dart';
+import '../modules/restaurant/features/home/presentation/pages/home_restaurant.dart';
+import '../modules/restaurant/features/home/presentation/pages/restaurant_detail_page.dart';
+import '../modules/restaurant/features/order/presentation/pages/order_list_page.dart';
+import '../modules/restaurant/features/checkout/presentation/pages/checkout_page.dart';
+import '../modules/restaurant/features/like/presentation/pages/liked_dishes_page.dart';
+import '../modules/restaurant/features/search/presentation/pages/search_page.dart';
+import '../modules/delivery/presentation/pages/delivery_dashboard_page.dart';
+import '../modules/delivery/presentation/pages/delivery_assignment_page.dart';
+import '../modules/admin/presentation/pages/order_management_page.dart';
+import '../modules/admin/presentation/pages/statistics_page.dart';
+import '../modules/admin/presentation/pages/add_dish_page.dart';
+import '../modules/admin/presentation/pages/user_management_page.dart';
+import '../modules/admin/presentation/pages/category_management_page.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
 
@@ -62,7 +86,6 @@ class AppRouter extends $AppRouter implements AutoRouteGuard {
         AutoRoute(page: ShareLocationRoute.page),
         AutoRoute(page: HomeRestaurantRoute.page),
         AutoRoute(page: DishDetailRoute.page),
-        AutoRoute(page: DishDetailRoute.page),
         AutoRoute(page: RestaurantDetailRoute.page),
         AutoRoute(page: CartRoute.page),
         AutoRoute(page: CheckoutRoute.page),
@@ -100,7 +123,13 @@ class AppRouter extends $AppRouter implements AutoRouteGuard {
         AutoRoute(page: DeliveryUserManagementRoute.page),
         AutoRoute(page: RestaurantEditRoute.page),
         AutoRoute(page: NotificationsRoute.page),
-        // AutoRoute(page: DeliveryNavigationRoute.page),
-        // AutoRoute(page: DeliveryAddressRoute.page),
+        AutoRoute(page: OrderManagementRoute.page),
+        AutoRoute(page: StatisticsRoute.page),
+        AutoRoute(page: AddDishRoute.page),
+        AutoRoute(page: UserManagementRoute.page),
+        AutoRoute(page: CategoryManagementRoute.page),
+        AutoRoute(page: ImageManagementRoute.page),
+        AutoRoute(page: AssignmentManagementRoute.page),
+        AutoRoute(page: RolePermissionManagementRoute.page),
       ];
 }
