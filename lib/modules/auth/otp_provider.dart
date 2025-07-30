@@ -89,10 +89,26 @@ class OtpNotifier extends StateNotifier<OtpState> {
       await _authService.sendOTP(phoneNumber);
       state = state.copyWith(isLoading: false);
     } catch (e) {
+      String errorMessage = 'Erreur lors du renvoi';
+
+      // Messages d'erreur plus spécifiques
+      if (e.toString().contains('too-many-requests')) {
+        errorMessage =
+            'Trop de demandes. Attendez quelques minutes avant de réessayer.';
+      } else if (e.toString().contains('invalid-phone-number')) {
+        errorMessage = 'Numéro de téléphone invalide.';
+      } else if (e.toString().contains('quota-exceeded')) {
+        errorMessage = 'Limite de SMS dépassée. Réessayez plus tard.';
+      } else if (e.toString().contains('network-request-failed')) {
+        errorMessage = 'Erreur réseau. Vérifiez votre connexion internet.';
+      } else {
+        errorMessage = 'Erreur lors du renvoi: ${e.toString()}';
+      }
+
       state = state.copyWith(
         isLoading: false,
         hasError: true,
-        errorMessage: 'Erreur lors du renvoi: ${e.toString()}',
+        errorMessage: errorMessage,
       );
     }
   }

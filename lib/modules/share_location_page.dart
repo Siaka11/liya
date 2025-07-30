@@ -264,7 +264,7 @@ class _ShareLocationPageState extends ConsumerState<ShareLocationPage> {
                           side: const BorderSide(color: UIColors.grey),
                           padding: const EdgeInsets.symmetric(
                             horizontal: 30,
-                            vertical: 15,
+                            vertical: 0,
                           ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(30),
@@ -285,9 +285,9 @@ class _ShareLocationPageState extends ConsumerState<ShareLocationPage> {
                             ? null
                             : () => locationNotifier.confirm(context),
                         bgColor: UIColors.defaultColor,
-                        fontSize: 16,
+                        fontSize: 12,
                         paddingVertical: 15,
-                        width: 50,
+                        width: 100,
                       ),
                     ],
                   ),

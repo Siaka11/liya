@@ -145,7 +145,10 @@ class _AuthPageState extends ConsumerState<AuthPage>
           final verificationId =
               await ref.read(authProvider.notifier).getVerificationId();
           if (verificationId != null && mounted) {
-            context.router.push(OtpRoute(verificationId: verificationId));
+            context.router.push(OtpRoute(
+              verificationId: verificationId,
+              phoneNumber: _phoneController.text.trim(),
+            ));
           }
         } else {
           // Cas 2 : Pas besoin d'OTP (utilisateur existant avec infos complètes ou auto-vérification)

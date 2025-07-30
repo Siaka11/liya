@@ -437,6 +437,7 @@ abstract class $AppRouter extends _i57.RootStackRouter {
         routeData: routeData,
         child: _i39.OtpPage(
           args.verificationId,
+          phoneNumber: args.phoneNumber,
           key: args.key,
         ),
       );
@@ -1520,12 +1521,14 @@ class OrderManagementRoute extends _i57.PageRouteInfo<void> {
 class OtpRoute extends _i57.PageRouteInfo<OtpRouteArgs> {
   OtpRoute({
     required String verificationId,
+    required String phoneNumber,
     _i58.Key? key,
     List<_i57.PageRouteInfo>? children,
   }) : super(
           OtpRoute.name,
           args: OtpRouteArgs(
             verificationId: verificationId,
+            phoneNumber: phoneNumber,
             key: key,
           ),
           initialChildren: children,
@@ -1540,16 +1543,19 @@ class OtpRoute extends _i57.PageRouteInfo<OtpRouteArgs> {
 class OtpRouteArgs {
   const OtpRouteArgs({
     required this.verificationId,
+    required this.phoneNumber,
     this.key,
   });
 
   final String verificationId;
 
+  final String phoneNumber;
+
   final _i58.Key? key;
 
   @override
   String toString() {
-    return 'OtpRouteArgs{verificationId: $verificationId, key: $key}';
+    return 'OtpRouteArgs{verificationId: $verificationId, phoneNumber: $phoneNumber, key: $key}';
   }
 }
 

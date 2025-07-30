@@ -1,5 +1,3 @@
-
-
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,12 +5,15 @@ import 'package:liya/core/ui/theme/theme.dart';
 import 'package:liya/modules/auth/otp_provider.dart';
 import 'package:pinput/pinput.dart';
 import 'package:liya/core/ui/components/custom_button.dart';
+import 'package:liya/modules/auth/firebase_auth_service.dart';
+import 'dart:async';
 
 @RoutePage()
 class OtpPage extends ConsumerStatefulWidget {
   final String verificationId;
+  final String phoneNumber; // Ajout du numéro de téléphone
 
-  const OtpPage(this.verificationId, {super.key});
+  const OtpPage(this.verificationId, {required this.phoneNumber, super.key});
 
   @override
   ConsumerState<OtpPage> createState() => _OtpPageState();
@@ -20,6 +21,9 @@ class OtpPage extends ConsumerStatefulWidget {
 
 class _OtpPageState extends ConsumerState<OtpPage> {
   late final TextEditingController _pinController;
+  Timer? _resendTimer;
+  int _resendCountdown = 60; // 60 secondes d'attente
+  bool _canResend = false;
 
   @override
   void initState() {
@@ -27,14 +31,70 @@ class _OtpPageState extends ConsumerState<OtpPage> {
 
     _pinController = TextEditingController();
     _pinController.addListener(() {
-      ref.read(otpProvider(widget.verificationId).notifier).updatePin(_pinController.text);
+      ref
+          .read(otpProvider(widget.verificationId).notifier)
+          .updatePin(_pinController.text);
     });
+
+    // Démarrer le timer pour le renvoi
+    _startResendTimer();
   }
 
   @override
   void dispose() {
     _pinController.dispose();
+    _resendTimer?.cancel();
     super.dispose();
+  }
+
+  void _startResendTimer() {
+    setState(() {
+      _canResend = false;
+      _resendCountdown = 60;
+    });
+
+    _resendTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      setState(() {
+        if (_resendCountdown > 0) {
+          _resendCountdown--;
+        } else {
+          _canResend = true;
+          timer.cancel();
+        }
+      });
+    });
+  }
+
+  Future<void> _resendOTP() async {
+    if (!_canResend) return;
+
+    final otpNotifier = ref.read(otpProvider(widget.verificationId).notifier);
+
+    try {
+      await otpNotifier.resendOTP(widget.phoneNumber);
+
+      // Redémarrer le timer après un renvoi réussi
+      _startResendTimer();
+
+      // Afficher un message de succès
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Code OTP renvoyé avec succès'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur lors du renvoi: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -161,15 +221,28 @@ class _OtpPageState extends ConsumerState<OtpPage> {
                   child: SizedBox(
                     width: 120,
                     height: 30,
-                    child: CustomButton(
-                      text: 'Renvoyer SMS',
-                      onPressedButton: () {},
-                      bgColor: UIColors.orange,
-                      fontSize: 10,
-                      paddingVertical: 8,
-                      borderRadius: 16,
-                      width: 50
-                    ),
+                    child: otpState.isLoading
+                        ? const Center(
+                            child: SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor:
+                                    AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            ),
+                          )
+                        : CustomButton(
+                            text: _canResend
+                                ? 'Renvoyer SMS'
+                                : '${_resendCountdown}s',
+                            onPressedButton: _canResend ? _resendOTP : null,
+                            bgColor: _canResend ? UIColors.orange : Colors.grey,
+                            fontSize: 10,
+                            paddingVertical: 8,
+                            borderRadius: 16,
+                            width: 50),
                   ),
                 ),
               ),
