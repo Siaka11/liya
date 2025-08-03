@@ -189,20 +189,54 @@ class FirebaseAuthService {
     }
   }
 
+  /// Force le renvoi d'un nouveau code OTP (en cas d'expiration)
+  Future<bool> resendOTP(String phoneNumber) async {
+    try {
+      print('🔄 Force renvoi OTP pour: $phoneNumber');
+
+      // Nettoyer complètement l'ancien verificationId
+      await forceClearVerificationId();
+      print('🗑️ Ancien verificationId complètement nettoyé');
+
+      // Réinitialiser le flag d'envoi
+      _isSendingOTP = false;
+
+      // Renvoyer l'OTP
+      return await sendOTP(phoneNumber);
+    } catch (e) {
+      print('❌ Erreur lors du renvoi forcé OTP: $e');
+      rethrow;
+    }
+  }
+
   /// Envoie l'OTP via Firebase Auth
   Future<bool> _sendOTPViaFirebase(String formattedPhone) async {
     final completer = Completer<bool>();
 
+    print('📱 Début envoi OTP Firebase pour: $formattedPhone');
+
+    // Nettoyer tout verificationId existant avant d'en envoyer un nouveau
+    await clearVerificationId();
+    print('🗑️ VerificationId précédent nettoyé');
+
     await _authInstance.verifyPhoneNumber(
       phoneNumber: formattedPhone,
+      timeout: const Duration(seconds: 60), // Timeout explicite
       verificationCompleted: (PhoneAuthCredential credential) async {
         // Auto-vérification (Android) - Firebase reconnaît le numéro
         print(
             '✅ Auto-vérification réussie par Firebase (verificationCompleted).');
-        await _signInWithCredential(credential);
-        await clearVerificationId(); // Utiliser la méthode publique
-        if (!completer.isCompleted) {
-          completer.complete(false); // Pas besoin d'OTP manuellement
+        try {
+          await _signInWithCredential(credential);
+          await clearVerificationId(); // Utiliser la méthode publique
+          if (!completer.isCompleted) {
+            completer.complete(false); // Pas besoin d'OTP manuellement
+          }
+        } catch (e) {
+          print('❌ Erreur lors de l\'auto-vérification: $e');
+          if (!completer.isCompleted) {
+            completer.completeError(e);
+          }
         }
       },
       verificationFailed: (FirebaseAuthException e) {
@@ -240,55 +274,75 @@ class FirebaseAuthService {
               'Erreur lors de l\'envoi du code de vérification: ${e.message}';
         }
 
+        print('📱 Message d\'erreur utilisateur: $userFriendlyMessage');
         if (!completer.isCompleted) {
           completer.completeError(Exception(userFriendlyMessage));
         }
       },
       codeSent: (String verificationId, int? resendToken) async {
-        print('📨 Code OTP envoyé par SMS (codeSent). ID: $verificationId');
-        await _storeVerificationId(verificationId);
-        if (!completer.isCompleted) {
-          completer.complete(true); // Indique que l'OTP est nécessaire
+        print('📨 Code OTP envoyé par SMS (codeSent).');
+        print('📨 VerificationId: ${verificationId.substring(0, 10)}...');
+        print('📨 ResendToken: $resendToken');
+
+        try {
+          await _storeVerificationId(verificationId);
+          print('💾 VerificationId stocké avec succès');
+
+          if (!completer.isCompleted) {
+            completer.complete(true); // OTP envoyé, attente de saisie manuelle
+          }
+        } catch (e) {
+          print('❌ Erreur stockage verificationId: $e');
+          if (!completer.isCompleted) {
+            completer.completeError(e);
+          }
         }
       },
       codeAutoRetrievalTimeout: (String verificationId) {
-        print('⏰ Timeout auto-récupération du code. ID: $verificationId');
-        // Nettoyer l'ancien verification_id avant d'en stocker un nouveau
-        forceClearVerificationId().then((_) {
-          _storeVerificationId(verificationId);
-        });
+        print('⏰ Timeout auto-récupération du code SMS.');
+        print('⏰ VerificationId: ${verificationId.substring(0, 10)}...');
+
+        // Ne pas compléter ici, laisser l'utilisateur saisir manuellement
         if (!completer.isCompleted) {
-          completer.complete(true); // Toujours besoin d'OTP
+          completer.complete(true);
         }
       },
-      timeout: const Duration(seconds: 60),
     );
 
-    return await completer.future;
+    return completer.future;
   }
 
-  /// Vérifier le code OTP reçu
-  Future<UserCredential> verifyOTP(String smsCode) async {
+  /// Vérifie le code OTP reçu
+  Future<UserCredential> verifyOTP(String otp) async {
     try {
-      print('🔐 Début vérification code OTP.');
+      print('🔍 Début vérification OTP: $otp');
 
-      final verificationId =
-          await getVerificationId(); // Récupère l'ID stocké (maintenant public)
+      // Récupérer l'ID de vérification
+      final verificationId = await getVerificationId();
+      print(
+          '🔍 VerificationId récupéré: ${verificationId?.substring(0, 10)}...');
+
       if (verificationId == null) {
         throw Exception(
-            'Aucun ID de vérification trouvé. Veuillez renvoyer l\'OTP.');
+            'Aucun ID de vérification trouvé. Veuillez redemander un code.');
       }
 
+      // Créer la credential
       final credential = PhoneAuthProvider.credential(
         verificationId: verificationId,
-        smsCode: smsCode,
+        smsCode: otp,
       );
+      print('🔍 Credential créée avec succès');
 
+      // Se connecter avec la credential
       final userCredential = await _signInWithCredential(credential);
+      print('🔍 Connexion avec credential réussie');
 
-      // Si la connexion réussit, vérifier/créer l'utilisateur dans Firestore
+      // Vérifier et créer l'utilisateur dans Firestore si nécessaire
       if (userCredential.user != null) {
+        print('🔍 Début vérification/création utilisateur Firestore...');
         await _checkAndCreateUserInFirestore(userCredential.user!);
+        print('🔍 Fin vérification/création utilisateur Firestore');
       }
 
       await clearVerificationId(); // Nettoyer l'ID après vérification réussie
@@ -296,6 +350,21 @@ class FirebaseAuthService {
       return userCredential;
     } catch (e) {
       print('❌ Erreur vérification OTP: $e');
+
+      // Gestion spécifique des erreurs Firebase Auth
+      if (e.toString().contains('session-expired')) {
+        print('🔄 Code SMS expiré, nettoyage du verificationId...');
+        await clearVerificationId();
+        throw Exception(
+            'Le code SMS a expiré. Veuillez redemander un nouveau code.');
+      } else if (e.toString().contains('invalid-verification-code')) {
+        print('❌ Code OTP invalide');
+        throw Exception('Code OTP incorrect. Veuillez vérifier et réessayer.');
+      } else if (e.toString().contains('quota-exceeded')) {
+        print('❌ Quota SMS dépassé');
+        throw Exception('Trop de tentatives. Veuillez réessayer plus tard.');
+      }
+
       rethrow;
     }
   }
@@ -382,16 +451,28 @@ class FirebaseAuthService {
             '💾 Données nouvel utilisateur sauvegardées dans LocalStorage: $userDataForLocalStorage');
 
         // Vérifier que les données sont bien sauvegardées
-        final savedData = localStorage.getUserDetails();
-        print('🔍 Vérification LocalStorage après sauvegarde: $savedData');
+        final savedDataString = localStorage.getUserDetails();
+        print(
+            '🔍 Vérification LocalStorage après sauvegarde: $savedDataString');
 
         // Vérification spécifique du phoneNumber
-        if (savedData != null && savedData['phoneNumber'] != null) {
-          print(
-              '✅ PhoneNumber correctement sauvegardé: ${savedData['phoneNumber']}');
+        if (savedDataString != null && savedDataString != '{}') {
+          try {
+            final savedData =
+                jsonDecode(savedDataString) as Map<String, dynamic>;
+            if (savedData['phoneNumber'] != null) {
+              print(
+                  '✅ PhoneNumber correctement sauvegardé: ${savedData['phoneNumber']}');
+            } else {
+              print('❌ ERREUR: PhoneNumber manquant dans LocalStorage!');
+              print('🔍 Données sauvegardées: $savedData');
+            }
+          } catch (e) {
+            print('⚠️ Erreur parsing données sauvegardées: $e');
+            print('🔍 Données brutes: $savedDataString');
+          }
         } else {
-          print('❌ ERREUR: PhoneNumber manquant dans LocalStorage!');
-          print('🔍 Données sauvegardées: $savedData');
+          print('❌ ERREUR: Aucune donnée sauvegardée dans LocalStorage!');
         }
 
         // Marquer comme authentifié dans SharedPreferences
@@ -418,7 +499,9 @@ class FirebaseAuthService {
       }
     } catch (e) {
       print('❌ Erreur vérification/création utilisateur Firestore: $e');
-      rethrow;
+      print('❌ Stack trace: ${StackTrace.current}');
+      // Ne pas rethrow l'erreur pour permettre la redirection
+      // rethrow;
     }
   }
 
@@ -672,8 +755,27 @@ class FirebaseAuthService {
       print('💾 Données sauvegardées dans LocalStorage');
 
       // Vérifier que les données sont bien sauvegardées
-      final savedData = localStorage.getUserDetails();
-      print('🔍 Vérification LocalStorage après sauvegarde: $savedData');
+      final savedDataString = localStorage.getUserDetails();
+      print('🔍 Vérification LocalStorage après sauvegarde: $savedDataString');
+
+      // Vérification spécifique du phoneNumber
+      if (savedDataString != null && savedDataString != '{}') {
+        try {
+          final savedData = jsonDecode(savedDataString) as Map<String, dynamic>;
+          if (savedData['phoneNumber'] != null) {
+            print(
+                '✅ PhoneNumber correctement sauvegardé: ${savedData['phoneNumber']}');
+          } else {
+            print('❌ ERREUR: PhoneNumber manquant dans LocalStorage!');
+            print('🔍 Données sauvegardées: $savedData');
+          }
+        } catch (e) {
+          print('⚠️ Erreur parsing données sauvegardées: $e');
+          print('🔍 Données brutes: $savedDataString');
+        }
+      } else {
+        print('❌ ERREUR: Aucune donnée sauvegardée dans LocalStorage!');
+      }
 
       // Marquer comme authentifié dans SharedPreferences
       await singleton<SharedPreferences>().setBool(Config.ISAUTH, true);
