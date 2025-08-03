@@ -6,7 +6,8 @@ import '../../domain/entities/user_profile.dart';
 
 final profileRepositoryProvider = Provider((ref) {
   return ProfileRepositoryImpl(
-    remoteDataSource: ProfileRemoteDataSourceMySQL(http.Client()),
+    remoteDataSource:
+        ProfileRemoteDataSourceImpl(), // Utiliser Firestore au lieu de MySQL
   );
 });
 

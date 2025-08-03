@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:auto_route/auto_route.dart';
-import '../../application/delivery_admin_existing_provider.dart';
-import '../../domain/entities/delivery_order.dart';
-import '../../domain/entities/delivery_user.dart';
 import '../../../../core/ui/theme/theme.dart';
-import '../../../../core/ui/components/custom_button.dart';
+import '../../application/delivery_location_provider.dart';
+import '../../domain/entities/delivery_user.dart';
+import '../../data/services/delivery_location_service.dart';
+import '../../data/services/delivery_existing_service.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 @RoutePage()
 class DeliveryAdminDashboardPage extends ConsumerStatefulWidget {
-  const DeliveryAdminDashboardPage({super.key});
+  const DeliveryAdminDashboardPage({Key? key}) : super(key: key);
 
   @override
   ConsumerState<DeliveryAdminDashboardPage> createState() =>
@@ -18,13 +19,22 @@ class DeliveryAdminDashboardPage extends ConsumerStatefulWidget {
 
 class _DeliveryAdminDashboardPageState
     extends ConsumerState<DeliveryAdminDashboardPage>
-    with TickerProviderStateMixin {
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  List<Map<String, dynamic>> pendingOrders = [];
+  List<Map<String, dynamic>> pendingParcels = [];
+  bool isLoadingOrders = false;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+
+    // Charger les données au démarrage
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(deliveryLocationProvider.notifier).loadAvailableDeliveryUsers();
+      _loadPendingOrders();
+    });
   }
 
   @override
@@ -33,371 +43,135 @@ class _DeliveryAdminDashboardPageState
     super.dispose();
   }
 
+  Future<void> _loadPendingOrders() async {
+    setState(() {
+      isLoadingOrders = true;
+    });
+
+    try {
+      final orders = await DeliveryLocationService
+          .getPendingRestaurantOrdersWithClientInfo();
+      final parcelOrders =
+          await DeliveryExistingService.getPendingParcelOrders();
+
+      // Convertir les DeliveryOrder en Map pour les colis
+      final parcels = parcelOrders
+          .map((parcel) => {
+                'id': parcel.id,
+                'customer_name': parcel.customerName,
+                'customer_address': parcel.customerAddress,
+                'customer_phone_number': parcel.customerPhoneNumber,
+                'description': parcel.description,
+                'amount': parcel.amount,
+                'delivery_fee': parcel.deliveryFee,
+                'status': parcel.status.name,
+                'created_at': parcel.createdAt,
+                'type': 'parcel',
+              })
+          .toList();
+
+      setState(() {
+        pendingOrders = orders;
+        pendingParcels = parcels;
+        isLoadingOrders = false;
+      });
+
+      print('📦 Colis chargés: ${parcels.length}');
+      for (final parcel in parcels) {
+        print(
+            '📦 ${parcel['id']}: ${parcel['customer_name']} - ${parcel['customer_address']}');
+      }
+    } catch (e) {
+      print('❌ Erreur chargement commandes: $e');
+      setState(() {
+        isLoadingOrders = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final locationState = ref.watch(deliveryLocationProvider);
+    final locationNotifier = ref.read(deliveryLocationProvider.notifier);
+
     return Scaffold(
-      backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text(
-          'Gestion des Livraisons',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: UIColors.primary,
+        title: const Text('Gestion des Livraisons'),
+        backgroundColor: UIColors.orange,
         foregroundColor: Colors.white,
         elevation: 0,
+        bottom: TabBar(
+          controller: _tabController,
+          indicatorColor: Colors.white,
+          labelColor: Colors.white,
+          unselectedLabelColor: Colors.white70,
+          tabs: const [
+            Tab(text: 'Commandes', icon: Icon(Icons.restaurant)),
+            Tab(text: 'Colis', icon: Icon(Icons.inventory)),
+            Tab(text: 'Livreurs', icon: Icon(Icons.people)),
+          ],
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () {
-              ref.read(deliveryAdminExistingProvider.notifier).refreshData();
+              ref
+                  .read(deliveryLocationProvider.notifier)
+                  .loadAvailableDeliveryUsers();
+              _loadPendingOrders();
             },
           ),
         ],
       ),
-      body: Column(
+      body: TabBarView(
+        controller: _tabController,
         children: [
-          // Onglets modernes
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.1),
-                  spreadRadius: 1,
-                  blurRadius: 3,
-                  offset: const Offset(0, 1),
-                ),
-              ],
-            ),
-            child: TabBar(
-              controller: _tabController,
-              labelColor: UIColors.primary,
-              unselectedLabelColor: Colors.grey[600],
-              indicatorColor: UIColors.primary,
-              indicatorWeight: 3,
-              tabs: const [
-                Tab(
-                  icon: Icon(Icons.restaurant),
-                  text: 'Commandes Restaurant',
-                ),
-                Tab(
-                  icon: Icon(Icons.local_shipping),
-                  text: 'Colis',
-                ),
-                Tab(
-                  icon: Icon(Icons.assignment),
-                  text: 'Livraisons Assignées',
-                ),
-              ],
-            ),
-          ),
+          // Tab 1: Commandes en attente
+          _buildOrdersTab(locationNotifier),
 
-          // Contenu des onglets
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildRestaurantOrdersTab(),
-                _buildParcelOrdersTab(),
-                _buildAssignedDeliveriesTab(),
-              ],
-            ),
-          ),
+          // Tab 2: Colis en attente
+          _buildParcelsTab(locationNotifier),
+
+          // Tab 3: Livreurs disponibles
+          _buildDriversTab(locationState, locationNotifier),
         ],
       ),
     );
   }
 
-  Widget _buildRestaurantOrdersTab() {
-    final pendingOrders = ref.watch(pendingRestaurantOrdersProvider);
-    final adminState = ref.watch(deliveryAdminExistingProvider);
-
-    if (adminState.isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(UIColors.primary),
-        ),
-      );
-    }
-
-    if (pendingOrders.isEmpty) {
-      return _buildEmptyState(
-        icon: Icons.restaurant_outlined,
-        title: 'Aucune commande en attente',
-        subtitle: 'Toutes les commandes ont été assignées',
-      );
-    }
-
-    return RefreshIndicator(
-      onRefresh: () async {
-        ref.read(deliveryAdminExistingProvider.notifier).refreshData();
-      },
-      child: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: pendingOrders.length,
-        itemBuilder: (context, index) {
-          final order = pendingOrders[index];
-          return _buildOrderCard(order, true);
-        },
-      ),
-    );
-  }
-
-  Widget _buildParcelOrdersTab() {
-    final pendingOrders = ref.watch(pendingParcelOrdersProvider);
-    final adminState = ref.watch(deliveryAdminExistingProvider);
-
-    if (adminState.isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(UIColors.primary),
-        ),
-      );
-    }
-
-    if (pendingOrders.isEmpty) {
-      return _buildEmptyState(
-        icon: Icons.local_shipping_outlined,
-        title: 'Aucun colis en attente',
-        subtitle: 'Tous les colis ont été assignés',
-      );
-    }
-
-    return RefreshIndicator(
-      onRefresh: () async {
-        ref.read(deliveryAdminExistingProvider.notifier).refreshData();
-      },
-      child: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: pendingOrders.length,
-        itemBuilder: (context, index) {
-          final order = pendingOrders[index];
-          return _buildOrderCard(order, false);
-        },
-      ),
-    );
-  }
-
-  Widget _buildAssignedDeliveriesTab() {
-    final assignedRestaurantOrders =
-        ref.watch(assignedRestaurantOrdersProvider);
-    final assignedParcelOrders = ref.watch(assignedParcelOrdersProvider);
-    final adminState = ref.watch(deliveryAdminExistingProvider);
-
-    if (adminState.isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(UIColors.primary),
-        ),
-      );
-    }
-
-    final allAssignedOrders = [
-      ...assignedRestaurantOrders,
-      ...assignedParcelOrders
-    ];
-
-    if (allAssignedOrders.isEmpty) {
-      return _buildEmptyState(
-        icon: Icons.assignment_outlined,
-        title: 'Aucune livraison assignée',
-        subtitle: 'Toutes les livraisons sont en cours de traitement',
-      );
-    }
-
-    return RefreshIndicator(
-      onRefresh: () async {
-        ref.read(deliveryAdminExistingProvider.notifier).refreshData();
-      },
-      child: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: allAssignedOrders.length,
-        itemBuilder: (context, index) {
-          final order = allAssignedOrders[index];
-          return _buildAssignedOrderCard(order);
-        },
-      ),
-    );
-  }
-
-  Widget _buildEmptyState({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-  }) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              icon,
-              size: 64,
-              color: Colors.grey[400],
+  Widget _buildOrdersTab(DeliveryLocationNotifier locationNotifier) {
+    return Column(
+      children: [
+        // Header avec statistiques
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [UIColors.orange, UIColors.orange],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
           ),
-          const SizedBox(height: 24),
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey[600],
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            subtitle,
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey[500],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildOrderCard(DeliveryOrder order, bool isRestaurant) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: InkWell(
-        onTap: () => _showOrderDetails(order, isRestaurant),
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isRestaurant ? Colors.orange : Colors.blue,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      isRestaurant ? 'Restaurant' : 'Colis',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.green[100],
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      'En attente',
-                      style: TextStyle(
-                        color: Colors.green[700],
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Text(
-                order.description,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Icon(Icons.person, size: 16, color: Colors.grey[600]),
-                  const SizedBox(width: 4),
                   Expanded(
-                    child: Text(
-                      order.customerName,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                      ),
+                    child: _buildStatCard(
+                      'Commandes',
+                      '${pendingOrders.length}',
+                      Icons.restaurant,
+                      Colors.white,
                     ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              Row(
-                children: [
-                  Icon(Icons.location_on, size: 16, color: Colors.grey[600]),
-                  const SizedBox(width: 4),
+                  const SizedBox(width: 16),
                   Expanded(
-                    child: Text(
-                      order.customerAddress,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Total',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[500],
-                        ),
-                      ),
-                      Text(
-                        '${order.totalAmount.toStringAsFixed(0)} FCFA',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: UIColors.primary,
-                        ),
-                      ),
-                    ],
-                  ),
-                  ElevatedButton.icon(
-                    onPressed: () =>
-                        _showDeliveryUserSelection(order, isRestaurant),
-                    icon: const Icon(Icons.person_add, size: 16),
-                    label: const Text('Assigner'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: UIColors.primary,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
+                    child: _buildStatCard(
+                      'En Attente',
+                      '${pendingOrders.length}',
+                      Icons.pending_actions,
+                      Colors.white,
                     ),
                   ),
                 ],
@@ -405,667 +179,850 @@ class _DeliveryAdminDashboardPageState
             ],
           ),
         ),
+
+        // Liste des commandes
+        Expanded(
+          child: isLoadingOrders
+              ? const Center(child: CircularProgressIndicator())
+              : pendingOrders.isEmpty
+                  ? const Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.restaurant_outlined,
+                              size: 64, color: Colors.grey),
+                          SizedBox(height: 16),
+                          Text(
+                            'Aucune commande en attente',
+                            style: TextStyle(fontSize: 18, color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: pendingOrders.length,
+                      itemBuilder: (context, index) {
+                        final order = pendingOrders[index];
+                        return _buildOrderCard(order, locationNotifier);
+                      },
+                    ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildParcelsTab(DeliveryLocationNotifier locationNotifier) {
+    return Column(
+      children: [
+        // Header avec statistiques
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [UIColors.orange, UIColors.orange],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildStatCard(
+                      'Colis',
+                      '${pendingParcels.length}',
+                      Icons.inventory,
+                      Colors.white,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _buildStatCard(
+                      'En Attente',
+                      '${pendingParcels.length}',
+                      Icons.pending_actions,
+                      Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+
+        // Liste des colis
+        Expanded(
+          child: isLoadingOrders
+              ? const Center(child: CircularProgressIndicator())
+              : pendingParcels.isEmpty
+                  ? const Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.inventory_2_outlined,
+                              size: 64, color: Colors.grey),
+                          SizedBox(height: 16),
+                          Text(
+                            'Aucun colis en attente',
+                            style: TextStyle(fontSize: 18, color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: pendingParcels.length,
+                      itemBuilder: (context, index) {
+                        final parcel = pendingParcels[index];
+                        return _buildParcelCard(parcel, locationNotifier);
+                      },
+                    ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDriversTab(DeliveryLocationState locationState,
+      DeliveryLocationNotifier locationNotifier) {
+    final drivers = locationState.availableDeliveryUsers;
+
+    return Column(
+      children: [
+        // Header avec statistiques
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [UIColors.orange, UIColors.orange],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildStatCard(
+                      'Livreurs',
+                      '${drivers.length}',
+                      Icons.people,
+                      Colors.white,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _buildStatCard(
+                      'En Ligne',
+                      '${drivers.where((d) => d.isOnline).length}',
+                      Icons.circle,
+                      Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+
+        // Liste des livreurs
+        Expanded(
+          child: drivers.isEmpty
+              ? const Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.people_outline, size: 64, color: Colors.grey),
+                      SizedBox(height: 16),
+                      Text(
+                        'Aucun livreur disponible',
+                        style: TextStyle(fontSize: 18, color: Colors.grey),
+                      ),
+                    ],
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: drivers.length,
+                  itemBuilder: (context, index) {
+                    final driver = drivers[index];
+                    return _buildDriverCard(driver, locationNotifier);
+                  },
+                ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatCard(
+      String title, String value, IconData icon, Color color) {
+    return Card(
+      color: Colors.white.withOpacity(0.9),
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          children: [
+            Icon(icon, color: color, size: 24),
+            const SizedBox(height: 4),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+            ),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 10,
+                color: color.withOpacity(0.8),
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildAssignedOrderCard(DeliveryOrder order) {
-    final isRestaurant = order.type == DeliveryType.restaurant;
-
+  Widget _buildOrderCard(
+      Map<String, dynamic> order, DeliveryLocationNotifier locationNotifier) {
     return Card(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: InkWell(
-        onTap: () => _showAssignedOrderDetails(order),
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isRestaurant ? Colors.orange : Colors.blue,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      isRestaurant ? 'Restaurant' : 'Colis',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.restaurant, color: UIColors.orange, size: 24),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Commande #${order['id']}',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
-                  ),
-                  const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.blue[100],
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      'En cours',
-                      style: TextStyle(
-                        color: Colors.blue[700],
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Text(
-                order.description,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Icon(Icons.person, size: 16, color: Colors.grey[600]),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Text(
-                      order.customerName,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              Row(
-                children: [
-                  Icon(Icons.delivery_dining,
-                      size: 16, color: Colors.grey[600]),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Text(
-                      'Livreur: ${order.deliveryName ?? 'Non assigné'}',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              if (order.deliveryPhoneNumber != null) ...[
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Icon(Icons.phone, size: 16, color: Colors.grey[600]),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        'Tél: ${order.deliveryPhoneNumber}',
+                      Text(
+                        order['customer_name'] ?? 'Client inconnu',
                         style: TextStyle(
                           fontSize: 14,
-                          color: Colors.grey[600],
+                          fontWeight: FontWeight.w500,
+                          color: Colors.grey.shade700,
                         ),
                       ),
+                      if (order['customer_phone'] != null)
+                        Text(
+                          '📞 ${order['customer_phone']}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade100,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '${order['amount']?.toStringAsFixed(0) ?? '0'} FCFA',
+                    style: TextStyle(
+                      color: Colors.orange.shade700,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
                     ),
-                  ],
+                  ),
                 ),
               ],
-              const SizedBox(height: 12),
+            ),
+            const SizedBox(height: 12),
+            if (order['customer_address'] != null) ...[
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Column(
+                  Icon(Icons.location_on,
+                      size: 16, color: Colors.grey.shade600),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      '📍 ${order['customer_address']}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+            ],
+            if (order['customer_email'] != null) ...[
+              Row(
+                children: [
+                  Icon(Icons.email, size: 16, color: Colors.grey.shade600),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      '📧 ${order['customer_email']}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+            ],
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  _showAssignOrderDialog(order, locationNotifier);
+                },
+                icon: const Icon(Icons.assignment),
+                label: const Text('Assigner à un livreur'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: UIColors.orange,
+                  foregroundColor: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildParcelCard(
+      Map<String, dynamic> parcel, DeliveryLocationNotifier locationNotifier) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.inventory, color: UIColors.orange, size: 24),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Total',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[500],
-                        ),
-                      ),
-                      Text(
-                        '${order.totalAmount.toStringAsFixed(0)} FCFA',
+                        'Colis #${parcel['id']}',
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: UIColors.primary,
+                        ),
+                      ),
+                      Text(
+                        parcel['customer_name'] ?? 'Client inconnu',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey.shade600,
                         ),
                       ),
                     ],
                   ),
-                  Row(
-                    children: [
-                      ElevatedButton.icon(
-                        onPressed: () => _showReassignmentDialog(order),
-                        icon: const Icon(Icons.swap_horiz, size: 16),
-                        label: const Text('Changer'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.orange,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      ElevatedButton.icon(
-                        onPressed: () => _showAssignedOrderDetails(order),
-                        icon: const Icon(Icons.visibility, size: 16),
-                        label: const Text('Détails'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: UIColors.primary,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                      ),
-                    ],
+                ),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade100,
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showOrderDetails(DeliveryOrder order, bool isRestaurant) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => _buildOrderDetailsModal(order, isRestaurant),
-    );
-  }
-
-  Widget _buildOrderDetailsModal(DeliveryOrder order, bool isRestaurant) {
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.7,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      child: Column(
-        children: [
-          // Handle bar
-          Container(
-            margin: const EdgeInsets.only(top: 12),
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: Colors.grey[300],
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Header
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isRestaurant ? Colors.orange : Colors.blue,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          isRestaurant ? 'Commande Restaurant' : 'Colis',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      const Spacer(),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.green[100],
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          'En attente d\'assignation',
-                          style: TextStyle(
-                            color: Colors.green[700],
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Description
-                  Text(
-                    'Description',
+                  child: Text(
+                    'Colis',
                     style: TextStyle(
-                      fontSize: 16,
+                      color: Colors.blue.shade700,
                       fontWeight: FontWeight.bold,
-                      color: Colors.grey[800],
+                      fontSize: 12,
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    order.description,
-                    style: const TextStyle(fontSize: 16),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Client info
-                  _buildDetailSection(
-                    'Informations Client',
-                    [
-                      _buildDetailRow('Nom', order.customerName),
-                      _buildDetailRow('Téléphone', order.customerPhoneNumber),
-                      _buildDetailRow('Adresse', order.customerAddress),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Financial info
-                  _buildDetailSection(
-                    'Informations Financières',
-                    [
-                      _buildDetailRow(
-                          'Montant', '${order.amount.toStringAsFixed(0)} FCFA'),
-                      _buildDetailRow('Frais de livraison',
-                          '${order.deliveryFee.toStringAsFixed(0)} FCFA'),
-                      _buildDetailRow('Total',
-                          '${order.totalAmount.toStringAsFixed(0)} FCFA',
-                          isTotal: true),
-                    ],
-                  ),
-                  const SizedBox(height: 30),
-
-                  // Assign button
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        _showDeliveryUserSelection(order, isRestaurant);
-                      },
-                      icon: const Icon(Icons.person_add),
-                      label: const Text('Assigner à un livreur'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: UIColors.primary,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Adresse: ${parcel['customer_address'] ?? 'Non spécifiée'}',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey.shade600,
               ),
             ),
-          ),
-        ],
+            if (parcel['customer_phone_number'] != null &&
+                parcel['customer_phone_number'].isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  '📞 ${parcel['customer_phone_number']}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+              ),
+            if (parcel['description'] != null &&
+                parcel['description'].isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  '📝 ${parcel['description']}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+              ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  _showAssignParcelDialog(parcel, locationNotifier);
+                },
+                icon: const Icon(Icons.assignment),
+                label: const Text('Assigner à un livreur'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: UIColors.orange,
+                  foregroundColor: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildDetailSection(String title, List<Widget> children) {
+  Widget _buildDriverCard(
+      DeliveryUser driver, DeliveryLocationNotifier locationNotifier) {
+    final hasLocation =
+        driver.currentLatitude != null && driver.currentLongitude != null;
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            // En-tête avec statut
+            Row(
+              children: [
+                // Avatar du livreur
+                CircleAvatar(
+                  radius: 24,
+                  backgroundColor:
+                      driver.isOnline ? Colors.green : Colors.grey.shade400,
+                  child: Text(
+                    '${driver.name[0]}${driver.lastname[0]}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+
+                // Informations du livreur
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${driver.name} ${driver.lastname}',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        driver.phoneNumber,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(
+                            driver.isOnline
+                                ? Icons.circle
+                                : Icons.circle_outlined,
+                            size: 12,
+                            color: driver.isOnline ? Colors.green : Colors.grey,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            driver.isOnline ? 'En ligne' : 'Hors ligne',
+                            style: TextStyle(
+                              color:
+                                  driver.isOnline ? Colors.green : Colors.grey,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Indicateur de position
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: hasLocation
+                        ? Colors.blue.shade100
+                        : Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        hasLocation ? Icons.location_on : Icons.location_off,
+                        size: 16,
+                        color: hasLocation ? Colors.blue : Colors.grey,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        hasLocation ? 'Position OK' : 'Pas de position',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: hasLocation ? Colors.blue : Colors.grey,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 16),
+
+            // Statistiques du livreur
+            Row(
+              children: [
+                Expanded(
+                  child: _buildDriverStat(
+                    'Livraisons',
+                    '${driver.completedDeliveries}',
+                    Icons.local_shipping,
+                    Colors.orange,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: _buildDriverStat(
+                    'Gains',
+                    '${driver.totalEarnings.toStringAsFixed(0)} FCFA',
+                    Icons.attach_money,
+                    Colors.green,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: _buildDriverStat(
+                    'Note',
+                    '${driver.averageRating.toStringAsFixed(1)}/5',
+                    Icons.star,
+                    Colors.amber,
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 16),
+
+            // Actions
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: hasLocation
+                        ? () {
+                            _showAssignToDriverDialog(driver, locationNotifier);
+                          }
+                        : null,
+                    icon: const Icon(Icons.assignment),
+                    label: const Text('Assigner une commande'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: UIColors.orange,
+                      side: BorderSide(color: UIColors.orange),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: hasLocation
+                        ? () {
+                            _showDriverLocationMap(driver);
+                          }
+                        : null,
+                    icon: const Icon(Icons.map),
+                    label: const Text('Voir position'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: hasLocation
+                        ? () {
+                            _showDriverDetails(driver);
+                          }
+                        : null,
+                    icon: const Icon(Icons.info),
+                    label: const Text('Détails'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDriverStat(
+      String label, String value, IconData icon, Color color) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Icon(icon, color: color, size: 20),
+        const SizedBox(height: 4),
         Text(
-          title,
+          value,
           style: TextStyle(
-            fontSize: 16,
+            fontSize: 12,
             fontWeight: FontWeight.bold,
-            color: Colors.grey[800],
+            color: color,
           ),
         ),
-        const SizedBox(height: 12),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.grey[50],
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Column(
-            children: children,
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 10,
+            color: Colors.grey.shade600,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildDetailRow(String label, String value, {bool isTotal = false}) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[600],
-            ),
-          ),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
-              color: isTotal ? UIColors.primary : Colors.grey[800],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showDeliveryUserSelection(DeliveryOrder order, bool isRestaurant) {
-    final availableUsers = ref.read(availableDeliveryUsersProvider);
-
-    if (availableUsers.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('❌ Aucun livreur disponible'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) =>
-          _buildDeliveryUserSelectionModal(order, availableUsers, isRestaurant),
-    );
-  }
-
-  Widget _buildDeliveryUserSelectionModal(
-    DeliveryOrder order,
-    List<DeliveryUser> availableUsers,
-    bool isRestaurant,
-  ) {
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.6,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      child: Column(
-        children: [
-          // Handle bar
-          Container(
-            margin: const EdgeInsets.only(top: 12),
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: Colors.grey[300],
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Sélectionner un livreur',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey[800],
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Choisissez un livreur pour assigner cette ${isRestaurant ? 'commande' : 'colis'}',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              itemCount: availableUsers.length,
-              itemBuilder: (context, index) {
-                final user = availableUsers[index];
-                return _buildDeliveryUserOption(order, user, isRestaurant);
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDeliveryUserOption(
-    DeliveryOrder order,
-    DeliveryUser user,
-    bool isRestaurant,
-  ) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      elevation: 1,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: InkWell(
-        onTap: () {
-          Navigator.pop(context);
-          _assignOrderToUser(order, user, isRestaurant);
-        },
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              CircleAvatar(
-                radius: 24,
-                backgroundColor: UIColors.primary,
-                child: Text(
-                  user.name.isNotEmpty ? user.name[0].toUpperCase() : 'L',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      user.fullName,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Icon(Icons.phone, size: 14, color: Colors.grey[600]),
-                        const SizedBox(width: 4),
-                        Text(
-                          user.phoneNumber,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Icon(Icons.star, size: 14, color: Colors.orange),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${user.completedDeliveries} livraisons - ${user.totalEarnings.toStringAsFixed(0)} FCFA',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              Icon(
-                Icons.arrow_forward_ios,
-                size: 16,
-                color: Colors.grey[400],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _assignOrderToUser(
-      DeliveryOrder order, DeliveryUser user, bool isRestaurant) {
-    try {
-      if (isRestaurant) {
-        ref
-            .read(deliveryAdminExistingProvider.notifier)
-            .assignRestaurantOrderToDeliveryUser(order, user);
-      } else {
-        ref
-            .read(deliveryAdminExistingProvider.notifier)
-            .assignParcelToDeliveryUser(order, user);
+  // Forcer la mise à jour de position des livreurs
+  void _forceUpdateDriverPositions(List<DeliveryUser> drivers) async {
+    for (final driver in drivers) {
+      try {
+        await DeliveryLocationService.forceUpdateDriverPosition(
+            driver.phoneNumber);
+        print('✅ Position mise à jour pour ${driver.name} ${driver.lastname}');
+      } catch (e) {
+        print('❌ Erreur mise à jour position pour ${driver.name}: $e');
       }
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            '✅ ${isRestaurant ? 'Commande' : 'Colis'} assigné(e) à ${user.fullName}',
-          ),
-          backgroundColor: Colors.green,
-          action: SnackBarAction(
-            label: 'Voir',
-            textColor: Colors.white,
-            onPressed: () {
-              // TODO: Naviguer vers la page de suivi des livraisons
-            },
-          ),
-        ),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('❌ Erreur lors de l\'assignation: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
     }
   }
 
-  void _showReassignmentDialog(DeliveryOrder order) {
-    final availableUsers = ref.read(availableDeliveryUsersProvider);
-    final currentDeliveryUser = availableUsers.firstWhere(
-      (user) => user.phoneNumber == order.deliveryPhoneNumber,
-      orElse: () => DeliveryUser(
-        id: '',
-        phoneNumber: '',
-        name: '',
-        lastname: '',
-        email: '',
-        address: '',
-        phone: '',
-        createdAt: DateTime.now(),
-        role: '',
-      ),
-    );
+  void _showAssignOrderDialog(
+      Map<String, dynamic> order, DeliveryLocationNotifier locationNotifier) {
+    final locationState = ref.watch(deliveryLocationProvider);
+    final availableDrivers =
+        locationState.availableDeliveryUsers.where((d) => d.isOnline).toList();
 
-    // Filtrer pour exclure le livreur actuel
-    final otherUsers = availableUsers
-        .where(
-          (user) => user.phoneNumber != order.deliveryPhoneNumber,
-        )
-        .toList();
-
-    if (otherUsers.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('❌ Aucun autre livreur disponible'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
+    // Forcer la mise à jour de position des livreurs avant affichage
+    _forceUpdateDriverPositions(availableDrivers);
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Changer de livreur'),
+        title: Text('Assigner la commande #${order['id']}'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Livreur actuel: ${currentDeliveryUser.fullName}',
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            const Text('Sélectionner un nouveau livreur:'),
-            const SizedBox(height: 8),
-            ...otherUsers.map((user) => ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: UIColors.primary,
-                    child: Text(
-                      user.name.isNotEmpty ? user.name[0].toUpperCase() : 'L',
-                      style: const TextStyle(color: Colors.white),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.blue.shade200),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '📋 Détails de la commande',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue.shade700,
                     ),
                   ),
-                  title: Text(user.fullName),
-                  subtitle: Text(user.phoneNumber),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _reassignOrder(order, user);
-                  },
-                )),
+                  const SizedBox(height: 8),
+                  Text('Client: ${order['customer_name'] ?? 'Inconnu'}'),
+                  if (order['customer_phone'] != null)
+                    Text('📞 ${order['customer_phone']}'),
+                  if (order['customer_address'] != null)
+                    Text('📍 ${order['customer_address']}'),
+                  if (order['customer_email'] != null)
+                    Text('📧 ${order['customer_email']}'),
+                  Text(
+                      'Montant: ${order['amount']?.toStringAsFixed(0) ?? '0'} FCFA'),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            if (availableDrivers.isEmpty) ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.orange.shade200),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.warning, color: Colors.orange, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Aucun livreur en ligne disponible',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.orange.shade700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ] else ...[
+              Text(
+                'Choisissez un livreur en ligne :',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: UIColors.orange,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                height: 200,
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: availableDrivers.map((driver) {
+                      final hasLocation = driver.currentLatitude != null &&
+                          driver.currentLongitude != null;
+
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        child: ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor:
+                                driver.active ? Colors.green : Colors.grey,
+                            child: Text(
+                              '${driver.name[0]}${driver.lastname[0]}',
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          title: Text('${driver.name} ${driver.lastname}'),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(driver.phoneNumber),
+                              if (hasLocation) ...[
+                                Text(
+                                  'Position: ${driver.currentLatitude!.toStringAsFixed(4)}, ${driver.currentLongitude!.toStringAsFixed(4)}',
+                                  style: TextStyle(
+                                      fontSize: 10, color: Colors.grey[600]),
+                                ),
+                              ] else ...[
+                                Text(
+                                  'Position non disponible',
+                                  style: TextStyle(
+                                      fontSize: 10, color: Colors.orange),
+                                ),
+                              ],
+                            ],
+                          ),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                hasLocation
+                                    ? Icons.location_on
+                                    : Icons.location_off,
+                                color:
+                                    hasLocation ? Colors.green : Colors.orange,
+                                size: 16,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                hasLocation ? 'OK' : 'N/A',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: hasLocation
+                                      ? Colors.green
+                                      : Colors.orange,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                          onTap: () {
+                            Navigator.pop(context);
+                            _assignOrderToSpecificDriver(
+                                order, driver, locationNotifier);
+                          },
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
         actions: [
@@ -1073,211 +1030,654 @@ class _DeliveryAdminDashboardPageState
             onPressed: () => Navigator.pop(context),
             child: const Text('Annuler'),
           ),
+          if (availableDrivers.isNotEmpty)
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _assignOrderToNearestDriver(order, locationNotifier);
+              },
+              child: const Text('Assigner au plus proche'),
+            ),
         ],
       ),
     );
   }
 
-  void _reassignOrder(DeliveryOrder order, DeliveryUser newUser) {
+  void _assignOrderToSpecificDriver(
+    Map<String, dynamic> order,
+    DeliveryUser driver,
+    DeliveryLocationNotifier locationNotifier,
+  ) async {
     try {
-      if (order.type == DeliveryType.restaurant) {
-        ref
-            .read(deliveryAdminExistingProvider.notifier)
-            .reassignRestaurantOrder(order, newUser);
-      } else {
-        ref
-            .read(deliveryAdminExistingProvider.notifier)
-            .reassignParcel(order, newUser);
-      }
+      // Utiliser les coordonnées de la commande ou des coordonnées par défaut
+      final lat = order['latitude']?.toDouble() ?? 6.8270;
+      final lon = order['longitude']?.toDouble() ?? -5.2890;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            '✅ Livraison réassignée à ${newUser.fullName}',
-          ),
-          backgroundColor: Colors.green,
-        ),
+      final success = await locationNotifier.assignOrderToSpecificDriver(
+        order['id'],
+        driver.phoneNumber,
+        lat,
+        lon,
       );
+
+      if (success) {
+        _showSuccessDialog(driver, order['id']);
+        _loadPendingOrders();
+      } else {
+        _showErrorDialog();
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('❌ Erreur lors de la réassignation: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      print('❌ Erreur assignation spécifique: $e');
+      _showErrorDialog();
     }
   }
 
-  void _showAssignedOrderDetails(DeliveryOrder order) {
-    showModalBottomSheet(
+  void _assignOrderToNearestDriver(
+    Map<String, dynamic> order,
+    DeliveryLocationNotifier locationNotifier,
+  ) async {
+    try {
+      // Utiliser les coordonnées réelles de la commande
+      final lat = order['latitude']?.toDouble();
+      final lon = order['longitude']?.toDouble();
+
+      if (lat == null || lon == null) {
+        print(
+            '❌ Coordonnées de destination manquantes pour la commande ${order['id']}');
+        _showErrorDialog();
+        return;
+      }
+
+      final assignedDriver = await locationNotifier.assignOrderToNearestDriver(
+        order['id'],
+        lat,
+        lon,
+      );
+
+      if (assignedDriver != null) {
+        _showSuccessDialog(assignedDriver, order['id']);
+        _loadPendingOrders();
+      } else {
+        _showErrorDialog();
+      }
+    } catch (e) {
+      print('❌ Erreur assignation au plus proche: $e');
+      _showErrorDialog();
+    }
+  }
+
+  void _showAssignParcelDialog(
+      Map<String, dynamic> parcel, DeliveryLocationNotifier locationNotifier) {
+    final locationState = ref.watch(deliveryLocationProvider);
+    final availableDrivers =
+        locationState.availableDeliveryUsers.where((d) => d.isOnline).toList();
+
+    showDialog(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => _buildAssignedOrderDetailsModal(order),
+      builder: (context) => AlertDialog(
+        title: Text('Assigner le colis #${parcel['id']}'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Client: ${parcel['customer_name'] ?? 'Inconnu'}'),
+            Text('Adresse: ${parcel['customer_address'] ?? 'Non spécifiée'}'),
+            const SizedBox(height: 16),
+            if (availableDrivers.isEmpty) ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.orange.shade200),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.warning, color: Colors.orange, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Aucun livreur en ligne disponible',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.orange.shade700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ] else ...[
+              Text(
+                'Choisissez un livreur en ligne :',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: UIColors.orange,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                height: 200,
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: availableDrivers.map((driver) {
+                      final hasLocation = driver.currentLatitude != null &&
+                          driver.currentLongitude != null;
+
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        child: ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor:
+                                driver.isOnline ? Colors.green : Colors.grey,
+                            child: Text(
+                              '${driver.name[0]}${driver.lastname[0]}',
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          title: Text('${driver.name} ${driver.lastname}'),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(driver.phoneNumber),
+                              if (hasLocation) ...[
+                                Text(
+                                  'Position: ${driver.currentLatitude!.toStringAsFixed(4)}, ${driver.currentLongitude!.toStringAsFixed(4)}',
+                                  style: TextStyle(
+                                      fontSize: 10, color: Colors.grey[600]),
+                                ),
+                              ] else ...[
+                                Text(
+                                  'Position non disponible',
+                                  style: TextStyle(
+                                      fontSize: 10, color: Colors.orange),
+                                ),
+                              ],
+                            ],
+                          ),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                hasLocation
+                                    ? Icons.location_on
+                                    : Icons.location_off,
+                                color:
+                                    hasLocation ? Colors.green : Colors.orange,
+                                size: 16,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                hasLocation ? 'OK' : 'N/A',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: hasLocation
+                                      ? Colors.green
+                                      : Colors.orange,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                          onTap: hasLocation
+                              ? () {
+                                  Navigator.pop(context);
+                                  _assignParcelToSpecificDriver(
+                                      parcel, driver, locationNotifier);
+                                }
+                              : null,
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Annuler'),
+          ),
+          if (availableDrivers.isNotEmpty)
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _assignParcelToNearestDriver(parcel, locationNotifier);
+              },
+              child: const Text('Assigner au plus proche'),
+            ),
+        ],
+      ),
     );
   }
 
-  Widget _buildAssignedOrderDetailsModal(DeliveryOrder order) {
-    final isRestaurant = order.type == DeliveryType.restaurant;
+  void _assignParcelToSpecificDriver(
+    Map<String, dynamic> parcel,
+    DeliveryUser driver,
+    DeliveryLocationNotifier locationNotifier,
+  ) async {
+    try {
+      print(
+          '📦 Assignation colis ${parcel['id']} à ${driver.name} ${driver.lastname}');
 
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.7,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      child: Column(
-        children: [
-          // Handle bar
-          Container(
-            margin: const EdgeInsets.only(top: 12),
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: Colors.grey[300],
-              borderRadius: BorderRadius.circular(2),
-            ),
+      // Utiliser la méthode d'assignation des colis
+      await DeliveryExistingService.assignParcelToDeliveryUser(
+        parcel['id'],
+        driver.phoneNumber,
+        '${driver.name} ${driver.lastname}',
+      );
+
+      _showSuccessDialog(driver, parcel['id']);
+      _loadPendingOrders();
+    } catch (e) {
+      print('❌ Erreur assignation colis spécifique: $e');
+      _showErrorDialog();
+    }
+  }
+
+  void _assignParcelToNearestDriver(
+    Map<String, dynamic> parcel,
+    DeliveryLocationNotifier locationNotifier,
+  ) async {
+    try {
+      print('📦 Assignation colis ${parcel['id']} au livreur le plus proche');
+
+      // Pour les colis, on peut assigner au premier livreur disponible
+      final locationState = ref.read(deliveryLocationProvider);
+      final availableDrivers = locationState.availableDeliveryUsers
+          .where((d) =>
+              d.isOnline &&
+              d.currentLatitude != null &&
+              d.currentLongitude != null)
+          .toList();
+
+      if (availableDrivers.isEmpty) {
+        print('❌ Aucun livreur disponible pour le colis ${parcel['id']}');
+        _showErrorDialog();
+        return;
+      }
+
+      // Assigner au premier livreur disponible
+      final driver = availableDrivers.first;
+      await DeliveryExistingService.assignParcelToDeliveryUser(
+        parcel['id'],
+        driver.phoneNumber,
+        '${driver.name} ${driver.lastname}',
+      );
+
+      _showSuccessDialog(driver, parcel['id']);
+      _loadPendingOrders();
+    } catch (e) {
+      print('❌ Erreur assignation colis au plus proche: $e');
+      _showErrorDialog();
+    }
+  }
+
+  void _assignParcelToDriver(Map<String, dynamic> parcel, DeliveryUser driver,
+      DeliveryLocationNotifier locationNotifier) async {
+    try {
+      print(
+          '📦 Assignation colis ${parcel['id']} à ${driver.name} ${driver.lastname}');
+
+      // Utiliser la méthode d'assignation des colis
+      await DeliveryExistingService.assignParcelToDeliveryUser(
+        parcel['id'],
+        driver.phoneNumber,
+        '${driver.name} ${driver.lastname}',
+      );
+
+      // Afficher le dialog de succès
+      _showSuccessDialog(driver, parcel['id']);
+
+      // Recharger les données
+      _loadPendingOrders();
+    } catch (e) {
+      print('❌ Erreur assignation colis: $e');
+      _showErrorDialog();
+    }
+  }
+
+  void _showSuccessDialog(DeliveryUser driver, String orderId) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('✅ Assignation réussie'),
+        content: Text(
+            'Commande #$orderId assignée à ${driver.name} ${driver.lastname}'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
           ),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Header
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isRestaurant ? Colors.orange : Colors.blue,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          isRestaurant ? 'Commande Restaurant' : 'Colis',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      const Spacer(),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.blue[100],
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          'En cours de livraison',
-                          style: TextStyle(
-                            color: Colors.blue[700],
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
+        ],
+      ),
+    );
+  }
 
-                  // Description
-                  Text(
-                    'Description',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey[800],
+  void _showErrorDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('❌ Erreur'),
+        content: const Text('Aucun livreur disponible pour cette livraison'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAssignToDriverDialog(
+      DeliveryUser driver, DeliveryLocationNotifier locationNotifier) {
+    final orderIdController = TextEditingController();
+    final latController = TextEditingController();
+    final lonController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Assigner une commande à ${driver.name}'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: orderIdController,
+              decoration: const InputDecoration(
+                labelText: 'ID de la commande',
+                hintText: 'Ex: order_123',
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: latController,
+                    decoration: const InputDecoration(
+                      labelText: 'Latitude destination',
+                      hintText: '6.8270',
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    order.description,
-                    style: const TextStyle(fontSize: 16),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextField(
+                    controller: lonController,
+                    decoration: const InputDecoration(
+                      labelText: 'Longitude destination',
+                      hintText: '-5.2890',
+                    ),
                   ),
-                  const SizedBox(height: 20),
-
-                  // Client info
-                  _buildDetailSection(
-                    'Informations Client',
-                    [
-                      _buildDetailRow('Nom', order.customerName),
-                      _buildDetailRow('Téléphone', order.customerPhoneNumber),
-                      _buildDetailRow('Adresse', order.customerAddress),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Delivery info
-                  _buildDetailSection(
-                    'Informations Livreur',
-                    [
-                      _buildDetailRow(
-                          'Nom', order.deliveryName ?? 'Non assigné'),
-                      _buildDetailRow('Téléphone',
-                          order.deliveryPhoneNumber ?? 'Non assigné'),
-                      if (order.assignedAt != null)
-                        _buildDetailRow(
-                            'Assigné le', _formatDate(order.assignedAt!)),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Financial info
-                  _buildDetailSection(
-                    'Informations Financières',
-                    [
-                      _buildDetailRow(
-                          'Montant', '${order.amount.toStringAsFixed(0)} FCFA'),
-                      _buildDetailRow('Frais de livraison',
-                          '${order.deliveryFee.toStringAsFixed(0)} FCFA'),
-                      _buildDetailRow('Total',
-                          '${order.totalAmount.toStringAsFixed(0)} FCFA',
-                          isTotal: true),
-                    ],
-                  ),
-                  const SizedBox(height: 30),
-
-                  // Action buttons
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: () {
-                            Navigator.pop(context);
-                            _showReassignmentDialog(order);
-                          },
-                          icon: const Icon(Icons.swap_horiz),
-                          label: const Text('Changer de livreur'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.orange,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.blue.shade200),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, color: Colors.blue, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Position du livreur: ${driver.currentLatitude?.toStringAsFixed(4)}, ${driver.currentLongitude?.toStringAsFixed(4)}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.blue.shade700,
                       ),
-                    ],
+                    ),
                   ),
                 ],
               ),
             ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Annuler'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final orderId = orderIdController.text.trim();
+              final lat = double.tryParse(latController.text);
+              final lon = double.tryParse(lonController.text);
+
+              if (orderId.isNotEmpty && lat != null && lon != null) {
+                Navigator.pop(context);
+
+                final assignedDriver =
+                    await locationNotifier.assignOrderToNearestDriver(
+                  orderId,
+                  lat,
+                  lon,
+                );
+
+                if (assignedDriver != null) {
+                  _showSuccessDialog(assignedDriver, orderId);
+                } else {
+                  _showErrorDialog();
+                }
+              } else {
+                _showValidationError();
+              }
+            },
+            child: const Text('Assigner'),
           ),
         ],
       ),
     );
   }
 
-  String _formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year} à ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
+  void _showDriverDetails(DeliveryUser driver) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Détails de ${driver.name}'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Nom: ${driver.name} ${driver.lastname}'),
+            Text('Téléphone: ${driver.phoneNumber}'),
+            Text('Adresse: ${driver.address}'),
+            Text('Livraisons complétées: ${driver.completedDeliveries}'),
+            Text(
+                'Gains totaux: ${driver.totalEarnings.toStringAsFixed(0)} FCFA'),
+            Text('Note moyenne: ${driver.averageRating.toStringAsFixed(1)}/5'),
+            if (driver.currentLatitude != null &&
+                driver.currentLongitude != null) ...[
+              const SizedBox(height: 8),
+              const Text(
+                'Position actuelle:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              Text('Lat: ${driver.currentLatitude!.toStringAsFixed(4)}'),
+              Text('Lon: ${driver.currentLongitude!.toStringAsFixed(4)}'),
+            ],
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Fermer'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showValidationError() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('❌ Erreur'),
+        content: const Text('Veuillez remplir tous les champs correctement'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDriverLocationMap(DeliveryUser driver) {
+    if (driver.currentLatitude == null || driver.currentLongitude == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Position du livreur non disponible'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        child: Container(
+          width: MediaQuery.of(context).size.width * 0.9,
+          height: MediaQuery.of(context).size.height * 0.7,
+          child: Column(
+            children: [
+              // En-tête
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: UIColors.orange,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(12),
+                    topRight: Radius.circular(12),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.location_on, color: Colors.white, size: 24),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Position de ${driver.name} ${driver.lastname}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.close, color: Colors.white),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Carte
+              Expanded(
+                child: GoogleMap(
+                  initialCameraPosition: CameraPosition(
+                    target: LatLng(
+                      driver.currentLatitude!,
+                      driver.currentLongitude!,
+                    ),
+                    zoom: 15,
+                  ),
+                  markers: {
+                    Marker(
+                      markerId: MarkerId(driver.phoneNumber),
+                      position: LatLng(
+                        driver.currentLatitude!,
+                        driver.currentLongitude!,
+                      ),
+                      infoWindow: InfoWindow(
+                        title: '${driver.name} ${driver.lastname}',
+                        snippet: driver.isOnline ? 'En ligne' : 'Hors ligne',
+                      ),
+                      icon: BitmapDescriptor.defaultMarkerWithHue(
+                        driver.isOnline
+                            ? BitmapDescriptor.hueGreen
+                            : BitmapDescriptor.hueRed,
+                      ),
+                    ),
+                  },
+                  myLocationEnabled: false,
+                  zoomControlsEnabled: true,
+                  mapToolbarEnabled: false,
+                ),
+              ),
+
+              // Informations
+              Container(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Informations du livreur',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: UIColors.orange,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(
+                          driver.isOnline
+                              ? Icons.circle
+                              : Icons.circle_outlined,
+                          size: 16,
+                          color: driver.isOnline ? Colors.green : Colors.grey,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          driver.isOnline ? 'En ligne' : 'Hors ligne',
+                          style: TextStyle(
+                            color: driver.isOnline ? Colors.green : Colors.grey,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text('Téléphone: ${driver.phoneNumber}'),
+                    const SizedBox(height: 4),
+                    Text('Livraisons: ${driver.completedDeliveries}'),
+                    const SizedBox(height: 4),
+                    Text(
+                        'Gains: ${driver.totalEarnings.toStringAsFixed(0)} FCFA'),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Coordonnées: ${driver.currentLatitude!.toStringAsFixed(4)}, ${driver.currentLongitude!.toStringAsFixed(4)}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                        fontFamily: 'monospace',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

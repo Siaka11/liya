@@ -1,83 +1,80 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:liya/core/singletons.dart';
 
 import '../../core/local_storage_factory.dart';
 import '../../utils/snackbar.dart';
+import 'firebase_auth_service.dart';
+
+// Fonction utilitaire pour les SnackBar (assurez-vous qu'elle est définie quelque part, par exemple dans core/ui/components/snack_bar_utils.dart)
+void showSnackBar(BuildContext context, String message,
+    {bool isError = false}) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(message),
+      backgroundColor: isError ? Colors.red : Colors.green,
+      duration: const Duration(seconds: 3),
+    ),
+  );
+}
 
 class AuthService {
-  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
+  final FirebaseAuthService _firebaseAuthService = FirebaseAuthService();
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-
-
-  Future verifynumpad({
+  // Cette méthode est un wrapper direct pour FirebaseAuthService.sendOTP.
+  // Idéalement, les appels devraient aller directement à AuthProvider.sendOTP.
+  Future<void> verifynumpad({
     required String phoneNumber,
     required Function(String verificationId) onCodeSent,
     required BuildContext context,
   }) async {
+    try {
+      // Appelle le sendOTP du service FirebaseAuthService
+      final needsOTP = await _firebaseAuthService.sendOTP(phoneNumber);
 
-    //rediriger vers l'otp
-    onCodeSent('123456');
-    showSnackBar(context, "Code envoyé");
-
-    return;
-
-
-/*    try {
-      await _firebaseAuth.verifyPhoneNumber(
-        phoneNumber: '+225'+ phoneNumber,
-        timeout: const Duration(seconds: 60),
-        verificationCompleted: (PhoneAuthCredential credential) async {
-          try {
-            await _firebaseAuth.signInWithCredential(credential);
-            showSnackBar(context, "Connexion réussie");
-          } catch (e) {
-            showSnackBar(context, "Erreur de connexion automatique : $e", isError: true);
-          }
-        },
-        verificationFailed: (FirebaseAuthException e) {
-          showSnackBar(context, "Erreur de vérification : ${e.message}", isError: true);
-        },
-        codeSent: (String verificationId, int? resendToken) {
+      if (needsOTP) {
+        final verificationId = await _firebaseAuthService.getVerificationId();
+        if (verificationId != null) {
           onCodeSent(verificationId);
-        },
-        codeAutoRetrievalTimeout: (String verificationId) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Délai de récupération du code expiré")),
-          );
-          showSnackBar(context, "Délai de récupération du code expiré", isError: true);
-        },
-      );
+          showSnackBar(context, "Code envoyé");
+        } else {
+          throw Exception(
+              "L'ID de vérification est manquant après l'envoi de l'OTP.");
+        }
+      } else {
+        onCodeSent('auto_verified');
+        showSnackBar(context, "Connexion auto-vérifiée !");
+      }
     } catch (e) {
-      showSnackBar(context, "Erreur de vérification : $e", isError: true);
-    }*/
+      showSnackBar(context, "Erreur d'envoi du code : ${e.toString()}",
+          isError: true);
+    }
   }
 
+  // Cette méthode est un wrapper direct pour FirebaseAuthService.verifyOTP.
+  // Idéalement, les appels devraient aller directement à AuthProvider.verifyOTP.
   Future<void> verifOtp({
     required String otp,
-    required String verificationId,
+    required String
+        verificationId, // Ce paramètre n'est plus utilisé par le service
     required Function() onSuccess,
     required Function(String) onError,
   }) async {
     try {
-      await Future.delayed(const Duration(seconds: 1));
-      if(otp == verificationId){
+      final userCredential = await _firebaseAuthService.verifyOTP(otp);
+      if (userCredential.user != null) {
         onSuccess();
-      }else{
-        throw Exception("Erreur de vérification");
+      } else {
+        throw Exception("Échec de la vérification");
       }
-      // Exemple Firebase :
-      // var credential = PhoneAuthProvider.credential(
-      //   verificationId: verificationId,
-      //   smsCode: otp,
-      // );
-      // await FirebaseAuth.instance.signInWithCredential(credential);
-      // onSuccess();
-    }catch (e){
+    } catch (e) {
       onError(e.toString());
     }
   }
 
+  // Cette méthode est un wrapper direct pour FirebaseAuthService.updateUserInfo.
   Future<void> saveUserInfo({
     required String name,
     required String lastName,
@@ -85,35 +82,78 @@ class AuthService {
     required Function(String) onError,
   }) async {
     try {
-      // Simuler la sauvegarde des données
-      print('Saving user info: name=$name, lastName=$lastName');
-      await Future.delayed(const Duration(seconds: 1));
+      final currentUser = _firebaseAuthService.currentUser;
+      if (currentUser?.phoneNumber == null) {
+        throw Exception("Utilisateur non connecté");
+      }
+
+      // Normaliser le numéro de téléphone pour correspondre au format des IDs de documents Firestore
+      final firestorePhone = _firebaseAuthService
+          .normalizePhoneForFirestore(currentUser!.phoneNumber!);
+      print(
+          '🔍 Utilisation du format Firestore pour la sauvegarde des infos: $firestorePhone');
+
+      await _firebaseAuthService.updateUserInfo(
+        firestorePhone,
+        {
+          'name': name,
+          'lastname': lastName,
+        },
+      );
+
       onSuccess();
-      // Exemple Firebase :
-      // var user = FirebaseAuth.instance.currentUser;
-      // await user?.updateProfile(displayName: '$name $lastName');
     } catch (e) {
       onError(e.toString());
     }
   }
 
+  // Cette méthode est un wrapper pour la mise à jour de la localisation.
+  // Si la logique de localisation est simple, elle peut rester ici ou être déplacée dans un service dédié.
   Future<void> saveUserLocation({
     required double latitude,
     required double longitude,
-    required String address,
+    String? address,
     required Function() onSuccess,
     required Function(String) onError,
   }) async {
     try {
-      print('Saving user location: lat=$latitude, lon=$longitude, address=$address');
-      await singleton<LocalStorageFactory>().setUserLocation(latitude: latitude, longitude: longitude, address: address);
+      final currentUser = _firebaseAuthService.currentUser;
+      if (currentUser?.phoneNumber == null) {
+        throw Exception("Utilisateur non connecté");
+      }
+
+      // Normaliser le numéro de téléphone pour correspondre au format des IDs de documents Firestore
+      final firestorePhone = _firebaseAuthService
+          .normalizePhoneForFirestore(currentUser!.phoneNumber!);
+      print(
+          '🔍 Utilisation du format Firestore pour la sauvegarde de localisation: $firestorePhone');
+
+      final updateData = {
+        'current_latitude': latitude,
+        'current_longitude': longitude,
+        'last_location_update': FieldValue.serverTimestamp(),
+      };
+
+      if (address != null && address.isNotEmpty) {
+        updateData['delivery_address'] = address;
+      }
+
+      await _firestore
+          .collection('users')
+          .doc(firestorePhone)
+          .update(updateData);
+
       onSuccess();
     } catch (e) {
       onError(e.toString());
     }
   }
+
+// La méthode _formatPhoneNumber est une DUPLICATION et DOIT ÊTRE SUPPRIMÉE de ce fichier.
+// Elle est déjà et doit rester uniquement dans FirebaseAuthService.
+/*
+  String _formatPhoneNumber(String phoneNumber) {
+    // ... votre implémentation
+  }
+  */
 }
-
-
-
-

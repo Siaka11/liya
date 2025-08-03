@@ -90,15 +90,21 @@ class HomeDeliveryNotifier extends StateNotifier<HomeDeliveryState> {
   // Charger toutes les données
   Future<void> _loadAllData(String phoneNumber) async {
     try {
+      print('🔄 _loadAllData() appelé pour: $phoneNumber');
+
       final restaurantOrders =
           await DeliveryExistingService.getRestaurantOrdersForDeliveryUser(
               phoneNumber);
+      print('🍕 Commandes restaurant trouvées: ${restaurantOrders.length}');
+
       final parcelOrders =
           await DeliveryExistingService.getParcelOrdersForDeliveryUser(
               phoneNumber);
+      print('📦 Colis trouvés: ${parcelOrders.length}');
 
       // Combiner toutes les commandes assignées
       final allAssignedOrders = [...restaurantOrders, ...parcelOrders];
+      print('📋 Total commandes assignées: ${allAssignedOrders.length}');
 
       // Séparer les commandes en cours et terminées
       final assignedOrders = allAssignedOrders
@@ -106,20 +112,27 @@ class HomeDeliveryNotifier extends StateNotifier<HomeDeliveryState> {
               order.status == DeliveryStatus.reception ||
               order.status == DeliveryStatus.enRoute)
           .toList();
+      print('🚚 Commandes en cours: ${assignedOrders.length}');
 
       final completedOrders = allAssignedOrders
           .where((order) => order.status == DeliveryStatus.livre)
           .toList();
+      print('✅ Commandes terminées: ${completedOrders.length}');
 
       final todayEarnings =
           await DeliveryExistingService.getTodayEarnings(phoneNumber);
+      print('💰 Gains du jour: $todayEarnings FCFA');
 
       state = state.copyWith(
         assignedOrders: assignedOrders,
         completedOrders: completedOrders,
         todayEarnings: todayEarnings,
       );
+
+      print(
+          '✅ State mis à jour avec ${assignedOrders.length} commandes assignées');
     } catch (e) {
+      print('❌ Erreur lors du chargement des données: $e');
       state =
           state.copyWith(error: 'Erreur lors du chargement des données: $e');
     }
@@ -146,8 +159,7 @@ class HomeDeliveryNotifier extends StateNotifier<HomeDeliveryState> {
 
         // Mettre à jour l'état local immédiatement pour une réponse instantanée
         if (state.currentUser != null) {
-          final updatedUser =
-              state.currentUser!.copyWith(isAvailable: isAvailable);
+          final updatedUser = state.currentUser!.copyWith(active: isAvailable);
           state = state.copyWith(currentUser: updatedUser);
         }
 
@@ -165,8 +177,7 @@ class HomeDeliveryNotifier extends StateNotifier<HomeDeliveryState> {
       print('Erreur lors de la mise à jour de la disponibilité: $e');
       // En cas d'erreur, remettre l'ancienne valeur
       if (state.currentUser != null) {
-        final updatedUser =
-            state.currentUser!.copyWith(isAvailable: !isAvailable);
+        final updatedUser = state.currentUser!.copyWith(active: !isAvailable);
         state = state.copyWith(currentUser: updatedUser);
       }
       state = state.copyWith(
@@ -213,8 +224,14 @@ class HomeDeliveryNotifier extends StateNotifier<HomeDeliveryState> {
             order.id, DeliveryStatus.livre);
       }
 
-      // Recharger les données
+      // Mettre à jour la position après la livraison
       final phoneNumber = state.currentUser?.phoneNumber;
+      if (phoneNumber != null) {
+        print('📍 Mise à jour position après livraison terminée');
+        await DeliveryExistingService.updatePositionAfterDelivery(phoneNumber);
+      }
+
+      // Recharger les données
       if (phoneNumber != null) {
         await _loadAllData(phoneNumber);
       }
@@ -239,14 +256,20 @@ class HomeDeliveryNotifier extends StateNotifier<HomeDeliveryState> {
             order.id, DeliveryStatus.nonLivre);
       }
 
-      // Recharger les données
+      // Mettre à jour la position après l'échec de livraison
       final phoneNumber = state.currentUser?.phoneNumber;
+      if (phoneNumber != null) {
+        print('📍 Mise à jour position après échec de livraison');
+        await DeliveryExistingService.updatePositionAfterDelivery(phoneNumber);
+      }
+
+      // Recharger les données
       if (phoneNumber != null) {
         await _loadAllData(phoneNumber);
       }
     } catch (e) {
       state = state.copyWith(
-          error: 'Erreur lors de la marque de la livraison comme échouée: $e');
+          error: 'Erreur lors de la marque d\'échec de livraison: $e');
     } finally {
       state = state.copyWith(isLoading: false);
     }

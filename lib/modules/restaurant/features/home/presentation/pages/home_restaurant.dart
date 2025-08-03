@@ -17,6 +17,7 @@ import '../../../../../../routes/app_router.gr.dart';
 import '../../../../../home/domain/entities/home_option.dart';
 import '../../application/pupular_dish_controller_provider.dart';
 import '../../application/restaurant_controller_provider.dart';
+import '../../application/new_dishes_firebase_provider.dart';
 import '../widget/popular_dish_card.dart';
 import '../widget/restaurant_card.dart';
 
@@ -39,6 +40,11 @@ class HomeRestaurantPage extends ConsumerWidget {
         ref.read(popularDishControllerProvider.notifier);
     final popularDishState = ref.watch(popularDishControllerProvider);
 
+    // Nouveau provider pour les plats Firebase
+    final newDishesFirebaseController =
+        ref.read(newDishesFirebaseProvider.notifier);
+    final newDishesFirebaseState = ref.watch(newDishesFirebaseProvider);
+
     // Charger les données uniquement au premier rendu si non chargé
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (restaurantState.restaurants == null && !restaurantState.isLoading) {
@@ -47,6 +53,11 @@ class HomeRestaurantPage extends ConsumerWidget {
       if (popularDishState.popularDishes == null &&
           !popularDishState.isLoading) {
         popularDishController.loadPopularDishes();
+      }
+      // Charger les nouveaux plats Firebase
+      if (newDishesFirebaseState.dishes == null &&
+          !newDishesFirebaseState.isLoading) {
+        newDishesFirebaseController.loadNewDishes();
       }
     });
 
@@ -389,7 +400,366 @@ class HomeRestaurantPage extends ConsumerWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 100), // Espace pour le bouton flottant
+                  // Les plats - Section Nouveaux plats avec Firebase
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              "Nouveaux plats",
+                              style: TextStyle(
+                                  fontSize: 20, fontWeight: FontWeight.bold),
+                            ),
+                            Row(
+                              children: [
+                                IconButton(
+                                  onPressed: () {
+                                    newDishesFirebaseController.refresh();
+                                  },
+                                  icon: const Icon(Icons.refresh, size: 20),
+                                  tooltip: 'Actualiser',
+                                ),
+                                TextButton(
+                                  onPressed: () {
+                                    context.router.push(AllDishesRoute());
+                                  },
+                                  child: Text("Voir tout"),
+                                  style: TextButton.styleFrom(
+                                    foregroundColor: Colors.grey,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        SizedBox(
+                          child: newDishesFirebaseState.isLoading
+                              ? Center(child: CircularProgressIndicator())
+                              : newDishesFirebaseState.error != null
+                                  ? Center(
+                                      child: Column(
+                                        children: [
+                                          Text(newDishesFirebaseState.error!),
+                                          const SizedBox(height: 8),
+                                          ElevatedButton(
+                                            onPressed: () {
+                                              newDishesFirebaseController
+                                                  .refresh();
+                                            },
+                                            child: const Text('Réessayer'),
+                                          ),
+                                        ],
+                                      ),
+                                    )
+                                  : newDishesFirebaseState.dishes == null ||
+                                          newDishesFirebaseState.dishes!.isEmpty
+                                      ? Center(
+                                          child: Column(
+                                            children: [
+                                              const Text(
+                                                  "Aucun nouveau plat disponible"),
+                                              const SizedBox(height: 8),
+                                              Text(
+                                                "État: ${newDishesFirebaseState.isLoading ? 'Chargement...' : 'Terminé'}",
+                                                style: const TextStyle(
+                                                    fontSize: 12,
+                                                    color: Colors.grey),
+                                              ),
+                                              const SizedBox(height: 8),
+                                              ElevatedButton(
+                                                onPressed: () {
+                                                  newDishesFirebaseController
+                                                      .refresh();
+                                                },
+                                                child: const Text('Actualiser'),
+                                              ),
+                                            ],
+                                          ),
+                                        )
+                                      : SingleChildScrollView(
+                                          scrollDirection: Axis.horizontal,
+                                          child: Row(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              for (int i = 0;
+                                                  i <
+                                                      newDishesFirebaseState
+                                                          .dishes!.length;
+                                                  i += 2)
+                                                Padding(
+                                                  padding:
+                                                      const EdgeInsets.only(
+                                                          right: 10),
+                                                  child: Row(
+                                                    children: [
+                                                      // Premier plat
+                                                      Container(
+                                                        width: 160,
+                                                        child: ModernDishCard(
+                                                          id: newDishesFirebaseState
+                                                              .dishes![i]['id'],
+                                                          name:
+                                                              newDishesFirebaseState
+                                                                      .dishes![
+                                                                  i]['name'],
+                                                          price:
+                                                              newDishesFirebaseState
+                                                                  .dishes![i]
+                                                                      ['price']
+                                                                  .toString(),
+                                                          imageUrl:
+                                                              newDishesFirebaseState
+                                                                      .dishes![i]
+                                                                  ['image_url'],
+                                                          restaurantId:
+                                                              newDishesFirebaseState
+                                                                      .dishes![i]
+                                                                  [
+                                                                  'restaurant_id'],
+                                                          description:
+                                                              newDishesFirebaseState
+                                                                      .dishes![i]
+                                                                  [
+                                                                  'description'],
+                                                          isOnSale: newDishesFirebaseState
+                                                                      .dishes![i]
+                                                                  [
+                                                                  'is_on_sale'] ??
+                                                              false,
+                                                          originalPrice:
+                                                              newDishesFirebaseState
+                                                                  .dishes![i][
+                                                                      'original_price']
+                                                                  ?.toDouble(),
+                                                          discountPercentage:
+                                                              newDishesFirebaseState
+                                                                  .dishes![i][
+                                                                      'discount_percentage']
+                                                                  ?.toDouble(),
+                                                          onTap: () {
+                                                            // Navigation vers la page de détail du plat
+                                                            Navigator.push(
+                                                              context,
+                                                              MaterialPageRoute(
+                                                                builder:
+                                                                    (context) =>
+                                                                        DishDetailPage(
+                                                                  id: newDishesFirebaseState
+                                                                          .dishes![
+                                                                      i]['id'],
+                                                                  restaurantId:
+                                                                      newDishesFirebaseState
+                                                                              .dishes![i]
+                                                                          [
+                                                                          'restaurant_id'],
+                                                                  name: newDishesFirebaseState
+                                                                          .dishes![
+                                                                      i]['name'],
+                                                                  price: newDishesFirebaseState
+                                                                      .dishes![
+                                                                          i][
+                                                                          'price']
+                                                                      .toString(),
+                                                                  imageUrl: newDishesFirebaseState
+                                                                          .dishes![i]
+                                                                      [
+                                                                      'image_url'],
+                                                                  rating: newDishesFirebaseState
+                                                                      .dishes![
+                                                                          i][
+                                                                          'rating']
+                                                                      .toString(),
+                                                                  description:
+                                                                      newDishesFirebaseState
+                                                                              .dishes![i]
+                                                                          [
+                                                                          'description'],
+                                                                ),
+                                                              ),
+                                                            );
+                                                          },
+                                                        ),
+                                                      ),
+                                                      // Deuxième plat (si disponible)
+                                                      if (i + 1 <
+                                                          newDishesFirebaseState
+                                                              .dishes!.length)
+                                                        Padding(
+                                                          padding:
+                                                              const EdgeInsets
+                                                                  .only(
+                                                                  left: 10),
+                                                          child: Container(
+                                                            width: 160,
+                                                            child:
+                                                                ModernDishCard(
+                                                              id: newDishesFirebaseState
+                                                                      .dishes![
+                                                                  i + 1]['id'],
+                                                              name: newDishesFirebaseState
+                                                                      .dishes![
+                                                                  i + 1]['name'],
+                                                              price: newDishesFirebaseState
+                                                                  .dishes![
+                                                                      i + 1]
+                                                                      ['price']
+                                                                  .toString(),
+                                                              imageUrl: newDishesFirebaseState
+                                                                          .dishes![
+                                                                      i + 1]
+                                                                  ['image_url'],
+                                                              restaurantId:
+                                                                  newDishesFirebaseState
+                                                                              .dishes![
+                                                                          i + 1]
+                                                                      [
+                                                                      'restaurant_id'],
+                                                              description:
+                                                                  newDishesFirebaseState
+                                                                              .dishes![
+                                                                          i + 1]
+                                                                      [
+                                                                      'description'],
+                                                              isOnSale: newDishesFirebaseState
+                                                                              .dishes![
+                                                                          i + 1]
+                                                                      [
+                                                                      'is_on_sale'] ??
+                                                                  false,
+                                                              originalPrice:
+                                                                  newDishesFirebaseState
+                                                                      .dishes![
+                                                                          i + 1]
+                                                                          [
+                                                                          'original_price']
+                                                                      ?.toDouble(),
+                                                              discountPercentage:
+                                                                  newDishesFirebaseState
+                                                                      .dishes![
+                                                                          i + 1]
+                                                                          [
+                                                                          'discount_percentage']
+                                                                      ?.toDouble(),
+                                                              onTap: () {
+                                                                Navigator.push(
+                                                                  context,
+                                                                  MaterialPageRoute(
+                                                                    builder:
+                                                                        (context) =>
+                                                                            DishDetailPage(
+                                                                      id: newDishesFirebaseState.dishes![i +
+                                                                              1]
+                                                                          [
+                                                                          'id'],
+                                                                      restaurantId:
+                                                                          newDishesFirebaseState.dishes![i + 1]
+                                                                              [
+                                                                              'restaurant_id'],
+                                                                      name: newDishesFirebaseState.dishes![i +
+                                                                              1]
+                                                                          [
+                                                                          'name'],
+                                                                      price: newDishesFirebaseState
+                                                                          .dishes![
+                                                                              i + 1]
+                                                                              [
+                                                                              'price']
+                                                                          .toString(),
+                                                                      imageUrl: newDishesFirebaseState.dishes![i +
+                                                                              1]
+                                                                          [
+                                                                          'image_url'],
+                                                                      rating: newDishesFirebaseState
+                                                                          .dishes![
+                                                                              i + 1]
+                                                                              [
+                                                                              'rating']
+                                                                          .toString(),
+                                                                      description:
+                                                                          newDishesFirebaseState.dishes![i + 1]
+                                                                              [
+                                                                              'description'],
+                                                                    ),
+                                                                  ),
+                                                                );
+                                                              },
+                                                            ),
+                                                          ),
+                                                        ),
+                                                    ],
+                                                  ),
+                                                ),
+                                            ],
+                                          ),
+                                        ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 100),
+                  /*Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              "Plats",
+                              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                context.router.push(AllRestaurantsRoute());
+                              },
+                              child: Text("Voir tout"),
+                              style: TextButton.styleFrom(
+                                foregroundColor: Colors.grey,
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (restaurantState.isLoading)
+                          Center(child: CircularProgressIndicator())
+                        else if (restaurantState.error != null)
+                          Center(child: Text(restaurantState.error!))
+                        else if (restaurantState.restaurants == null ||
+                              restaurantState.restaurants!.isEmpty)
+                            Center(child: Text("Aucun plat disponible"))
+                          else
+                            Column(
+                              children: restaurantState.restaurants!.map((restaurant) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 16),
+                                  child: RestaurantCard(
+                                    width: 300.0,
+                                    restaurant: restaurant,
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => RestaurantDetailPage(
+                                            coverImage: restaurant.coverImage,
+                                            id: restaurant.id,
+                                            name: restaurant.name,
+                                            description: restaurant.description ?? '',
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                      ],
+                    ),
+                  ),*/
                 ],
               ),
             ),

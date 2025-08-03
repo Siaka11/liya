@@ -28,6 +28,11 @@ class DeliveryOrder {
   final String? notes;
   final double? rating;
   final String? ratingComment;
+  final double? destinationLatitude; // Coordonnées de destination
+  final double? destinationLongitude; // Coordonnées de destination
+  // Informations complètes du client
+  final String? customerEmail;
+  final String? customerFullName;
 
   const DeliveryOrder({
     required this.id,
@@ -47,6 +52,10 @@ class DeliveryOrder {
     this.notes,
     this.rating,
     this.ratingComment,
+    this.destinationLatitude,
+    this.destinationLongitude,
+    this.customerEmail,
+    this.customerFullName,
   });
 
   DeliveryOrder copyWith({
@@ -67,6 +76,10 @@ class DeliveryOrder {
     String? notes,
     double? rating,
     String? ratingComment,
+    double? destinationLatitude,
+    double? destinationLongitude,
+    String? customerEmail,
+    String? customerFullName,
   }) {
     return DeliveryOrder(
       id: id ?? this.id,
@@ -86,6 +99,10 @@ class DeliveryOrder {
       notes: notes ?? this.notes,
       rating: rating ?? this.rating,
       ratingComment: ratingComment ?? this.ratingComment,
+      destinationLatitude: destinationLatitude ?? this.destinationLatitude,
+      destinationLongitude: destinationLongitude ?? this.destinationLongitude,
+      customerEmail: customerEmail ?? this.customerEmail,
+      customerFullName: customerFullName ?? this.customerFullName,
     );
   }
 
@@ -108,6 +125,10 @@ class DeliveryOrder {
       'notes': notes,
       'rating': rating,
       'rating_comment': ratingComment,
+      'destination_latitude': destinationLatitude,
+      'destination_longitude': destinationLongitude,
+      'customer_email': customerEmail,
+      'customer_full_name': customerFullName,
     };
   }
 
@@ -137,6 +158,10 @@ class DeliveryOrder {
       notes: map['notes'],
       rating: map['rating']?.toDouble(),
       ratingComment: map['rating_comment'],
+      destinationLatitude: map['destination_latitude']?.toDouble(),
+      destinationLongitude: map['destination_longitude']?.toDouble(),
+      customerEmail: map['customer_email'],
+      customerFullName: map['customer_full_name'],
     );
   }
 

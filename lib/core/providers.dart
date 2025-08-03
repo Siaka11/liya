@@ -5,6 +5,7 @@ import 'package:liya/modules/restaurant/features/like/data/repositories/like_rep
 import 'package:liya/modules/restaurant/features/like/domain/repositories/like_repository.dart';
 import 'package:liya/modules/restaurant/features/like/domain/usecases/like_dish.dart';
 import 'package:liya/core/storage/local_storage_factory.dart';
+import 'package:liya/modules/auth/firebase_auth_service.dart';
 import 'dart:convert';
 
 final likeRepositoryProvider = Provider<LikeRepository>((ref) {
@@ -25,4 +26,11 @@ final userIdProvider = FutureProvider<String>((ref) async {
   final localStorage = ref.watch(localStorageFactoryProvider);
   final userDetails = await localStorage.getUserDetails();
   return userDetails['phoneNumber'] ?? '';
+});
+
+// Provider pour récupérer les informations utilisateur depuis Firestore
+final userInfoProvider = FutureProvider.family<Map<String, dynamic>?, String>(
+    (ref, phoneNumber) async {
+  final authService = FirebaseAuthService();
+  return await authService.getUserInfoFromFirestore(phoneNumber);
 });

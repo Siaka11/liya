@@ -53,8 +53,11 @@ class OrderDetailPage extends ConsumerWidget {
           padding: EdgeInsets.zero,
           children: [
             OrderStatusTimeline(
-                status: currentOrder.status,
-                expectedDate: currentOrder.createdAt),
+              status: currentOrder.status,
+              expectedDate: currentOrder.createdAt,
+              orderId: currentOrder.id,
+              deliveryAddress: currentOrder.address,
+            ),
             OrderItemCardSection(items: currentOrder.items),
             OrderDetailsSection(order: currentOrder),
           ],
@@ -65,5 +68,3 @@ class OrderDetailPage extends ConsumerWidget {
     );
   }
 }
-
-

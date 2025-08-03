@@ -3,6 +3,7 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:liya/modules/restaurant/features/home/presentation/pages/restaurant_detail_page.dart';
+import 'package:liya/core/ui/components/notification_button.dart';
 import '../../application/all_restaurants_provider.dart';
 import '../widget/restaurant_card.dart';
 
@@ -24,6 +25,12 @@ class AllRestaurantsPage extends ConsumerWidget {
           ),
         ),
         centerTitle: true,
+        actions: [
+          NotificationAppBarButton(
+            backgroundColor: Colors.transparent,
+            iconColor: Colors.grey[700],
+          ),
+        ],
       ),
       body: restaurantsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -40,13 +47,12 @@ class AllRestaurantsPage extends ConsumerWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) =>
-                        RestaurantDetailPage(
-                          id: restaurant.id,
-                          name: restaurant.name,
-                          description: restaurant.description ?? '',
-                          coverImage: restaurant.coverImage,
-                        ),
+                    builder: (context) => RestaurantDetailPage(
+                      id: restaurant.id,
+                      name: restaurant.name,
+                      description: restaurant.description ?? '',
+                      coverImage: restaurant.coverImage,
+                    ),
                   ),
                 );
               },

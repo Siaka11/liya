@@ -122,7 +122,7 @@ class DeliveryNotifier extends StateNotifier<DeliveryState> {
         // Mettre à jour l'état local
         if (state.currentUser != null) {
           final updatedUser =
-              state.currentUser!.copyWith(isAvailable: isAvailable);
+              state.currentUser!.copyWith(active: isAvailable);
           state = state.copyWith(currentUser: updatedUser);
         }
       }

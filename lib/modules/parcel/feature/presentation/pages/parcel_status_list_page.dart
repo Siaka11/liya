@@ -24,24 +24,77 @@ class ParcelStatusListPage extends ConsumerWidget {
         ? jsonDecode(userDetailsJson)
         : userDetailsJson;
     final phoneNumber = userDetails['phoneNumber'] ?? '';
+
+    // Titre dynamique selon le statut
+    String getStatusTitle() {
+      switch (status) {
+        case 'reception':
+          return 'Colis en réception';
+        case 'enRoute':
+          return 'Colis en route';
+        case 'livre':
+          return 'Colis livrés';
+        case 'nonLivre':
+          return 'Colis non livrés';
+        default:
+          return 'Mes colis';
+      }
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFFFF3ED),
       appBar: AppBar(
         backgroundColor: const Color(0xFFFFF3ED),
         elevation: 0,
-        leading: SizedBox(),
-        title: const Text('Mes livraisons',
-            style: TextStyle(color: Colors.black, fontSize: 18)),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(getStatusTitle(),
+            style: const TextStyle(color: Colors.black, fontSize: 18)),
         centerTitle: true,
       ),
       body: parcelsAsync.when(
         data: (parcels) {
+          final userParcels =
+              parcels.where((p) => p.phoneNumber == phoneNumber).toList();
           final filtered = status == 'ALL'
-              ? parcels
-              : parcels.where((p) => p.status == status).toList();
+              ? userParcels
+              : userParcels.where((p) => p.status == status).toList();
+
           if (filtered.isEmpty) {
-            return const Center(child: Text('Aucune demande.'));
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.inbox_outlined,
+                    size: 64,
+                    color: Colors.grey[400],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Aucun colis ${_getStatusText(status)}',
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: Colors.grey[600],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Vous n\'avez pas encore de colis dans cette catégorie',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[500],
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            );
           }
+
           return ListView.separated(
             padding: const EdgeInsets.all(16),
             itemCount: filtered.length,
@@ -58,6 +111,21 @@ class ParcelStatusListPage extends ConsumerWidget {
       bottomNavigationBar: _ParcelBottomNavBar(),
     );
   }
+
+  String _getStatusText(String status) {
+    switch (status) {
+      case 'reception':
+        return 'en réception';
+      case 'enRoute':
+        return 'en route';
+      case 'livre':
+        return 'livré';
+      case 'nonLivre':
+        return 'non livré';
+      default:
+        return '';
+    }
+  }
 }
 
 class _ParcelCardList extends StatelessWidget {
@@ -66,20 +134,14 @@ class _ParcelCardList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final statusColor = parcel.status == 'livre'
-        ? Colors.green
-        : parcel.status == 'enRoute'
-            ? Colors.green
-            : parcel.status == 'nonLivre'
-                ? Colors.red
-                : Colors.pink.shade100;
-    final statusTextColor =
-        parcel.status == 'enRoute' ? Colors.white : Colors.black;
+    final statusColor = _getStatusColor(parcel.status);
+    final statusText = _getStatusText(parcel.status);
+
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       margin: EdgeInsets.zero,
       child: InkWell(
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(12),
         onTap: () {
           Navigator.push(
               context,
@@ -90,70 +152,103 @@ class _ParcelCardList extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // En-tête avec statut et date
               Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: statusColor,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      statusText,
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12),
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    '${parcel.createdAt.day}/${parcel.createdAt.month}/${parcel.createdAt.year}',
+                    style: const TextStyle(color: Colors.grey, fontSize: 12),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 12),
+
+              // Informations du colis
+              Row(
                 children: [
                   Container(
                     width: 48,
                     height: 48,
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade200,
+                      color: const Color(0xFFF24E1E).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(Icons.inventory_2,
-                        size: 32, color: Colors.grey),
+                        size: 24, color: Color(0xFFF24E1E)),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: statusColor,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                parcel.status,
-                                style: TextStyle(
-                                    color: statusTextColor,
-                                    fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                            const Spacer(),
-                            Text(
-                              '${parcel.createdAt.day} ${_monthName(parcel.createdAt.month)} ${parcel.createdAt.year}',
-                              style: const TextStyle(
-                                  color: Colors.grey, fontSize: 12),
-                            ),
-                          ],
+                        // ID du colis
+                        Text(
+                          'Colis #${parcel.id}',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: Color(0xFFF24E1E),
+                          ),
                         ),
-                        const SizedBox(height: 8),
-                        Text(parcel.instructions ?? '',
-                            style:
-                                const TextStyle(fontWeight: FontWeight.bold)),
                         const SizedBox(height: 4),
-                        Text('ID: ${parcel.id}',
+
+                        // Expéditeur
+                        if (parcel.expediteurNom != null &&
+                            parcel.expediteurNom!.isNotEmpty)
+                          Text(
+                            'De: ${parcel.expediteurNom}',
                             style: const TextStyle(
-                                color: Colors.blue, fontSize: 13)),
+                              fontSize: 14,
+                              color: Colors.black87,
+                            ),
+                          ),
+
+                        // Destinataire
+                        if (parcel.destinataireNom != null &&
+                            parcel.destinataireNom!.isNotEmpty)
+                          Text(
+                            'À: ${parcel.destinataireNom}',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.black87,
+                            ),
+                          ),
+
+                        // Instructions
+                        if (parcel.instructions != null &&
+                            parcel.instructions!.isNotEmpty)
+                          Text(
+                            parcel.instructions!,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                       ],
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.chevron_right),
-                    onPressed: () {
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => ParcelDetailPage(parcel: parcel),
-                          ));
-                    },
-                  ),
+                  const Icon(Icons.chevron_right, color: Colors.grey),
                 ],
               ),
             ],
@@ -163,23 +258,34 @@ class _ParcelCardList extends StatelessWidget {
     );
   }
 
-  String _monthName(int month) {
-    const months = [
-      '',
-      'janv.',
-      'févr.',
-      'mars',
-      'avr.',
-      'mai',
-      'juin',
-      'juil.',
-      'août',
-      'sept.',
-      'oct.',
-      'nov.',
-      'déc.'
-    ];
-    return months[month];
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'reception':
+        return Colors.orange;
+      case 'enRoute':
+        return Colors.blue;
+      case 'livre':
+        return Colors.green;
+      case 'nonLivre':
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  String _getStatusText(String status) {
+    switch (status) {
+      case 'reception':
+        return 'EN RÉCEPTION';
+      case 'enRoute':
+        return 'EN ROUTE';
+      case 'livre':
+        return 'LIVRÉ';
+      case 'nonLivre':
+        return 'NON LIVRÉ';
+      default:
+        return status.toUpperCase();
+    }
   }
 }
 

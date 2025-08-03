@@ -108,11 +108,11 @@ class DeliveryProfilePage extends ConsumerWidget {
                 child: Row(
                   children: [
                     Icon(
-                      currentUser.isAvailable
+                      currentUser.active
                           ? Icons.check_circle
                           : Icons.cancel,
                       color:
-                          currentUser.isAvailable ? Colors.green : Colors.red,
+                          currentUser.active ? Colors.green : Colors.red,
                       size: 32,
                     ),
                     const SizedBox(width: 16),
@@ -121,19 +121,19 @@ class DeliveryProfilePage extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            currentUser.isAvailable
+                            currentUser.active
                                 ? 'Disponible'
                                 : 'Indisponible',
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
-                              color: currentUser.isAvailable
+                              color: currentUser.active
                                   ? Colors.green
                                   : Colors.red,
                             ),
                           ),
                           Text(
-                            currentUser.isAvailable
+                            currentUser.active
                                 ? 'Prêt pour les livraisons'
                                 : 'Non disponible pour les livraisons',
                             style: const TextStyle(color: Colors.grey),
@@ -239,7 +239,10 @@ class DeliveryProfilePage extends ConsumerWidget {
                   _buildInfoTile(
                     Icons.calendar_today,
                     'Membre depuis',
-                    DateFormat('dd/MM/yyyy').format(currentUser.createdAt),
+                    currentUser.createdAt != null
+                        ? DateFormat('dd/MM/yyyy')
+                            .format(currentUser.createdAt!)
+                        : 'Date non disponible',
                   ),
                 ],
               ),

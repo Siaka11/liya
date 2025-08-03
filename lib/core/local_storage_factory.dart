@@ -28,28 +28,28 @@ class LocalStorageFactory {
     return singleton<SharedPreferences>().getInt(key) ?? defaultValue;
   }
 
-  setObject(key, value) {
-    singleton<SharedPreferences>().setString(key, jsonEncode(value));
+  Future<void> setObject(key, value) async {
+    await singleton<SharedPreferences>().setString(key, jsonEncode(value));
   }
 
   getObject(key) {
     return singleton<SharedPreferences>().get(key) ?? '{}';
   }
 
-  setUserDetails(data) {
-    setObject("UserDetails", data);
+  Future<void> setUserDetails(data) async {
+    await setObject("UserDetails", data);
   }
 
-  setAppModules(data) {
-    setObject("AppModules", data);
+  Future<void> setAppModules(data) async {
+    await setObject("AppModules", data);
   }
 
   setUserSetting(data) {
     setObject("UserSetting", data);
   }
 
-  void clearUserDetails() {
-    singleton<SharedPreferences>().remove("UserDetails");
+  Future<void> clearUserDetails() async {
+    await singleton<SharedPreferences>().remove("UserDetails");
   }
 
   static getUserSetting() {

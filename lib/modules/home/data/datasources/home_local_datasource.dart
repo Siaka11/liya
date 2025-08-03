@@ -10,22 +10,24 @@ abstract class HomeLocalDataSource {
 }
 
 class HomeLocalDataSourceImpl implements HomeLocalDataSource {
-  late final Map<String, dynamic> userDetails;
-  late final String? role;
-
-  HomeLocalDataSourceImpl() {
-    final userDetailsJson = singleton<LocalStorageFactory>().getUserDetails();
-    userDetails = userDetailsJson is String
-        ? jsonDecode(userDetailsJson)
-        : userDetailsJson;
-    role = userDetails['role'];
-    print('Role de l\'utilisateur : $role');
-  }
-
-
-
   @override
   Future<List<HomeOptionModel>> getHomeOptions() async {
+    // Lire les données utilisateur à chaque appel pour avoir les données à jour
+    final userDetailsJson = singleton<LocalStorageFactory>().getUserDetails();
+    Map<String, dynamic> userDetails;
+
+    try {
+      userDetails = userDetailsJson is String
+          ? jsonDecode(userDetailsJson)
+          : userDetailsJson;
+    } catch (e) {
+      print('❌ Erreur parsing userDetails: $e');
+      userDetails = {};
+    }
+
+    final String? role = userDetails['role'];
+    print('🔄 Role de l\'utilisateur (mis à jour): $role');
+
     return [
       const HomeOptionModel(
         title: 'Je commande un plat',
@@ -35,16 +37,12 @@ class HomeLocalDataSourceImpl implements HomeLocalDataSource {
         title: "J'expédie un colis",
         icon: 'local_shipping',
       ),
-      if(role == 'admin' || role == 'livreur')...[
-      const HomeOptionModel(
-        title: 'Je livre',
-        icon: 'delivery_dining',
-      ),
+      if (role == 'admin' || role == 'livreur') ...[
+        const HomeOptionModel(
+          title: 'Je livre',
+          icon: 'delivery_dining',
+        ),
       ],
-      /*const HomeOptionModel(
-        title: 'Faire des courses',
-        icon: 'shopping_cart',
-      ),*/
       if (role == 'admin') ...[
         const HomeOptionModel(
           title: 'Administrateur',

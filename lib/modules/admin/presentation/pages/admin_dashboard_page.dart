@@ -1,181 +1,28 @@
-import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../core/ui/theme/theme.dart';
-import '../../../../routes/app_router.gr.dart';
-import '../widgets/admin_menu_card.dart';
+import 'package:auto_route/auto_route.dart';
+import 'package:liya/routes/app_router.gr.dart';
+import 'package:liya/core/ui/components/admin_menu_card.dart';
 
 @RoutePage()
-class AdminDashboardPage extends ConsumerWidget {
+class AdminDashboardPage extends StatelessWidget {
   const AdminDashboardPage({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
+        title: const Text('Administration'),
         backgroundColor: const Color(0xFFF24E1E),
-        title: const Text(
-          'Administration',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        centerTitle: true,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications, color: Colors.white),
-            onPressed: () {
-              // TODO: Notifications admin
-            },
-          ),
-        ],
+        foregroundColor: Colors.white,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // En-tête avec statistiques rapides
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF24E1E),
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, 5),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Icon(
-                          Icons.admin_panel_settings,
-                          color: Colors.white,
-                          size: 32,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      const Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Tableau de bord',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Text(
-                              'Gestion complète de la plateforme',
-                              style: TextStyle(
-                                color: Colors.white70,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // Section Gestion des Restaurants
-            const Text(
-              '🍽️ Gestion des Restaurants',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFFF24E1E),
-              ),
-            ),
-            const SizedBox(height: 12),
-            GridView.count(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: 2,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-              childAspectRatio: 1.2,
-              children: [
-                AdminMenuCard(
-                  title: 'Restaurants',
-                  subtitle: 'Gérer les restaurants',
-                  icon: Icons.restaurant,
-                  color: Colors.orange,
-                  onTap: () {
-                    AutoRouter.of(context)
-                        .push(const RestaurantManagementRoute());
-                  },
-                ),
-                AdminMenuCard(
-                  title: 'Plats',
-                  subtitle: 'Gérer les plats',
-                  icon: Icons.fastfood,
-                  color: Colors.green,
-                  onTap: () {
-                    AutoRouter.of(context).push(const DishManagementRoute());
-                  },
-                ),
-                AdminMenuCard(
-                  title: 'Catégories',
-                  subtitle: 'Gérer les catégories',
-                  icon: Icons.category,
-                  color: Colors.blue,
-                  onTap: () {
-                    // TODO: Navigation vers gestion catégories
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Fonctionnalité à venir')),
-                    );
-                  },
-                ),
-                AdminMenuCard(
-                  title: 'Images',
-                  subtitle: 'Éditer les images',
-                  icon: Icons.image,
-                  color: Colors.purple,
-                  onTap: () {
-                    // TODO: Navigation vers éditeur d'images
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Fonctionnalité à venir')),
-                    );
-                  },
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-
             // Section Gestion des Livraisons
-            const Text(
-              '🚚 Gestion des Livraisons',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFFF24E1E),
-              ),
-            ),
-            const SizedBox(height: 12),
+            _buildSectionHeader('🚚 Gestion des Livraisons', Colors.orange),
+            const SizedBox(height: 16),
             GridView.count(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
@@ -198,49 +45,37 @@ class AdminDashboardPage extends ConsumerWidget {
                   title: 'Commandes',
                   subtitle: 'Suivre les commandes',
                   icon: Icons.assignment,
-                  color: Colors.indigo,
+                  color: Colors.blue,
                   onTap: () {
-                    // TODO: Navigation vers suivi commandes
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Fonctionnalité à venir')),
-                    );
+                    AutoRouter.of(context).push(const OrderManagementRoute());
                   },
                 ),
                 AdminMenuCard(
                   title: 'Assignations',
                   subtitle: 'Assigner les livraisons',
                   icon: Icons.people,
-                  color: Colors.cyan,
+                  color: Colors.lightBlue,
                   onTap: () {
                     AutoRouter.of(context)
-                        .push(const DeliveryAdminDashboardRoute());
+                        .push(const AssignmentManagementRoute());
                   },
                 ),
                 AdminMenuCard(
                   title: 'Statistiques',
                   subtitle: 'Voir les statistiques',
-                  icon: Icons.analytics,
-                  color: Colors.amber,
+                  icon: Icons.bar_chart,
+                  color: Colors.yellow,
                   onTap: () {
-                    // TODO: Navigation vers statistiques
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Fonctionnalité à venir')),
-                    );
+                    AutoRouter.of(context).push(const StatisticsRoute());
                   },
                 ),
               ],
             ),
-            const SizedBox(height: 24),
 
-            // Section Gestion des Utilisateurs
-            const Text(
-              '👥 Gestion des Utilisateurs',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFFF24E1E),
-              ),
-            ),
+            const SizedBox(height: 32),
+
+            // Section Gestion des Restaurants
+            _buildSectionHeader('🍽️ Gestion des Restaurants', Colors.orange),
             const SizedBox(height: 12),
             GridView.count(
               shrinkWrap: true,
@@ -251,27 +86,85 @@ class AdminDashboardPage extends ConsumerWidget {
               childAspectRatio: 1.2,
               children: [
                 AdminMenuCard(
-                  title: 'Clients',
-                  subtitle: 'Gérer les clients',
-                  icon: Icons.people_outline,
-                  color: Colors.pink,
+                  title: 'Restaurants',
+                  subtitle: 'Gérer les restaurants',
+                  icon: Icons.restaurant,
+                  color: Colors.orange,
                   onTap: () {
-                    // TODO: Navigation vers gestion clients
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Fonctionnalité à venir')),
-                    );
+                    AutoRouter.of(context)
+                        .push(const RestaurantManagementRoute());
                   },
                 ),
                 AdminMenuCard(
+                  title: 'Plats',
+                  subtitle: 'Gérer les plats',
+                  icon: Icons.restaurant_menu,
+                  color: Colors.green,
+                  onTap: () {
+                    AutoRouter.of(context).push(const DishManagementRoute());
+                  },
+                ),
+                AdminMenuCard(
+                  title: 'Promotions',
+                  subtitle: 'Gérer les promotions',
+                  icon: Icons.local_offer,
+                  color: Colors.orange,
+                  onTap: () {
+                    AutoRouter.of(context)
+                        .push(const PromotionManagementRoute());
+                  },
+                ),
+                AdminMenuCard(
+                  title: 'Catégories',
+                  subtitle: 'Gérer les catégories',
+                  icon: Icons.category,
+                  color: Colors.blue,
+                  onTap: () {
+                    AutoRouter.of(context)
+                        .push(const CategoryManagementRoute());
+                  },
+                ),
+                /*AdminMenuCard(
+                  title: 'Images',
+                  subtitle: 'Éditer les images',
+                  icon: Icons.image,
+                  color: Colors.purple,
+                  onTap: () {
+                    AutoRouter.of(context).push(const ImageManagementRoute());
+                  },
+                ),*/
+              ],
+            ),
+
+            const SizedBox(height: 32),
+
+            // Section Gestion des Utilisateurs
+            _buildSectionHeader('👥 Gestion des Utilisateurs', Colors.orange),
+            const SizedBox(height: 16),
+            GridView.count(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: 2,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+              childAspectRatio: 1.2,
+              children: [
+                AdminMenuCard(
+                  title: 'Utilisateurs',
+                  subtitle: 'Gérer les clients',
+                  icon: Icons.people,
+                  color: Colors.pink,
+                  onTap: () {
+                    AutoRouter.of(context).push(const UserManagementRoute());
+                  },
+                ),
+/*                AdminMenuCard(
                   title: 'Profils',
                   subtitle: 'Gérer les profils',
                   icon: Icons.person,
-                  color: Colors.deepPurple,
+                  color: Colors.purple,
                   onTap: () {
-                    // TODO: Navigation vers gestion profils
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Fonctionnalité à venir')),
-                    );
+                    AutoRouter.of(context).push(const UserManagementRoute());
                   },
                 ),
                 AdminMenuCard(
@@ -280,10 +173,8 @@ class AdminDashboardPage extends ConsumerWidget {
                   icon: Icons.security,
                   color: Colors.red,
                   onTap: () {
-                    // TODO: Navigation vers gestion rôles
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Fonctionnalité à venir')),
-                    );
+                    AutoRouter.of(context)
+                        .push(const RolePermissionManagementRoute());
                   },
                 ),
                 AdminMenuCard(
@@ -292,26 +183,18 @@ class AdminDashboardPage extends ConsumerWidget {
                   icon: Icons.lock,
                   color: Colors.brown,
                   onTap: () {
-                    // TODO: Navigation vers gestion permissions
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Fonctionnalité à venir')),
-                    );
+                    AutoRouter.of(context)
+                        .push(const RolePermissionManagementRoute());
                   },
-                ),
+                ),*/
               ],
             ),
-            const SizedBox(height: 24),
+
+            const SizedBox(height: 32),
 
             // Section Système et Configuration
-            const Text(
-              '⚙️ Système et Configuration',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFFF24E1E),
-              ),
-            ),
-            const SizedBox(height: 12),
+/*            _buildSectionHeader('⚙️ Système et Configuration', Colors.orange),
+            const SizedBox(height: 16),
             GridView.count(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
@@ -326,7 +209,7 @@ class AdminDashboardPage extends ConsumerWidget {
                   icon: Icons.settings,
                   color: Colors.grey,
                   onTap: () {
-                    // TODO: Navigation vers paramètres
+                    // TODO: Implémenter la page de paramètres
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Fonctionnalité à venir')),
                     );
@@ -336,9 +219,9 @@ class AdminDashboardPage extends ConsumerWidget {
                   title: 'Logs',
                   subtitle: 'Voir les logs système',
                   icon: Icons.list_alt,
-                  color: Colors.blueGrey,
+                  color: Colors.grey,
                   onTap: () {
-                    // TODO: Navigation vers logs
+                    // TODO: Implémenter la page de logs
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Fonctionnalité à venir')),
                     );
@@ -348,9 +231,9 @@ class AdminDashboardPage extends ConsumerWidget {
                   title: 'Sauvegarde',
                   subtitle: 'Sauvegarder les données',
                   icon: Icons.backup,
-                  color: Colors.lightGreen,
+                  color: Colors.green,
                   onTap: () {
-                    // TODO: Navigation vers sauvegarde
+                    // TODO: Implémenter la fonctionnalité de sauvegarde
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Fonctionnalité à venir')),
                     );
@@ -362,26 +245,20 @@ class AdminDashboardPage extends ConsumerWidget {
                   icon: Icons.build,
                   color: Colors.orange,
                   onTap: () {
-                    // TODO: Navigation vers maintenance
+                    // TODO: Implémenter le mode maintenance
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Fonctionnalité à venir')),
                     );
                   },
                 ),
               ],
-            ),
-            const SizedBox(height: 24),
+            ),*/
+
+            const SizedBox(height: 32),
 
             // Section Rapports et Analytics
-            const Text(
-              '📊 Rapports et Analytics',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFFF24E1E),
-              ),
-            ),
-            const SizedBox(height: 12),
+            /*_buildSectionHeader('📊 Rapports et Analytics', Colors.orange),
+            const SizedBox(height: 16),
             GridView.count(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
@@ -396,22 +273,16 @@ class AdminDashboardPage extends ConsumerWidget {
                   icon: Icons.trending_up,
                   color: Colors.green,
                   onTap: () {
-                    // TODO: Navigation vers rapport ventes
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Fonctionnalité à venir')),
-                    );
+                    AutoRouter.of(context).push(const StatisticsRoute());
                   },
                 ),
                 AdminMenuCard(
                   title: 'Performance',
                   subtitle: 'Performance des livreurs',
                   icon: Icons.speed,
-                  color: Colors.lightBlue,
+                  color: Colors.blue,
                   onTap: () {
-                    // TODO: Navigation vers performance
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Fonctionnalité à venir')),
-                    );
+                    AutoRouter.of(context).push(const StatisticsRoute());
                   },
                 ),
                 AdminMenuCard(
@@ -420,7 +291,7 @@ class AdminDashboardPage extends ConsumerWidget {
                   icon: Icons.star,
                   color: Colors.yellow,
                   onTap: () {
-                    // TODO: Navigation vers satisfaction
+                    // TODO: Implémenter la page de satisfaction
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Fonctionnalité à venir')),
                     );
@@ -429,21 +300,35 @@ class AdminDashboardPage extends ConsumerWidget {
                 AdminMenuCard(
                   title: 'Export',
                   subtitle: 'Exporter les données',
-                  icon: Icons.file_download,
-                  color: Colors.deepOrange,
+                  icon: Icons.download,
+                  color: Colors.red,
                   onTap: () {
-                    // TODO: Navigation vers export
+                    // TODO: Implémenter l'export de données
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Fonctionnalité à venir')),
                     );
                   },
                 ),
               ],
-            ),
-            const SizedBox(height: 32),
+            ),*/
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title, Color color) {
+    return Row(
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
+      ],
     );
   }
 }

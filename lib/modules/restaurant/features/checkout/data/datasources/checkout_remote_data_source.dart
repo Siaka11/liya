@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../card/data/models/cart_item_model.dart';
 import '../../domain/entities/delivery_info.dart';
 import '../models/delivery_info_model.dart';
+import 'package:liya/core/services/notification_service.dart';
 
 abstract class CheckoutRemoteDataSource {
   Future<DeliveryInfo> getDeliveryInfo(String userId);
@@ -12,6 +13,7 @@ abstract class CheckoutRemoteDataSource {
 
 class CheckoutRemoteDataSourceImpl implements CheckoutRemoteDataSource {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final NotificationService _notificationService = NotificationService();
 
   @override
   Future<DeliveryInfo> getDeliveryInfo(String userId) async {
@@ -55,22 +57,55 @@ class CheckoutRemoteDataSourceImpl implements CheckoutRemoteDataSource {
     }
 
     final orderRef = _firestore.collection('orders').doc();
+    final orderId = orderRef.id;
+    final total = cartItems.fold(
+        0.0,
+        (sum, item) =>
+            sum + (double.tryParse(item.price) ?? 0) * item.quantity);
+
     final batch = _firestore.batch();
 
     // Create order
     batch.set(orderRef, {
+      'id': orderId,
       'userId': userId,
       'status': 'pending',
       'createdAt': FieldValue.serverTimestamp(),
       'items': cartItems.map((item) => item.toFirestore()).toList(),
       'deliveryInfo': (deliveryInfo as DeliveryInfoModel).toFirestore(),
-      'total': cartItems.fold(
-          0.0,
-          (sum, item) =>
-              sum + (double.tryParse(item.price) ?? 0) * item.quantity),
+      'total': total,
     });
 
     // Execute batch
     await batch.commit();
+
+    print('✅ Commande créée avec succès: $orderId');
+
+    // Envoyer notification aux admins
+    print('📤 === DÉBUT ENVOI NOTIFICATION ADMIN ===');
+    print('📤 OrderId: $orderId');
+    print('📤 CustomerPhone: $userId');
+    print('📤 Total: $total');
+    print('📤 Items: ${cartItems.length}');
+
+    try {
+      // Récupérer le nom de l'utilisateur depuis Firestore
+      final userDoc = await _firestore.collection('users').doc(userId).get();
+      final userData = userDoc.data();
+      final customerName = userData?['name'] ?? 'Client';
+
+      print('📤 CustomerName: $customerName');
+
+      await _notificationService.notifyNewOrderToAdmin(
+        orderId: orderId,
+        customerName: customerName,
+        total: total,
+      );
+      print('✅ Notification envoyée aux admins pour la commande: $orderId');
+    } catch (e) {
+      print('❌ Erreur envoi notification admin: $e');
+      print('❌ Stack trace: ${StackTrace.current}');
+    }
+    print('📤 === FIN ENVOI NOTIFICATION ADMIN ===');
   }
 }

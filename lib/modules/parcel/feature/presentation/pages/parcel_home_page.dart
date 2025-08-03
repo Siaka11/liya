@@ -74,7 +74,7 @@ class ParcelHomePage extends ConsumerWidget {
                       _StatusRow(
                         icon: Icons.inbox,
                         label: 'RECEPTION',
-                        count: statusCounts['RECEPTION'] ?? 0,
+                        count: statusCounts['reception'] ?? 0,
                         color: Colors.black,
                         onTap: () {
                           Navigator.push(
@@ -133,17 +133,17 @@ class ParcelHomePage extends ConsumerWidget {
                         child: Text('Ce que je veux',
                             style: TextStyle(fontWeight: FontWeight.bold)),
                       ),
+                      _ActionButton(
+                        label: 'Je reçois un colis',
+                        onTap: () {
+                          _askPhoneNumber(context, true);
+                        },
+                      ),
                       const SizedBox(height: 8),
                       _ActionButton(
                         label: 'Je livre un colis',
                         onTap: () {
                           _askPhoneNumber(context, false);
-                        },
-                      ),
-                      _ActionButton(
-                        label: 'Je reçois un colis',
-                        onTap: () {
-                          _askPhoneNumber(context, true);
                         },
                       ),
                       const SizedBox(height: 24),
@@ -167,17 +167,32 @@ class ParcelHomePage extends ConsumerWidget {
         ? jsonDecode(userDetailsJson)
         : userDetailsJson;
     final phoneNumber = (userDetails['phoneNumber'] ?? '').toString();
+
+    print('🔍 === DÉBOGAGE COMPTAGE COLIS ===');
+    print('🔍 PhoneNumber utilisateur: $phoneNumber');
+    print('🔍 Total colis dans la liste: ${parcels.length}');
+
     final userParcels =
         parcels.where((p) => p.phoneNumber == phoneNumber).toList();
+
+    print('🔍 Colis de l\'utilisateur: ${userParcels.length}');
+
     final Map<String, int> counts = {
       'reception': 0,
       'enRoute': 0,
       'nonLivre': 0,
       'livre': 0,
     };
+
     for (final parcel in userParcels) {
+      print(
+          '🔍 Colis ID: ${parcel.id}, Status: ${parcel.status}, Phone: ${parcel.phoneNumber}');
       counts[parcel.status] = (counts[parcel.status] ?? 0) + 1;
     }
+
+    print('🔍 Comptage final: $counts');
+    print('🔍 === FIN DÉBOGAGE ===');
+
     return counts;
   }
 

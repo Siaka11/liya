@@ -11,6 +11,10 @@ class ModernDishCard extends ConsumerWidget {
   final String restaurantId;
   final String description;
   final VoidCallback? onTap;
+  // Nouveaux paramètres pour les promotions
+  final bool isOnSale;
+  final double? originalPrice;
+  final double? discountPercentage;
 
   const ModernDishCard({
     Key? key,
@@ -21,6 +25,9 @@ class ModernDishCard extends ConsumerWidget {
     required this.restaurantId,
     required this.description,
     this.onTap,
+    this.isOnSale = false,
+    this.originalPrice,
+    this.discountPercentage,
   }) : super(key: key);
 
   @override
@@ -38,101 +45,180 @@ class ModernDishCard extends ConsumerWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
           onTap: onTap,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Stack(
             children: [
-              // Image du plat - hauteur fixe
-              ClipRRect(
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(12)),
-                child: Container(
-                  height: 100,
-                  width: double.infinity,
-                  child: Image.network(
-                    imageUrl,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => Container(
-                      color: Colors.grey[300],
-                      child: const Icon(
-                        Icons.fastfood,
-                        size: 40,
-                        color: Colors.grey,
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Image du plat - hauteur fixe
+                  ClipRRect(
+                    borderRadius:
+                        const BorderRadius.vertical(top: Radius.circular(12)),
+                    child: Container(
+                      height: 100,
+                      width: double.infinity,
+                      child: Image.network(
+                        imageUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => Container(
+                          color: Colors.grey[300],
+                          child: const Icon(
+                            Icons.fastfood,
+                            size: 40,
+                            color: Colors.grey,
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ),
 
-              // Contenu de la carte - hauteur fixe
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Nom du plat
-                      Text(
-                        name,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-
-                      const SizedBox(height: 2),
-
-                      // Description
-                      Expanded(
-                        child: Text(
-                          description,
-                          style: TextStyle(
-                            fontSize: 9,
-                            color: Colors.grey[600],
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-
-                      const SizedBox(height: 6),
-
-                      // Prix et boutons de quantité
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  // Contenu de la carte - hauteur fixe
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Prix
+                          // Nom du plat
+                          Text(
+                            name,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+
+                          const SizedBox(height: 2),
+
+                          // Description
                           Expanded(
                             child: Text(
-                              '$price FCFA',
-                              style: const TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                color: UIColors.orange,
+                              description,
+                              style: TextStyle(
+                                fontSize: 9,
+                                color: Colors.grey[600],
                               ),
+                              maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
 
-                          const SizedBox(width: 4),
+                          const SizedBox(height: 6),
 
-                          // Boutons de quantité
-                          _QuantityControls(
-                            quantity: quantity,
-                            onAdd: () => _addItem(ref),
-                            onRemove: () => _removeItem(ref),
+                          // Prix et boutons de quantité
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              // Prix avec support des promotions
+                              Expanded(
+                                child: _buildPriceDisplay(),
+                              ),
+
+                              const SizedBox(width: 4),
+
+                              // Boutons de quantité
+                              _QuantityControls(
+                                quantity: quantity,
+                                onAdd: () => _addItem(ref),
+                                onRemove: () => _removeItem(ref),
+                              ),
+                            ],
                           ),
                         ],
                       ),
-                    ],
+                    ),
+                  ),
+                ],
+              ),
+
+              // Badge de promotion
+              if (isOnSale &&
+                  discountPercentage != null &&
+                  discountPercentage! > 0)
+                Positioned(
+                  top: 8,
+                  left: 8,
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(8),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.2),
+                          spreadRadius: 1,
+                          blurRadius: 3,
+                          offset: const Offset(0, 1),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.local_offer,
+                          color: Colors.white,
+                          size: 12,
+                        ),
+                        const SizedBox(width: 2),
+                        Text(
+                          '-${discountPercentage!.toInt()}%',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildPriceDisplay() {
+    if (!isOnSale ||
+        originalPrice == null ||
+        originalPrice! <= double.parse(price)) {
+      return Text(
+        '$price FCFA',
+        style: const TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
+          color: UIColors.orange,
+        ),
+        overflow: TextOverflow.ellipsis,
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '${originalPrice!.toInt()} FCFA',
+          style: const TextStyle(
+            decoration: TextDecoration.lineThrough,
+            color: Colors.grey,
+            fontSize: 9,
+          ),
+        ),
+        Text(
+          '$price FCFA',
+          style: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
+            color: Colors.red,
+          ),
+          overflow: TextOverflow.ellipsis,
+        ),
+      ],
     );
   }
 

@@ -1,123 +1,120 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:liya/modules/auth/auth_service.dart';
-
-import '../../core/loading_provider.dart';
-import '../../core/singletons.dart';
-import '../../routes/app_router.dart';
+import 'package:liya/modules/auth/firebase_auth_service.dart';
+import 'package:auto_route/auto_route.dart';
 import 'package:liya/routes/app_router.gr.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 
-enum OtpStatus {
-  Empty,
-  Processing,
-  Error,
-  Success,
-  Dirty,
-}
-
+// État OTP
 class OtpState {
+  final String pin;
+  final bool isLoading;
   final bool hasError;
   final String errorMessage;
-  final OtpStatus status;
-  final String pin;
+  final bool isVerified;
 
   OtpState({
+    this.pin = '',
+    this.isLoading = false,
     this.hasError = false,
     this.errorMessage = '',
-    this.status = OtpStatus.Empty,
-    this.pin = '',
+    this.isVerified = false,
   });
 
   OtpState copyWith({
+    String? pin,
+    bool? isLoading,
     bool? hasError,
     String? errorMessage,
-    OtpStatus? status,
-    String? pin,
+    bool? isVerified,
   }) {
     return OtpState(
+      pin: pin ?? this.pin,
+      isLoading: isLoading ?? this.isLoading,
       hasError: hasError ?? this.hasError,
       errorMessage: errorMessage ?? this.errorMessage,
-      status: status ?? this.status,
-      pin: pin ?? this.pin,
+      isVerified: isVerified ?? this.isVerified,
     );
   }
 }
 
+// Notifier OTP
 class OtpNotifier extends StateNotifier<OtpState> {
-  late final Ref ref;
-  late final String verificationId;
+  final String verificationId;
+  final FirebaseAuthService _authService;
 
-  OtpNotifier(this.ref, this.verificationId) : super(OtpState());
+  OtpNotifier(this.verificationId)
+      : _authService = FirebaseAuthService(),
+        super(OtpState());
 
   void updatePin(String pin) {
-    state = state.copyWith(
-      pin: pin,
-      hasError: false,
-      errorMessage: '',
-      status: OtpStatus.Dirty,
-    );
+    state = state.copyWith(pin: pin);
   }
 
   Future<void> verifyOTP(BuildContext context) async {
-    final pin = state.pin.trim();
-    print('Verifying OTP: $pin with verificationId: $verificationId');
-
-    state = state.copyWith(
-      hasError: false,
-      errorMessage: '',
-      status: OtpStatus.Processing,
-      pin: '',
-    );
-    ref.read(loadingProvider.notifier).start();
-
-    if (pin.length != 6) {
+    if (state.pin.length != 6) {
       state = state.copyWith(
         hasError: true,
-        errorMessage: 'Le code doit contenir 6 chiffres',
-        status: OtpStatus.Error,
-        pin: '',
+        errorMessage: 'Veuillez saisir les 6 chiffres du code',
       );
-      ref.read(loadingProvider.notifier).complete();
       return;
     }
 
+    state = state.copyWith(isLoading: true, hasError: false, errorMessage: '');
+
     try {
-      await AuthService().verifOtp(
-        otp: pin,
-        verificationId: verificationId,
-        onSuccess: () {
-          state = state.copyWith(
-            pin: '',
-            hasError: false,
-            errorMessage: '',
-            status: OtpStatus.Success,
-          );
-          ref.read(loadingProvider.notifier).complete();
-          singleton<AppRouter>().replace(const InfoUserRoute());
-        },
-        onError: (error) {
-          state = state.copyWith(
-            pin: '',
-            hasError: true,
-            errorMessage: error,
-            status: OtpStatus.Error,
-          );
-        },
-      );
+      final userCredential = await _authService.verifyOTP(state.pin);
+
+      if (userCredential.user != null) {
+        state = state.copyWith(isVerified: true, isLoading: false);
+
+        // Navigation vers la page d'informations utilisateur
+        if (context.mounted) {
+          context.router.push(const InfoUserRoute());
+        }
+      }
     } catch (e) {
       state = state.copyWith(
-        pin: '',
+        isLoading: false,
         hasError: true,
-        errorMessage: e.toString(),
-        status: OtpStatus.Error,
+        errorMessage: 'Code incorrect: ${e.toString()}',
       );
-    } finally {
-      ref.read(loadingProvider.notifier).complete();
-      state = state.copyWith(status: OtpStatus.Empty, pin: '');
+    }
+  }
+
+  Future<void> resendOTP(String phoneNumber) async {
+    state = state.copyWith(isLoading: true, hasError: false, errorMessage: '');
+
+    try {
+      await _authService.sendOTP(phoneNumber);
+      state = state.copyWith(isLoading: false);
+    } catch (e) {
+      String errorMessage = 'Erreur lors du renvoi';
+
+      // Messages d'erreur plus spécifiques
+      if (e.toString().contains('too-many-requests')) {
+        errorMessage =
+            'Trop de demandes. Attendez quelques minutes avant de réessayer.';
+      } else if (e.toString().contains('invalid-phone-number')) {
+        errorMessage = 'Numéro de téléphone invalide.';
+      } else if (e.toString().contains('quota-exceeded')) {
+        errorMessage = 'Limite de SMS dépassée. Réessayez plus tard.';
+      } else if (e.toString().contains('network-request-failed')) {
+        errorMessage = 'Erreur réseau. Vérifiez votre connexion internet.';
+      } else {
+        errorMessage = 'Erreur lors du renvoi: ${e.toString()}';
+      }
+
+      state = state.copyWith(
+        isLoading: false,
+        hasError: true,
+        errorMessage: errorMessage,
+      );
     }
   }
 }
 
+// Provider OTP
 final otpProvider = StateNotifierProvider.family<OtpNotifier, OtpState, String>(
-  (ref, verificationId) => OtpNotifier(ref, verificationId),
+  (ref, verificationId) => OtpNotifier(verificationId),
 );
