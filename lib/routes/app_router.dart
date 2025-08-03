@@ -39,6 +39,7 @@ import '../modules/admin/presentation/pages/order_management_page.dart';
 import '../modules/admin/presentation/pages/statistics_page.dart';
 import '../modules/admin/presentation/pages/add_dish_page.dart';
 import '../modules/admin/presentation/pages/edit_dish_page.dart';
+import '../modules/admin/presentation/pages/promotion_management_page.dart';
 import '../modules/admin/presentation/pages/user_management_page.dart';
 import '../modules/admin/presentation/pages/category_management_page.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -128,6 +129,7 @@ class AppRouter extends $AppRouter implements AutoRouteGuard {
         AutoRoute(page: StatisticsRoute.page),
         AutoRoute(page: AddDishRoute.page),
         AutoRoute(page: EditDishRoute.page),
+        AutoRoute(page: PromotionManagementRoute.page),
         AutoRoute(page: UserManagementRoute.page),
         AutoRoute(page: CategoryManagementRoute.page),
         AutoRoute(page: ImageManagementRoute.page),

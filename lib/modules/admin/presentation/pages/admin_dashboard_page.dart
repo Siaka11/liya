@@ -105,6 +105,16 @@ class AdminDashboardPage extends StatelessWidget {
                   },
                 ),
                 AdminMenuCard(
+                  title: 'Promotions',
+                  subtitle: 'Gérer les promotions',
+                  icon: Icons.local_offer,
+                  color: Colors.orange,
+                  onTap: () {
+                    AutoRouter.of(context)
+                        .push(const PromotionManagementRoute());
+                  },
+                ),
+                AdminMenuCard(
                   title: 'Catégories',
                   subtitle: 'Gérer les catégories',
                   icon: Icons.category,

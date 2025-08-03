@@ -9,6 +9,7 @@ import 'package:liya/routes/app_router.gr.dart';
 import 'package:flutter/material.dart';
 import 'navigation_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class FCMService {
   static final FCMService _instance = FCMService._internal();
@@ -300,10 +301,35 @@ class FCMService {
       final userDetails = await _localStorage.getUserDetails();
       print('📱 userDetails récupéré: $userDetails');
 
-      if (userDetails != null && userDetails['phoneNumber'] != null) {
-        String phone = userDetails['phoneNumber'];
-        print('📱 Phone trouvé: $phone');
+      String? phone;
 
+      // Essayer de récupérer depuis LocalStorage
+      if (userDetails != null && userDetails['phoneNumber'] != null) {
+        phone = userDetails['phoneNumber'];
+        print('📱 Phone trouvé dans LocalStorage: $phone');
+      } else {
+        // Fallback: récupérer depuis Firebase Auth
+        print(
+            '📱 Phone non trouvé dans LocalStorage, tentative depuis Firebase Auth...');
+        final currentUser = FirebaseAuth.instance.currentUser;
+        if (currentUser != null && currentUser.phoneNumber != null) {
+          phone = currentUser.phoneNumber;
+          print('📱 Phone trouvé dans Firebase Auth: $phone');
+
+          // Mettre à jour LocalStorage avec le phoneNumber
+          if (userDetails != null) {
+            userDetails['phoneNumber'] = phone;
+            await _localStorage.saveUserDetails(userDetails);
+            print('💾 LocalStorage mis à jour avec le phoneNumber: $phone');
+          }
+        } else {
+          print(
+              '❌ Aucun phoneNumber trouvé ni dans LocalStorage ni dans Firebase Auth');
+          return;
+        }
+      }
+
+      if (phone != null) {
         // Normaliser le numéro pour Firestore
         String normalizedPhone =
             phone.startsWith('+225') ? phone : '+225$phone';
@@ -317,7 +343,7 @@ class FCMService {
         print('✅ Token FCM sauvegardé dans Firestore');
       } else {
         print(
-            '⚠️ Impossible de récupérer le numéro de téléphone pour sauvegarder le token FCM');
+            '❌ Impossible de récupérer le numéro de téléphone pour sauvegarder le token FCM');
         print('⚠️ userDetails: $userDetails');
         print('⚠️ userDetails est null: ${userDetails == null}');
         if (userDetails != null) {

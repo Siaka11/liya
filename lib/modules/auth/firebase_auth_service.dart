@@ -367,6 +367,37 @@ class FirebaseAuthService {
         });
         print('✅ Nouvel utilisateur Firestore créé.');
 
+        // Sauvegarder les données dans LocalStorage pour le nouvel utilisateur
+        final userDataForLocalStorage = {
+          'name': localUserDetails?['name'] ?? 'Nouveau',
+          'lastName': localUserDetails?['lastName'] ?? 'Utilisateur',
+          'email': localUserDetails?['email'] ?? '',
+          'address': localUserDetails?['address'] ?? '',
+          'phoneNumber': firestorePhone, // TOUJOURS inclure le phoneNumber
+          'role': 'client',
+        };
+
+        await localStorage.setUserDetails(userDataForLocalStorage);
+        print(
+            '💾 Données nouvel utilisateur sauvegardées dans LocalStorage: $userDataForLocalStorage');
+
+        // Vérifier que les données sont bien sauvegardées
+        final savedData = localStorage.getUserDetails();
+        print('🔍 Vérification LocalStorage après sauvegarde: $savedData');
+
+        // Vérification spécifique du phoneNumber
+        if (savedData != null && savedData['phoneNumber'] != null) {
+          print(
+              '✅ PhoneNumber correctement sauvegardé: ${savedData['phoneNumber']}');
+        } else {
+          print('❌ ERREUR: PhoneNumber manquant dans LocalStorage!');
+          print('🔍 Données sauvegardées: $savedData');
+        }
+
+        // Marquer comme authentifié dans SharedPreferences
+        await singleton<SharedPreferences>().setBool(Config.ISAUTH, true);
+        print('✅ Nouvel utilisateur marqué comme authentifié');
+
         // Initialiser FCM après la création de l'utilisateur
         await FCMService().initializeAfterAuth();
 
@@ -374,7 +405,7 @@ class FirebaseAuthService {
         print(
             '🔄 Forçage de la sauvegarde du token FCM (nouvel utilisateur)...');
         await Future.delayed(Duration(seconds: 2));
-        await FCMService().forceSaveFCMToken();
+        await FCMService().forceSaveFCMTokenWithPhone(firestorePhone);
       } else {
         print(
             '✅ Utilisateur existant trouvé dans Firestore pour: $firestorePhone');

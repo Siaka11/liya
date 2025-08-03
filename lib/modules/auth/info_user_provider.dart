@@ -12,6 +12,8 @@ import '../home/application/home_provider.dart';
 import 'firebase_auth_service.dart'; // Vos routes générées
 // Importez votre AuthProvider si nécessaire, mais évitez d'appeler .login()
 
+import 'dart:convert'; // Added for jsonDecode
+
 enum InfoUserStatus { Empty, Processing, Error, Success }
 
 // Modèle d'état pour le formulaire d'informations utilisateur
@@ -123,8 +125,51 @@ class InfoUserNotifier extends StateNotifier<InfoUserState> {
       );
 
       // Mettre à jour les informations localement pour qu'elles soient disponibles immédiatement
-      var userDetail = {"name": name, "lastName": lastName};
-      singleton<LocalStorageFactory>().setUserDetails(userDetail);
+      // Récupérer les données existantes pour préserver phoneNumber et autres champs
+      final existingUserDetailsJson =
+          singleton<LocalStorageFactory>().getUserDetails();
+      print(
+          '🔍 Données existantes dans LocalStorage: $existingUserDetailsJson');
+
+      // Parser les données existantes
+      Map<String, dynamic> existingUserDetails = {};
+      if (existingUserDetailsJson != '{}') {
+        try {
+          existingUserDetails =
+              jsonDecode(existingUserDetailsJson) as Map<String, dynamic>;
+        } catch (e) {
+          print('⚠️ Erreur parsing données existantes: $e');
+          existingUserDetails = {};
+        }
+      }
+
+      // Fusionner les données existantes avec les nouvelles données
+      final updatedUserDetails = {
+        ...existingUserDetails, // Préserver toutes les données existantes
+        'name': name,
+        'lastName': lastName,
+      };
+
+      print('🔍 Données fusionnées pour LocalStorage: $updatedUserDetails');
+      await singleton<LocalStorageFactory>().setUserDetails(updatedUserDetails);
+
+      // Vérification après sauvegarde
+      final savedDataJson = singleton<LocalStorageFactory>().getUserDetails();
+      print('🔍 Vérification LocalStorage après mise à jour: $savedDataJson');
+      if (savedDataJson != '{}') {
+        try {
+          final savedData = jsonDecode(savedDataJson) as Map<String, dynamic>;
+          if (savedData['phoneNumber'] != null) {
+            print('✅ PhoneNumber préservé: ${savedData['phoneNumber']}');
+          } else {
+            print('❌ ERREUR: PhoneNumber perdu après mise à jour!');
+          }
+        } catch (e) {
+          print('⚠️ Erreur parsing données sauvegardées: $e');
+        }
+      } else {
+        print('❌ ERREUR: Aucune donnée sauvegardée!');
+      }
 
       // SUPPRIMÉ : ref.read(authProvider).login();
 
