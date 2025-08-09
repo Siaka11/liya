@@ -15,11 +15,13 @@ import 'package:liya/modules/restaurant/features/order/presentation/widgets/mode
 
 import '../../../../../../routes/app_router.gr.dart';
 import '../../../../../home/domain/entities/home_option.dart';
-import '../../application/pupular_dish_controller_provider.dart';
-import '../../application/restaurant_controller_provider.dart';
+// Remplacer les providers MySQL par les providers Firebase
+import '../../application/popular_dishes_firebase_provider.dart';
+import '../../application/restaurants_firebase_provider.dart';
 import '../../application/new_dishes_firebase_provider.dart';
 import '../widget/popular_dish_card.dart';
 import '../widget/restaurant_card.dart';
+import '../widget/restaurant_firebase_card.dart';
 
 @RoutePage(name: 'HomeRestaurantRoute')
 class HomeRestaurantPage extends ConsumerWidget {
@@ -34,11 +36,15 @@ class HomeRestaurantPage extends ConsumerWidget {
         ? jsonDecode(userDetailsJson)
         : userDetailsJson;
     final phoneNumber = userDetails['phoneNumber'] ?? '';
-    final controller = ref.read(restaurantControllerProvider.notifier);
-    final restaurantState = ref.watch(restaurantControllerProvider);
-    final popularDishController =
-        ref.read(popularDishControllerProvider.notifier);
-    final popularDishState = ref.watch(popularDishControllerProvider);
+
+    // Remplacer les providers MySQL par les providers Firebase
+    final restaurantsFirebaseController =
+        ref.read(restaurantsFirebaseProvider.notifier);
+    final restaurantsFirebaseState = ref.watch(restaurantsFirebaseProvider);
+
+    final popularDishesFirebaseController =
+        ref.read(popularDishesFirebaseProvider.notifier);
+    final popularDishesFirebaseState = ref.watch(popularDishesFirebaseProvider);
 
     // Nouveau provider pour les plats Firebase
     final newDishesFirebaseController =
@@ -47,12 +53,13 @@ class HomeRestaurantPage extends ConsumerWidget {
 
     // Charger les données uniquement au premier rendu si non chargé
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (restaurantState.restaurants == null && !restaurantState.isLoading) {
-        controller.loadRestaurants();
+      if (restaurantsFirebaseState.restaurants == null &&
+          !restaurantsFirebaseState.isLoading) {
+        restaurantsFirebaseController.loadRestaurants();
       }
-      if (popularDishState.popularDishes == null &&
-          !popularDishState.isLoading) {
-        popularDishController.loadPopularDishes();
+      if (popularDishesFirebaseState.dishes == null &&
+          !popularDishesFirebaseState.isLoading) {
+        popularDishesFirebaseController.loadPopularDishes();
       }
       // Charger les nouveaux plats Firebase
       if (newDishesFirebaseState.dishes == null &&
@@ -123,13 +130,15 @@ class HomeRestaurantPage extends ConsumerWidget {
                           ],
                         ),
                         SizedBox(
-                          child: popularDishState.isLoading
+                          child: popularDishesFirebaseState.isLoading
                               ? Center(child: CircularProgressIndicator())
-                              : popularDishState.error != null
-                                  ? Center(child: Text(popularDishState.error!))
-                                  : popularDishState.popularDishes == null ||
-                                          popularDishState
-                                              .popularDishes!.isEmpty
+                              : popularDishesFirebaseState.error != null
+                                  ? Center(
+                                      child: Text(
+                                          popularDishesFirebaseState.error!))
+                                  : popularDishesFirebaseState.dishes == null ||
+                                          popularDishesFirebaseState
+                                              .dishes!.isEmpty
                                       ? Center(
                                           child: Text(
                                               "Aucun plat populaire disponible"))
@@ -141,9 +150,8 @@ class HomeRestaurantPage extends ConsumerWidget {
                                             children: [
                                               for (int i = 0;
                                                   i <
-                                                      popularDishState
-                                                          .popularDishes!
-                                                          .length;
+                                                      popularDishesFirebaseState
+                                                          .dishes!.length;
                                                   i += 2)
                                                 Padding(
                                                   padding:
@@ -155,30 +163,30 @@ class HomeRestaurantPage extends ConsumerWidget {
                                                       Container(
                                                         width: 160,
                                                         child: ModernDishCard(
-                                                          id: popularDishState
-                                                              .popularDishes![i]
-                                                              .id,
-                                                          name: popularDishState
-                                                              .popularDishes![i]
-                                                              .name,
-                                                          price: popularDishState
-                                                              .popularDishes![i]
-                                                              .price,
+                                                          id: popularDishesFirebaseState
+                                                              .dishes![i]['id'],
+                                                          name:
+                                                              popularDishesFirebaseState
+                                                                      .dishes![
+                                                                  i]['name'],
+                                                          price:
+                                                              popularDishesFirebaseState
+                                                                      .dishes![
+                                                                  i]['price'],
                                                           imageUrl:
-                                                              popularDishState
-                                                                  .popularDishes![
-                                                                      i]
-                                                                  .imageUrl,
+                                                              popularDishesFirebaseState
+                                                                      .dishes![i]
+                                                                  ['image_url'],
                                                           restaurantId:
-                                                              popularDishState
-                                                                  .popularDishes![
-                                                                      i]
-                                                                  .restaurantId,
+                                                              popularDishesFirebaseState
+                                                                      .dishes![i]
+                                                                  [
+                                                                  'restaurant_id'],
                                                           description:
-                                                              popularDishState
-                                                                  .popularDishes![
-                                                                      i]
-                                                                  .description,
+                                                              popularDishesFirebaseState
+                                                                      .dishes![i]
+                                                                  [
+                                                                  'description'],
                                                           onTap: () {
                                                             // Navigation vers la page de détail du plat
                                                             Navigator.push(
@@ -187,33 +195,34 @@ class HomeRestaurantPage extends ConsumerWidget {
                                                                 builder:
                                                                     (context) =>
                                                                         DishDetailPage(
-                                                                  id: popularDishState
-                                                                      .popularDishes![
-                                                                          i]
-                                                                      .id,
+                                                                  id: popularDishesFirebaseState
+                                                                          .dishes![
+                                                                      i]['id'],
                                                                   restaurantId:
-                                                                      popularDishState
-                                                                          .popularDishes![
-                                                                              i]
-                                                                          .restaurantId,
-                                                                  name: popularDishState
-                                                                      .popularDishes![
-                                                                          i]
-                                                                      .name,
-                                                                  price: popularDishState
-                                                                      .popularDishes![
-                                                                          i]
-                                                                      .price,
-                                                                  imageUrl: popularDishState
-                                                                      .popularDishes![
-                                                                          i]
-                                                                      .imageUrl,
-                                                                  rating: '0.0',
+                                                                      popularDishesFirebaseState
+                                                                              .dishes![i]
+                                                                          [
+                                                                          'restaurant_id'],
+                                                                  name: popularDishesFirebaseState
+                                                                          .dishes![
+                                                                      i]['name'],
+                                                                  price: popularDishesFirebaseState
+                                                                          .dishes![i]
+                                                                      ['price'],
+                                                                  imageUrl: popularDishesFirebaseState
+                                                                          .dishes![i]
+                                                                      [
+                                                                      'image_url'],
+                                                                  rating: popularDishesFirebaseState
+                                                                      .dishes![
+                                                                          i][
+                                                                          'rating']
+                                                                      .toString(),
                                                                   description:
-                                                                      popularDishState
-                                                                          .popularDishes![
-                                                                              i]
-                                                                          .description,
+                                                                      popularDishesFirebaseState
+                                                                              .dishes![i]
+                                                                          [
+                                                                          'description'],
                                                                 ),
                                                               ),
                                                             );
@@ -221,9 +230,8 @@ class HomeRestaurantPage extends ConsumerWidget {
                                                         ),
                                                       ),
                                                       if (i + 1 <
-                                                          popularDishState
-                                                              .popularDishes!
-                                                              .length)
+                                                          popularDishesFirebaseState
+                                                              .dishes!.length)
                                                         Padding(
                                                           padding:
                                                               const EdgeInsets
@@ -233,33 +241,31 @@ class HomeRestaurantPage extends ConsumerWidget {
                                                             width: 160,
                                                             child:
                                                                 ModernDishCard(
-                                                              id: popularDishState
-                                                                  .popularDishes![
+                                                              id: popularDishesFirebaseState
+                                                                      .dishes![
+                                                                  i + 1]['id'],
+                                                              name: popularDishesFirebaseState
+                                                                      .dishes![
+                                                                  i + 1]['name'],
+                                                              price: popularDishesFirebaseState
+                                                                      .dishes![
+                                                                  i + 1]['price'],
+                                                              imageUrl: popularDishesFirebaseState
+                                                                          .dishes![
                                                                       i + 1]
-                                                                  .id,
-                                                              name: popularDishState
-                                                                  .popularDishes![
-                                                                      i + 1]
-                                                                  .name,
-                                                              price: popularDishState
-                                                                  .popularDishes![
-                                                                      i + 1]
-                                                                  .price,
-                                                              imageUrl:
-                                                                  popularDishState
-                                                                      .popularDishes![
-                                                                          i + 1]
-                                                                      .imageUrl,
+                                                                  ['image_url'],
                                                               restaurantId:
-                                                                  popularDishState
-                                                                      .popularDishes![
+                                                                  popularDishesFirebaseState
+                                                                              .dishes![
                                                                           i + 1]
-                                                                      .restaurantId,
+                                                                      [
+                                                                      'restaurant_id'],
                                                               description:
-                                                                  popularDishState
-                                                                      .popularDishes![
+                                                                  popularDishesFirebaseState
+                                                                              .dishes![
                                                                           i + 1]
-                                                                      .description,
+                                                                      [
+                                                                      'description'],
                                                               onTap: () {
                                                                 Navigator.push(
                                                                   context,
@@ -267,32 +273,36 @@ class HomeRestaurantPage extends ConsumerWidget {
                                                                     builder:
                                                                         (context) =>
                                                                             DishDetailPage(
-                                                                      id: popularDishState
-                                                                          .popularDishes![i +
+                                                                      id: popularDishesFirebaseState.dishes![i +
                                                                               1]
-                                                                          .id,
-                                                                      restaurantId: popularDishState
-                                                                          .popularDishes![i +
+                                                                          [
+                                                                          'id'],
+                                                                      restaurantId:
+                                                                          popularDishesFirebaseState.dishes![i + 1]
+                                                                              [
+                                                                              'restaurant_id'],
+                                                                      name: popularDishesFirebaseState.dishes![i +
                                                                               1]
-                                                                          .restaurantId,
-                                                                      name: popularDishState
-                                                                          .popularDishes![i +
+                                                                          [
+                                                                          'name'],
+                                                                      price: popularDishesFirebaseState.dishes![i +
                                                                               1]
-                                                                          .name,
-                                                                      price: popularDishState
-                                                                          .popularDishes![i +
+                                                                          [
+                                                                          'price'],
+                                                                      imageUrl: popularDishesFirebaseState.dishes![i +
                                                                               1]
-                                                                          .price,
-                                                                      imageUrl: popularDishState
-                                                                          .popularDishes![i +
-                                                                              1]
-                                                                          .imageUrl,
-                                                                      rating:
-                                                                          '0.0',
-                                                                      description: popularDishState
-                                                                          .popularDishes![i +
-                                                                              1]
-                                                                          .description,
+                                                                          [
+                                                                          'image_url'],
+                                                                      rating: popularDishesFirebaseState
+                                                                          .dishes![
+                                                                              i + 1]
+                                                                              [
+                                                                              'rating']
+                                                                          .toString(),
+                                                                      description:
+                                                                          popularDishesFirebaseState.dishes![i + 1]
+                                                                              [
+                                                                              'description'],
                                                                     ),
                                                                   ),
                                                                 );
@@ -337,12 +347,16 @@ class HomeRestaurantPage extends ConsumerWidget {
                             ),
                           ],
                         ),
-                        restaurantState.isLoading
+                        restaurantsFirebaseState.isLoading
                             ? Center(child: CircularProgressIndicator())
-                            : restaurantState.error != null
-                                ? Center(child: Text(restaurantState.error!))
-                                : restaurantState.restaurants == null ||
-                                        restaurantState.restaurants!.isEmpty
+                            : restaurantsFirebaseState.error != null
+                                ? Center(
+                                    child:
+                                        Text(restaurantsFirebaseState.error!))
+                                : restaurantsFirebaseState.restaurants ==
+                                            null ||
+                                        restaurantsFirebaseState
+                                            .restaurants!.isEmpty
                                     ? Center(
                                         child:
                                             Text("Aucun restaurant disponible"))
@@ -351,7 +365,7 @@ class HomeRestaurantPage extends ConsumerWidget {
                                             200, // Hauteur fixe pour la section
                                         child: ListView.builder(
                                           scrollDirection: Axis.horizontal,
-                                          itemCount: restaurantState
+                                          itemCount: restaurantsFirebaseState
                                               .restaurants!.length,
                                           itemBuilder: (context, index) {
                                             return Padding(
@@ -359,10 +373,11 @@ class HomeRestaurantPage extends ConsumerWidget {
                                                   right: 16),
                                               child: Container(
                                                 width: 300,
-                                                child: RestaurantCard(
+                                                child: RestaurantFirebaseCard(
                                                   width: 300.0,
-                                                  restaurant: restaurantState
-                                                      .restaurants![index],
+                                                  restaurant:
+                                                      restaurantsFirebaseState
+                                                          .restaurants![index],
                                                   onTap: () {
                                                     Navigator.push(
                                                       context,
@@ -370,23 +385,23 @@ class HomeRestaurantPage extends ConsumerWidget {
                                                         builder: (context) =>
                                                             RestaurantDetailPage(
                                                           coverImage:
-                                                              restaurantState
+                                                              restaurantsFirebaseState
+                                                                          .restaurants![
+                                                                      index][
+                                                                  'cover_image'],
+                                                          id: restaurantsFirebaseState
                                                                   .restaurants![
-                                                                      index]
-                                                                  .coverImage,
-                                                          id: restaurantState
-                                                              .restaurants![
-                                                                  index]
-                                                              .id,
-                                                          name: restaurantState
-                                                              .restaurants![
-                                                                  index]
-                                                              .name,
-                                                          description: restaurantState
+                                                              index]['id'],
+                                                          name: restaurantsFirebaseState
                                                                   .restaurants![
-                                                                      index]
-                                                                  .description ??
-                                                              '',
+                                                              index]['name'],
+                                                          description:
+                                                              restaurantsFirebaseState
+                                                                              .restaurants![
+                                                                          index]
+                                                                      [
+                                                                      'description'] ??
+                                                                  '',
                                                         ),
                                                       ),
                                                     );
