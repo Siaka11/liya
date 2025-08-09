@@ -1,27 +1,46 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+// Enum pour les options de tri des restaurants
+enum RestaurantSortOption {
+  newest('Plus récents', 'createdAt', true),
+  oldest('Plus anciens', 'createdAt', false),
+  nameAZ('Nom A-Z', 'name', false),
+  nameZA('Nom Z-A', 'name', true),
+  dishCountHighest('Plus de plats', 'dishes_count', true),
+  dishCountLowest('Moins de plats', 'dishes_count', false);
+
+  const RestaurantSortOption(this.label, this.field, this.descending);
+  final String label;
+  final String field;
+  final bool descending;
+}
+
 // État pour les restaurants Firebase
 class RestaurantsFirebaseState {
   final List<Map<String, dynamic>>? restaurants;
   final bool isLoading;
   final String? error;
+  final RestaurantSortOption sortOption;
 
   RestaurantsFirebaseState({
     this.restaurants,
     this.isLoading = false,
     this.error,
+    this.sortOption = RestaurantSortOption.newest,
   });
 
   RestaurantsFirebaseState copyWith({
     List<Map<String, dynamic>>? restaurants,
     bool? isLoading,
     String? error,
+    RestaurantSortOption? sortOption,
   }) {
     return RestaurantsFirebaseState(
       restaurants: restaurants ?? this.restaurants,
       isLoading: isLoading ?? this.isLoading,
       error: error ?? this.error,
+      sortOption: sortOption ?? this.sortOption,
     );
   }
 }
@@ -33,19 +52,30 @@ class RestaurantsFirebaseNotifier
 
   RestaurantsFirebaseNotifier() : super(RestaurantsFirebaseState());
 
-  Future<void> loadRestaurants() async {
-    state = state.copyWith(isLoading: true, error: null);
+  Future<void> loadRestaurants([RestaurantSortOption? sortOption]) async {
+    final selectedSortOption = sortOption ?? state.sortOption;
+    state = state.copyWith(
+        isLoading: true, error: null, sortOption: selectedSortOption);
 
     try {
       print('🔥 Début chargement restaurants Firebase...');
+      print('🔥 Tri sélectionné: ${selectedSortOption.label}');
 
-      // Récupérer tous les restaurants actifs
-      final restaurantsSnapshot = await _firestore
+      // Récupérer tous les restaurants actifs (sans orderBy pour l'instant)
+      Query query = _firestore
           .collection('restaurants')
           .where('isActive', isEqualTo: true)
-          .orderBy('createdAt', descending: true)
-          .limit(20)
-          .get();
+          .limit(20);
+
+      // Appliquer le tri si c'est un champ Firestore standard
+      if (selectedSortOption.field == 'createdAt' ||
+          selectedSortOption.field == 'name' ||
+          selectedSortOption.field == 'rating') {
+        query = query.orderBy(selectedSortOption.field,
+            descending: selectedSortOption.descending);
+      }
+
+      final restaurantsSnapshot = await query.get();
 
       print(
           '🔥 Restaurants trouvés dans Firestore: ${restaurantsSnapshot.docs.length}');
@@ -53,7 +83,7 @@ class RestaurantsFirebaseNotifier
       final List<Map<String, dynamic>> restaurants = [];
 
       for (final doc in restaurantsSnapshot.docs) {
-        final restaurantData = doc.data();
+        final restaurantData = doc.data() as Map<String, dynamic>;
         print(
             '🔥 Restaurant trouvé: ${doc.id} - ${restaurantData['name']} - isActive: ${restaurantData['isActive']}');
 
@@ -139,17 +169,16 @@ class RestaurantsFirebaseNotifier
           'id': doc.id,
           'name': restaurantData['name'] ?? 'Restaurant inconnu',
           'description': restaurantData['description'] ?? '',
-          'cover_image': restaurantData['coverImage'] ?? '', // Correction ici
+          'cover_image': restaurantData['coverImage'] ?? '',
           'logo': restaurantData['logo'] ?? '',
           'address': restaurantData['address'] ?? '',
           'phone': restaurantData['phone'] ?? '',
           'email': restaurantData['email'] ?? '',
           'rating': (restaurantData['rating'] ?? 0.0).toDouble(),
           'rating_count': restaurantData['rating_count'] ?? 0,
-          'is_active': isActive, // Correction ici
+          'is_active': isActive,
           'is_open': restaurantData['is_open'] ?? true,
-          'opening_hours':
-              restaurantData['openingHours'] ?? {}, // Correction ici
+          'opening_hours': restaurantData['openingHours'] ?? {},
           'cuisine_type': restaurantData['cuisine_type'] ?? 'Cuisine variée',
           'price_range': restaurantData['price_range'] ?? 'Modéré',
           'average_delivery_time': averageDeliveryTime,
@@ -160,13 +189,25 @@ class RestaurantsFirebaseNotifier
           'minimum_order': restaurantData['minimum_order'] ?? 0.0,
           'latitude': restaurantData['latitude'],
           'longitude': restaurantData['longitude'],
-          'created_at': restaurantData['createdAt'], // Correction ici
+          'created_at': restaurantData['createdAt'],
           'updated_at': restaurantData['updatedAt'],
         });
       }
 
+      // Appliquer le tri côté client pour les champs calculés
+      if (selectedSortOption.field == 'dishes_count') {
+        restaurants.sort((a, b) {
+          final aCount = a['dishes_count'] as int;
+          final bCount = b['dishes_count'] as int;
+          return selectedSortOption.descending
+              ? bCount.compareTo(aCount)
+              : aCount.compareTo(bCount);
+        });
+      }
+
       print('Restaurants trouvés: ${restaurants.length}');
-      for (final restaurant in restaurants) {
+      print('🔥 Tri appliqué: ${selectedSortOption.label}');
+      for (final restaurant in restaurants.take(3)) {
         print(
             'Restaurant: ${restaurant['name']} - Rating: ${restaurant['rating']} - Plats: ${restaurant['dishes_count']}');
       }
@@ -174,6 +215,7 @@ class RestaurantsFirebaseNotifier
       state = state.copyWith(
         restaurants: restaurants,
         isLoading: false,
+        sortOption: selectedSortOption,
       );
     } catch (e) {
       print('Erreur lors du chargement des restaurants: $e');
@@ -182,6 +224,10 @@ class RestaurantsFirebaseNotifier
         error: 'Erreur lors du chargement des restaurants: $e',
       );
     }
+  }
+
+  void changeSortOption(RestaurantSortOption sortOption) {
+    loadRestaurants(sortOption);
   }
 
   void refresh() {

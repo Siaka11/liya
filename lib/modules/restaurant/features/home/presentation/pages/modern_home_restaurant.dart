@@ -75,7 +75,8 @@ class ModernHomeRestaurantPage extends ConsumerWidget {
                       context, popularDishesFirebaseState, phoneNumber),
 
                   // Section restaurants
-                  _buildRestaurantsSection(context, restaurantsFirebaseState),
+                  _buildRestaurantsSection(
+                      context, restaurantsFirebaseState, ref),
 
                   const SizedBox(height: 100), // Espace pour le bouton flottant
                 ],
@@ -206,7 +207,7 @@ class ModernHomeRestaurantPage extends ConsumerWidget {
                 onPressed: () {
                   context.router.push(AllDishesRoute());
                 },
-                child: const Text("Voir tout"),
+                child: const Icon(Icons.arrow_forward_ios, size: 16),
                 style: TextButton.styleFrom(
                   foregroundColor: UIColors.orange,
                 ),
@@ -265,35 +266,71 @@ class ModernHomeRestaurantPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildRestaurantsSection(
-      BuildContext context, RestaurantsFirebaseState restaurantsState) {
+  Widget _buildRestaurantsSection(BuildContext context,
+      RestaurantsFirebaseState restaurantState, WidgetRef ref) {
+    final restaurantsController =
+        ref.read(restaurantsFirebaseProvider.notifier);
+
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            "Restaurants",
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                "Restaurants",
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              // Dropdown pour le tri des restaurants
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey[300]!),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: DropdownButton<RestaurantSortOption>(
+                  value: restaurantState.sortOption,
+                  underline: Container(),
+                  icon: const Icon(Icons.sort, size: 16),
+                  style: const TextStyle(fontSize: 12, color: Colors.black87),
+                  items: RestaurantSortOption.values.map((option) {
+                    return DropdownMenuItem<RestaurantSortOption>(
+                      value: option,
+                      child: Text(
+                        option.label,
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (RestaurantSortOption? newOption) {
+                    if (newOption != null) {
+                      restaurantsController.changeSortOption(newOption);
+                    }
+                  },
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
-          if (restaurantsState.isLoading)
+          if (restaurantState.isLoading)
             const Center(child: CircularProgressIndicator())
-          else if (restaurantsState.error != null)
-            Center(child: Text(restaurantsState.error!))
-          else if (restaurantsState.restaurants == null ||
-              restaurantsState.restaurants!.isEmpty)
+          else if (restaurantState.error != null)
+            Center(child: Text(restaurantState.error!))
+          else if (restaurantState.restaurants == null ||
+              restaurantState.restaurants!.isEmpty)
             const Center(child: Text("Aucun restaurant disponible"))
           else
             ListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              itemCount: restaurantsState.restaurants!.length,
+              itemCount: restaurantState.restaurants!.length,
               itemBuilder: (context, index) {
-                final restaurant = restaurantsState.restaurants![index];
+                final restaurant = restaurantState.restaurants![index];
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 16),
                   child: RestaurantFirebaseCard(
