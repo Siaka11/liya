@@ -8,6 +8,7 @@ import 'package:liya/core/ui/components/notification_button.dart';
 
 import '../../../../../../core/local_storage_factory.dart';
 import '../../../../../../core/singletons.dart';
+import '../../../../../../core/services/dish_popularity_service.dart';
 import '../../../card/data/datasources/cart_remote_data_source.dart';
 import '../../../card/data/models/cart_item_model.dart';
 import '../../../card/domain/repositories/cart_repository.dart';
@@ -63,6 +64,10 @@ class _DishDetailPageState extends ConsumerState<DishDetailPage>
   @override
   void initState() {
     super.initState();
+
+    // Tracker la vue du plat
+    _trackDishView();
+
     _fetchBeverages();
 
     // Initialisation des contrôleurs d'animation simplifiés
@@ -118,8 +123,19 @@ class _DishDetailPageState extends ConsumerState<DishDetailPage>
   }
 
   void _onScroll() {
-    setState(() {
-      _scrollOffset = _scrollController.offset;
+    if (_scrollController.hasClients) {
+      setState(() {
+        _scrollOffset = _scrollController.offset;
+      });
+    }
+  }
+
+  /// Tracker la vue du plat pour la popularité
+  void _trackDishView() {
+    // Appeler le service de popularité en mode fire-and-forget
+    DishPopularityService.incrementViewCount(widget.id).catchError((error) {
+      // Ignorer silencieusement les erreurs de tracking
+      print('Erreur tracking vue plat: $error');
     });
   }
 

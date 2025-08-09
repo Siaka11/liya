@@ -38,14 +38,16 @@ class PopularDishesFirebaseNotifier
 
     try {
       // Récupérer les plats populaires basés sur les critères suivants :
-      // 1. Plats avec un rating élevé (>= 4.0)
-      // 2. Plats avec beaucoup de commandes
-      // 3. Plats disponibles
+      // 1. Plats disponibles
+      // 2. Trier par rating puis par date de création
+      // TODO: Quand order_count sera disponible, changer pour :
+      // .orderBy('order_count', descending: true)
+      // .orderBy('rating', descending: true)
       final dishesSnapshot = await _firestore
           .collection('dishes')
           .where('isAvailable', isEqualTo: true)
           .orderBy('rating', descending: true)
-          .orderBy('rating_count', descending: true)
+          .orderBy('createdAt', descending: true)
           .limit(20)
           .get();
 
@@ -58,12 +60,9 @@ class PopularDishesFirebaseNotifier
         final isAvailable = dishData['isAvailable'] ?? true;
         if (!isAvailable) continue;
 
-        // Vérifier si le plat a un bon rating (au moins 3.5 étoiles)
+        // Pour l'instant, utiliser tous les plats disponibles
+        // Plus tard, on pourra filtrer par rating ou order_count
         final rating = (dishData['rating'] ?? 0.0).toDouble();
-        final ratingCount = dishData['rating_count'] ?? 0;
-
-        // Filtrer les plats avec un bon rating et au moins quelques avis
-        if (rating < 3.5 || ratingCount < 2) continue;
 
         // Récupérer les informations du restaurant
         String restaurantName = 'Restaurant inconnu';
@@ -126,7 +125,9 @@ class PopularDishesFirebaseNotifier
           'categorie': categoryName,
           'preparation_time': dishData['preparation_time'] ?? 30,
           'rating': rating,
-          'rating_count': ratingCount,
+          'rating_count': dishData['rating_count'] ?? 0,
+          'order_count':
+              dishData['order_count'] ?? 0, // Ajouter le compteur de commandes
           'is_vegetarian': dishData['is_vegetarian'] ?? false,
           'is_vegan': dishData['is_vegan'] ?? false,
           'is_gluten_free': dishData['is_gluten_free'] ?? false,
@@ -145,7 +146,7 @@ class PopularDishesFirebaseNotifier
       print('Plats populaires trouvés: ${dishes.length}');
       for (final dish in dishes) {
         print(
-            'Plat populaire: ${dish['name']} - Rating: ${dish['rating']} (${dish['rating_count']} avis) - Restaurant: ${dish['restaurant_name']}');
+            'Plat populaire: ${dish['name']} - Rating: ${dish['rating']} - Prix: ${dish['price']} - Restaurant: ${dish['restaurant_name']}');
       }
 
       state = state.copyWith(

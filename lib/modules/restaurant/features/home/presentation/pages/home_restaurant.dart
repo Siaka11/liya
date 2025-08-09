@@ -171,8 +171,9 @@ class HomeRestaurantPage extends ConsumerWidget {
                                                                   i]['name'],
                                                           price:
                                                               popularDishesFirebaseState
-                                                                      .dishes![
-                                                                  i]['price'],
+                                                                  .dishes![i]
+                                                                      ['price']
+                                                                  .toString(),
                                                           imageUrl:
                                                               popularDishesFirebaseState
                                                                       .dishes![i]
@@ -187,6 +188,40 @@ class HomeRestaurantPage extends ConsumerWidget {
                                                                       .dishes![i]
                                                                   [
                                                                   'description'],
+                                                          // Paramètres de popularité
+                                                          orderCount: popularDishesFirebaseState
+                                                                      .dishes![i]
+                                                                  [
+                                                                  'order_count'] ??
+                                                              0,
+                                                          rating: (popularDishesFirebaseState
+                                                                          .dishes![i]
+                                                                      [
+                                                                      'rating'] ??
+                                                                  0.0)
+                                                              .toDouble(),
+                                                          ratingCount:
+                                                              popularDishesFirebaseState
+                                                                          .dishes![i]
+                                                                      [
+                                                                      'rating_count'] ??
+                                                                  0,
+                                                          // Paramètres de promotion
+                                                          isOnSale: popularDishesFirebaseState
+                                                                      .dishes![i]
+                                                                  [
+                                                                  'is_on_sale'] ??
+                                                              false,
+                                                          originalPrice:
+                                                              popularDishesFirebaseState
+                                                                  .dishes![i][
+                                                                      'original_price']
+                                                                  ?.toDouble(),
+                                                          discountPercentage:
+                                                              popularDishesFirebaseState
+                                                                  .dishes![i][
+                                                                      'discount_percentage']
+                                                                  ?.toDouble(),
                                                           onTap: () {
                                                             // Navigation vers la page de détail du plat
                                                             Navigator.push(
@@ -207,8 +242,10 @@ class HomeRestaurantPage extends ConsumerWidget {
                                                                           .dishes![
                                                                       i]['name'],
                                                                   price: popularDishesFirebaseState
-                                                                          .dishes![i]
-                                                                      ['price'],
+                                                                      .dishes![
+                                                                          i][
+                                                                          'price']
+                                                                      .toString(),
                                                                   imageUrl: popularDishesFirebaseState
                                                                           .dishes![i]
                                                                       [
@@ -248,8 +285,10 @@ class HomeRestaurantPage extends ConsumerWidget {
                                                                       .dishes![
                                                                   i + 1]['name'],
                                                               price: popularDishesFirebaseState
-                                                                      .dishes![
-                                                                  i + 1]['price'],
+                                                                  .dishes![
+                                                                      i + 1]
+                                                                      ['price']
+                                                                  .toString(),
                                                               imageUrl: popularDishesFirebaseState
                                                                           .dishes![
                                                                       i + 1]
@@ -266,6 +305,46 @@ class HomeRestaurantPage extends ConsumerWidget {
                                                                           i + 1]
                                                                       [
                                                                       'description'],
+                                                              // Paramètres de popularité
+                                                              orderCount: popularDishesFirebaseState
+                                                                              .dishes![
+                                                                          i + 1]
+                                                                      [
+                                                                      'order_count'] ??
+                                                                  0,
+                                                              rating: (popularDishesFirebaseState.dishes![i +
+                                                                              1]
+                                                                          [
+                                                                          'rating'] ??
+                                                                      0.0)
+                                                                  .toDouble(),
+                                                              ratingCount: popularDishesFirebaseState
+                                                                              .dishes![
+                                                                          i + 1]
+                                                                      [
+                                                                      'rating_count'] ??
+                                                                  0,
+                                                              // Paramètres de promotion
+                                                              isOnSale: popularDishesFirebaseState
+                                                                              .dishes![
+                                                                          i + 1]
+                                                                      [
+                                                                      'is_on_sale'] ??
+                                                                  false,
+                                                              originalPrice:
+                                                                  popularDishesFirebaseState
+                                                                      .dishes![
+                                                                          i + 1]
+                                                                          [
+                                                                          'original_price']
+                                                                      ?.toDouble(),
+                                                              discountPercentage:
+                                                                  popularDishesFirebaseState
+                                                                      .dishes![
+                                                                          i + 1]
+                                                                          [
+                                                                          'discount_percentage']
+                                                                      ?.toDouble(),
                                                               onTap: () {
                                                                 Navigator.push(
                                                                   context,

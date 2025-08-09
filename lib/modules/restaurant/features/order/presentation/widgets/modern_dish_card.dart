@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:liya/core/ui/theme/theme.dart';
 import '../providers/modern_order_provider.dart';
+import '../../../home/presentation/widget/popularity_badge.dart';
 
 class ModernDishCard extends ConsumerWidget {
   final String id;
@@ -15,6 +16,10 @@ class ModernDishCard extends ConsumerWidget {
   final bool isOnSale;
   final double? originalPrice;
   final double? discountPercentage;
+  // Nouveaux paramètres pour la popularité
+  final int orderCount;
+  final double rating;
+  final int ratingCount;
 
   const ModernDishCard({
     Key? key,
@@ -28,6 +33,9 @@ class ModernDishCard extends ConsumerWidget {
     this.isOnSale = false,
     this.originalPrice,
     this.discountPercentage,
+    this.orderCount = 0,
+    this.rating = 0.0,
+    this.ratingCount = 0,
   }) : super(key: key);
 
   @override
@@ -176,6 +184,17 @@ class ModernDishCard extends ConsumerWidget {
                     ),
                   ),
                 ),
+
+              // Badge de popularité (en haut à gauche)
+              Positioned(
+                top: 8,
+                left: 8,
+                child: PopularityBadge(
+                  orderCount: orderCount,
+                  rating: rating,
+                  ratingCount: ratingCount,
+                ),
+              ),
             ],
           ),
         ),

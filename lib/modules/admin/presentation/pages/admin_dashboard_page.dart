@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:liya/routes/app_router.gr.dart';
 import 'package:liya/core/ui/components/admin_menu_card.dart';
+import 'package:liya/core/services/data_initializer.dart';
 
 @RoutePage()
 class AdminDashboardPage extends StatelessWidget {
@@ -20,6 +21,35 @@ class AdminDashboardPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Section des métriques
+            Row(
+              children: [
+                Expanded(
+                  child: AdminMenuCard(
+                    title: 'Initialiser Popularité',
+                    subtitle: 'Configurer les données de popularité',
+                    icon: Icons.trending_up,
+                    color: Colors.purple,
+                    onTap: () => _initializePopularitySystem(context),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: AdminMenuCard(
+                    title: 'Gestion des Utilisateurs',
+                    subtitle: 'Gérer les comptes utilisateurs',
+                    icon: Icons.people,
+                    color: Colors.pink,
+                    onTap: () {
+                      AutoRouter.of(context).push(const UserManagementRoute());
+                    },
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 32),
+
             // Section Gestion des Livraisons
             _buildSectionHeader('🚚 Gestion des Livraisons', Colors.orange),
             const SizedBox(height: 16),
@@ -330,5 +360,47 @@ class AdminDashboardPage extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  /// Initialise le système de popularité
+  Future<void> _initializePopularitySystem(BuildContext context) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const AlertDialog(
+        content: Row(
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(width: 16),
+            Text('Initialisation du système de popularité...'),
+          ],
+        ),
+      ),
+    );
+
+    try {
+      await DataInitializer.initializePopularitySystem();
+
+      Navigator.of(context).pop(); // Fermer le dialog de chargement
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Système de popularité initialisé avec succès !'),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      // Afficher les statistiques
+      await DataInitializer.showPopularityStats();
+    } catch (e) {
+      Navigator.of(context).pop(); // Fermer le dialog de chargement
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erreur lors de l\'initialisation: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 }

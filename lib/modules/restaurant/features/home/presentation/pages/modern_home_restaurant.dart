@@ -247,7 +247,7 @@ class ModernHomeRestaurantPage extends ConsumerWidget {
                               id: dish['id'],
                               restaurantId: dish['restaurant_id'],
                               name: dish['name'],
-                              price: dish['price'],
+                              price: dish['price'].toString(),
                               imageUrl: dish['image_url'],
                               rating: dish['rating'].toString(),
                               description: dish['description'],

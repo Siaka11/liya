@@ -5,6 +5,24 @@ import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'dart:io';
 
+// Niveaux de popularité prédéfinis
+enum PopularityLevel {
+  nouveau('Nouveau plat', 0, 0, 0.0),
+  standard('Plat standard', 2, 10, 3.0),
+  apprecie('Plat apprécié', 8, 40, 3.8),
+  populaire('Plat populaire', 20, 100, 4.2),
+  tendance('En tendance', 50, 250, 4.6),
+  bestseller('Best-seller', 100, 500, 4.8);
+
+  const PopularityLevel(
+      this.label, this.orderCount, this.viewCount, this.rating);
+
+  final String label;
+  final int orderCount;
+  final int viewCount;
+  final double rating;
+}
+
 @RoutePage()
 class AddDishPage extends StatefulWidget {
   const AddDishPage({Key? key}) : super(key: key);
@@ -26,6 +44,7 @@ class _AddDishPageState extends State<AddDishPage> {
   // Variables nullable pour éviter l'erreur DropdownButton
   String? _selectedRestaurantId;
   String? _selectedCategoryId;
+  String? _selectedPopularity; // Niveau de popularité initial
 
   List<Map<String, dynamic>> _restaurants = [];
   List<Map<String, dynamic>> _categories = [];
@@ -151,11 +170,14 @@ class _AddDishPageState extends State<AddDishPage> {
 
   Future<void> _saveDish() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_selectedRestaurantId == null || _selectedCategoryId == null) {
+    // Validation
+    if (_selectedRestaurantId == null ||
+        _selectedCategoryId == null ||
+        _selectedPopularity == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content:
-                Text('Veuillez sélectionner un restaurant et une catégorie')),
+            content: Text(
+                'Veuillez sélectionner un restaurant, une catégorie et un niveau de popularité')),
       );
       return;
     }
@@ -170,6 +192,10 @@ class _AddDishPageState extends State<AddDishPage> {
           ? _imageUrlController.text
           : await _uploadImage();
 
+      // Récupérer les données de popularité basées sur la sélection
+      final selectedLevel = PopularityLevel.values
+          .firstWhere((level) => level.name == _selectedPopularity);
+
       // Créer le plat selon la structure de l'image
       final dishData = {
         'restaurant_id': _selectedRestaurantId,
@@ -177,11 +203,28 @@ class _AddDishPageState extends State<AddDishPage> {
         'description': _descriptionController.text.trim(),
         'price': double.tryParse(_priceController.text) ?? 0.0,
         'image_url': imageUrl ?? '',
-        'rating': double.tryParse(_ratingController.text) ?? 0.0,
+        'rating':
+            selectedLevel.rating, // Utiliser le rating du niveau de popularité
         'categorie': _categories
             .firstWhere((c) => c['id'] == _selectedCategoryId)['name'],
         'preparation_time': _preparationTimeController.text.trim(),
         'sodas': int.tryParse(_sodasController.text) ?? 0,
+        'isAvailable': true, // Nouveau plat disponible par défaut
+        // Données de popularité initiales
+        'order_count': selectedLevel.orderCount,
+        'view_count': selectedLevel.viewCount,
+        'rating_count': selectedLevel.orderCount > 0
+            ? (selectedLevel.orderCount / 3).round()
+            : 0, // Estimation du nombre d'avis
+        'popularity_score': (selectedLevel.orderCount * 15.0) +
+            (selectedLevel.rating *
+                (selectedLevel.orderCount / 3).round() *
+                2.0),
+        'last_ordered':
+            selectedLevel.orderCount > 0 ? FieldValue.serverTimestamp() : null,
+        'last_viewed':
+            selectedLevel.viewCount > 0 ? FieldValue.serverTimestamp() : null,
+        // Timestamps
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
       };
@@ -358,39 +401,6 @@ class _AddDishPageState extends State<AddDishPage> {
                           ),
                           const SizedBox(height: 16),
 
-                          // Rating
-                          TextFormField(
-                            controller: _ratingController,
-                            decoration: InputDecoration(
-                              labelText: 'Note (0-5)',
-                              hintText: 'Ex: 4.5',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              prefixIcon: const Icon(Icons.star),
-                              filled: true,
-                              fillColor: Colors.grey[50],
-                            ),
-                            keyboardType:
-                                TextInputType.numberWithOptions(decimal: true),
-                            validator: (value) {
-                              if (value != null && value.trim().isNotEmpty) {
-                                final rating = double.tryParse(value);
-                                if (rating == null ||
-                                    rating < 0 ||
-                                    rating > 5) {
-                                  return 'La note doit être entre 0 et 5';
-                                }
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 24),
-
-                          // Section Catégorisation
-                          _buildSectionHeader('Catégorisation', Icons.category),
-                          const SizedBox(height: 16),
-
                           // Restaurant
                           DropdownButtonFormField<String>(
                             value: _selectedRestaurantId,
@@ -500,6 +510,87 @@ class _AddDishPageState extends State<AddDishPage> {
                               return null;
                             },
                           ),
+                          const SizedBox(height: 16),
+
+                          // Popularité initiale
+                          DropdownButtonFormField<String>(
+                            value: _selectedPopularity,
+                            decoration: InputDecoration(
+                              labelText: 'Popularité initiale *',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              prefixIcon: const Icon(Icons.trending_up),
+                              filled: true,
+                              fillColor: Colors.grey[50],
+                              helperText:
+                                  'Définit les statistiques initiales du plat',
+                            ),
+                            items: PopularityLevel.values.map((level) {
+                              return DropdownMenuItem<String>(
+                                value: level.name,
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    // Icône selon le niveau
+                                    Icon(
+                                      _getPopularityIcon(level),
+                                      color: _getPopularityColor(level),
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Flexible(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            level.label,
+                                            style: const TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                          Text(
+                                            '${level.orderCount} commandes • ${level.rating}⭐',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey[600],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }).toList(),
+                            onChanged: (String? newValue) {
+                              setState(() {
+                                _selectedPopularity = newValue;
+                              });
+                            },
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Veuillez sélectionner un niveau de popularité';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Aperçu de la popularité sélectionnée
+                          if (_selectedPopularity != null)
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.blue[50],
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.blue[200]!),
+                              ),
+                              child: _buildPopularityPreview(),
+                            ),
                           const SizedBox(height: 24),
 
                           // Section Détails
@@ -702,6 +793,124 @@ class _AddDishPageState extends State<AddDishPage> {
             fontWeight: FontWeight.bold,
             color: Color(0xFF333333),
           ),
+        ),
+      ],
+    );
+  }
+
+  IconData _getPopularityIcon(PopularityLevel level) {
+    switch (level) {
+      case PopularityLevel.nouveau:
+        return Icons.new_releases;
+      case PopularityLevel.standard:
+        return Icons.star_border;
+      case PopularityLevel.apprecie:
+        return Icons.thumb_up_alt_outlined;
+      case PopularityLevel.populaire:
+        return Icons.trending_up;
+      case PopularityLevel.tendance:
+        return Icons.trending_up;
+      case PopularityLevel.bestseller:
+        return Icons.star;
+    }
+  }
+
+  Color _getPopularityColor(PopularityLevel level) {
+    switch (level) {
+      case PopularityLevel.nouveau:
+        return Colors.blue;
+      case PopularityLevel.standard:
+        return Colors.orange;
+      case PopularityLevel.apprecie:
+        return Colors.green;
+      case PopularityLevel.populaire:
+        return Colors.purple;
+      case PopularityLevel.tendance:
+        return Colors.indigo;
+      case PopularityLevel.bestseller:
+        return Colors.red;
+    }
+  }
+
+  Widget _buildPopularityPreview() {
+    if (_selectedPopularity == null) return const SizedBox.shrink();
+
+    final selectedLevel = PopularityLevel.values
+        .firstWhere((level) => level.name == _selectedPopularity);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(
+              Icons.visibility,
+              size: 16,
+              color: Colors.blue[600],
+            ),
+            const SizedBox(width: 8),
+            Text(
+              'Aperçu du plat avec cette popularité',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: Colors.blue[800],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            // Badge de popularité simulé
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: _getPopularityColor(selectedLevel),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    _getPopularityIcon(selectedLevel),
+                    color: Colors.white,
+                    size: 14,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    selectedLevel.label
+                        .split(' ')
+                        .last, // Prendre le dernier mot
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 16),
+            // Statistiques
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '⭐ ${selectedLevel.rating.toStringAsFixed(1)} • ${selectedLevel.orderCount} commandes',
+                    style: const TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                  Text(
+                    '👁️ ${selectedLevel.viewCount} vues',
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ],
     );
