@@ -54,6 +54,9 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
   final instructionsController = TextEditingController();
   GoogleMapController? mapController;
 
+  // Protection contre les clics multiples
+  bool _isProcessingOrder = false;
+
   @override
   void initState() {
     super.initState();
@@ -89,6 +92,12 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
     } else {
       _setYamoussoukroAsDefault(localStorage);
     }
+  }
+
+  // Méthode pour afficher le popup de confirmation (désactivée)
+  Future<bool> _showOrderConfirmationDialog() async {
+    // Popup désactivé - retourne toujours true pour continuer directement
+    return true;
   }
 
   void _setYamoussoukroAsDefault(LocalStorageFactory localStorage) {
@@ -1005,134 +1014,146 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: ElevatedButton(
-            onPressed: () async {
-              // Vérifier qu'une adresse est sélectionnée
-              if (selectedLat == null ||
-                  selectedLng == null ||
-                  selectedAddress == null) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                        'Veuillez sélectionner une adresse de livraison sur la carte'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-                return;
-              }
+            onPressed: _isProcessingOrder
+                ? null
+                : () async {
+                    // Protection contre les clics multiples
+                    if (_isProcessingOrder) return;
 
-              // Vérifier que la distance est calculée
-              if (calculatedDistance == null || deliveryFee == null) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                        'Erreur lors du calcul de la distance. Veuillez réessayer.'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-                return;
-              }
-
-              // Crée la liste des OrderItem
-              final items = widget.cartItems
-                  .map((item) => OrderItemModel(
-                        name: item['name'],
-                        quantity: item['quantity'],
-                        price: double.tryParse(item['price'].toString()) ?? 0.0,
-                      ))
-                  .toList();
-
-              // Calcule les totaux
-              final subtotal = _calculateSubtotal();
-              final total = _calculateTotal();
-
-              // Crée l'objet Order avec les informations de livraison
-              final order = OrderModel(
-                id: '', // Laisse vide, le repo s'en charge
-                phoneNumber: phoneNumber, // Numéro principal (invariable)
-                phone: phone ??
-                    phoneNumber, // Contact supplémentaire ou phoneNumber par défaut
-                items: items,
-                total: total, // Total incluant les frais de livraison
-                subtotal: subtotal,
-                deliveryFee: deliveryFee!,
-                status: OrderStatus.reception,
-                createdAt: DateTime.now(),
-                latitude: selectedLat,
-                longitude: selectedLng,
-                deliveryInstructions: deliveryInstructions,
-                distance: calculatedDistance,
-                deliveryTime: deliveryTime,
-                address: selectedAddress,
-              );
-
-              // Debug: Afficher les données de la commande
-              print('DEBUG - Order data:');
-              print('phoneNumber: ${order.phoneNumber}');
-              print('phone: ${order.phone}');
-              print('phone variable: $phone');
-              print('toJson: ${order.toJson()}');
-              print('phone in toJson: ${order.toJson()['phone']}');
-
-              // Enregistre la commande sur Firestore avec les détails de livraison
-              final dataSource = OrderRemoteDataSourceImpl(
-                  firestore: cf.FirebaseFirestore.instance);
-              final repository = OrderRepositoryImpl(dataSource);
-
-              try {
-                await repository.createOrder(order);
-
-                // Vide le panier Firestore
-                final cartRepo = CartRepositoryImpl(
-                    remoteDataSource: CartRemoteDataSourceImpl());
-                await cartRepo.clearCart(phoneNumber);
-
-                // Vider la commande moderne (modernOrderProvider)
-                ref.read(modernOrderProvider.notifier).clearOrder();
-
-                if (!context.mounted) return;
-
-                // Afficher le message de confirmation
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                        'Commande enregistrée ! Total: ${total.toStringAsFixed(0)} FCFA'),
-                    duration: const Duration(seconds: 2),
-                  ),
-                );
-
-                // Attendre que le SnackBar soit visible
-                await Future.delayed(const Duration(milliseconds: 500));
-                if (!context.mounted) return;
-
-                // Rediriger vers la page d'accueil du restaurant
-                try {
-                  context.router
-                      .replace(OrderListRoute(phoneNumber: phoneNumber));
-                } catch (e) {
-                  // En cas d'erreur, essayer une navigation plus simple
-                  if (context.mounted) {
-                    Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(
-                        builder: (_) => HomeRestaurantPage(
-                          option: const HomeOption(
-                            title: 'Restaurants',
-                            icon: 'restaurant',
-                          ),
+                    // Vérifier qu'une adresse est sélectionnée
+                    if (selectedLat == null ||
+                        selectedLng == null ||
+                        selectedAddress == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                              'Veuillez sélectionner une adresse de livraison sur la carte'),
+                          backgroundColor: Colors.red,
                         ),
-                      ),
+                      );
+                      return;
+                    }
+
+                    // Vérifier que la distance est calculée
+                    if (calculatedDistance == null || deliveryFee == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                              'Erreur lors du calcul de la distance. Veuillez réessayer.'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                      return;
+                    }
+
+                    // Crée la liste des OrderItem
+                    final items = widget.cartItems
+                        .map((item) => OrderItemModel(
+                              name: item['name'],
+                              quantity: item['quantity'],
+                              price:
+                                  double.tryParse(item['price'].toString()) ??
+                                      0.0,
+                            ))
+                        .toList();
+
+                    // Calcule les totaux
+                    final subtotal = _calculateSubtotal();
+                    final total = _calculateTotal();
+
+                    // Crée l'objet Order avec les informations de livraison
+                    final order = OrderModel(
+                      id: '', // Laisse vide, le repo s'en charge
+                      phoneNumber: phoneNumber, // Numéro principal (invariable)
+                      phone: phone ??
+                          phoneNumber, // Contact supplémentaire ou phoneNumber par défaut
+                      items: items,
+                      total: total, // Total incluant les frais de livraison
+                      subtotal: subtotal,
+                      deliveryFee: deliveryFee!,
+                      status: OrderStatus.reception,
+                      createdAt: DateTime.now(),
+                      latitude: selectedLat,
+                      longitude: selectedLng,
+                      deliveryInstructions: deliveryInstructions,
+                      distance: calculatedDistance,
+                      deliveryTime: deliveryTime,
+                      address: selectedAddress,
                     );
-                  }
-                }
-              } catch (e) {
-                if (!context.mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Erreur lors de l\'enregistrement: $e'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-              }
-            },
+
+                    // Debug: Afficher les données de la commande
+                    print('DEBUG - Order data:');
+                    print('phoneNumber: ${order.phoneNumber}');
+                    print('phone: ${order.phone}');
+                    print('phone variable: $phone');
+                    print('toJson: ${order.toJson()}');
+                    print('phone in toJson: ${order.toJson()['phone']}');
+
+                    // Enregistre la commande sur Firestore avec les détails de livraison
+                    final dataSource = OrderRemoteDataSourceImpl(
+                        firestore: cf.FirebaseFirestore.instance);
+                    final repository = OrderRepositoryImpl(dataSource);
+
+                    try {
+                      // Activer la protection contre les clics multiples
+                      setState(() {
+                        _isProcessingOrder = true;
+                      });
+
+                      await repository.createOrder(order);
+
+                      // Vide le panier Firestore
+                      final cartRepo = CartRepositoryImpl(
+                          remoteDataSource: CartRemoteDataSourceImpl());
+                      await cartRepo.clearCart(phoneNumber);
+
+                      // Vider la commande moderne (modernOrderProvider)
+                      ref.read(modernOrderProvider.notifier).clearOrder();
+
+                      if (!context.mounted) return;
+
+                      // Afficher le message de confirmation
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                              'Commande enregistrée ! Total: ${total.toStringAsFixed(0)} FCFA'),
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
+
+                      // Attendre que le SnackBar soit visible
+                      await Future.delayed(const Duration(milliseconds: 500));
+                      if (!context.mounted) return;
+
+                      // Rediriger vers la page d'accueil du restaurant
+                      try {
+                        context.router
+                            .replace(OrderListRoute(phoneNumber: phoneNumber));
+                      } catch (e) {
+                        // En cas d'erreur, essayer une navigation plus simple
+                        if (context.mounted) {
+                          Navigator.of(context).pushReplacement(
+                            MaterialPageRoute(
+                              builder: (_) => HomeRestaurantPage(
+                                option: const HomeOption(
+                                  title: 'Restaurants',
+                                  icon: 'restaurant',
+                                ),
+                              ),
+                            ),
+                          );
+                        }
+                      }
+                    } catch (e) {
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Erreur lors de l\'enregistrement: $e'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,
               minimumSize: Size(double.infinity, 50),
@@ -1140,14 +1161,38 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                 borderRadius: BorderRadius.circular(25),
               ),
             ),
-            child: Text(
-              'Confirmer la commande • ${_calculateTotal().toStringAsFixed(0)} FCFA',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
+            child: _isProcessingOrder
+                ? Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Text(
+                        'Traitement en cours...',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  )
+                : Text(
+                    'Confirmer la commande • ${_calculateTotal().toStringAsFixed(0)} FCFA',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
           ),
         ),
       ),
