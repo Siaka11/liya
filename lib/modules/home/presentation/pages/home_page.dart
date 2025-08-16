@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:liya/modules/home/presentation/pages/widget/home_card_widget.dart';
+import 'package:liya/modules/home/presentation/pages/widget/profile_content_widget.dart';
 import 'package:liya/routes/app_router.gr.dart';
 import 'package:liya/modules/home/application/home_provider.dart';
 import 'package:liya/modules/home/presentation/pages/utils/top_menu.dart';
@@ -18,6 +19,9 @@ import '../../../../core/test_beverages.dart';
 import '../../../../core/test_modern_system.dart';
 import '../../../../core/test_users_management.dart';
 import '../../domain/entities/home_option.dart';
+
+// Provider pour gérer l'affichage du profil
+final showProfileProvider = StateProvider<bool>((ref) => false);
 
 // Nouveau widget CustomPromoDialog fidèle au design Yango, largeur max, image bord à bord, bouton collé en bas
 class CustomPromoDialog extends StatelessWidget {
@@ -240,7 +244,7 @@ class _PromoPopupManagerState extends State<PromoPopupManager> {
       children: [
         widget.child,
         // Bouton flottant de debug pour reset le flag
-        Positioned(
+        /*Positioned(
           bottom: 24,
           right: 24,
           child: FloatingActionButton(
@@ -258,7 +262,7 @@ class _PromoPopupManagerState extends State<PromoPopupManager> {
             },
             tooltip: 'Réinitialiser le popup',
           ),
-        ),
+        ),*/
       ],
     );
   }
@@ -409,6 +413,7 @@ class HomePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final homeState = ref.watch(homeProvider);
+    final showProfile = ref.watch(showProfileProvider);
 
     // Map pour associer les titres aux routes
     final _routeMap = {
@@ -435,145 +440,165 @@ class HomePage extends ConsumerWidget {
     return PromoPopupManager(
       child: Scaffold(
         body: SafeArea(
-            child: Stack(
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // Logo
-                  Container(
-                    padding: const EdgeInsets.all(5),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Image.asset(
-                          'assets/logo.png',
-                          fit: BoxFit.cover,
-                          height: 120.0,
-                          width: 120.0,
-                        ),
-                      ],
-                    ),
-                  ),
-                  // Titre
-                  const Text(
-                    'Comment pouvons-nous vous aider ?',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  // Grille de cartes
-                  Expanded(
-                    child: homeState.isLoading
-                        ? const Center(child: CircularProgressIndicator())
-                        : homeState.error != null
-                            ? Center(child: Text('Erreur : ${homeState.error}'))
-                            : GridView.builder(
-                                gridDelegate:
-                                    const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 2,
-                                  crossAxisSpacing: 12,
-                                  mainAxisSpacing: 12,
-                                  childAspectRatio: 1,
-                                ),
-                                itemCount: homeState.options.length,
-                                itemBuilder: (context, index) {
-                                  final option = homeState.options[index];
-                                  return HomeOptionCard(
-                                    option: option,
-                                    onTap: () {
-                                      onOptionSelected(context, option);
-                                    },
-                                  );
-                                },
-                              ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Message de bienvenue en haut à gauche
-            Positioned(
-              top: 10,
-              left: 10,
-              child: Padding(
-                padding: const EdgeInsets.all(12.0),
+          child: Stack(
+            children: [
+              // Contenu principal de la HomePage
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
+                    // Logo
+                    Container(
+                      padding: const EdgeInsets.all(5),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Image.asset(
+                            'assets/logo.png',
+                            fit: BoxFit.cover,
+                            height: 120.0,
+                            width: 120.0,
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Titre
                     const Text(
-                      "Bonjour ",
+                      'Comment pouvons-nous vous aider ?',
                       style: TextStyle(
                         fontSize: 16,
                         color: Colors.grey,
                       ),
                     ),
-                    Text(
-                      homeState.user.name,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                        color: Colors.black,
-                      ),
+                    const SizedBox(height: 10),
+                    // Grille de cartes
+                    Expanded(
+                      child: homeState.isLoading
+                          ? const Center(child: CircularProgressIndicator())
+                          : homeState.error != null
+                              ? Center(
+                                  child: Text('Erreur : ${homeState.error}'))
+                              : GridView.builder(
+                                  gridDelegate:
+                                      const SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 2,
+                                    crossAxisSpacing: 12,
+                                    mainAxisSpacing: 12,
+                                    childAspectRatio: 1,
+                                  ),
+                                  itemCount: homeState.options.length,
+                                  itemBuilder: (context, index) {
+                                    final option = homeState.options[index];
+                                    return HomeOptionCard(
+                                      option: option,
+                                      onTap: () {
+                                        onOptionSelected(context, option);
+                                      },
+                                    );
+                                  },
+                                ),
                     ),
                   ],
                 ),
               ),
-            ),
 
-            // Bouton menu utilisateur en haut à droite
-            Positioned(
-              top: 10,
-              right: 10,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Icône de notifications
-                  NotificationButton(
-                    backgroundColor: Colors.transparent,
-                    iconColor: Colors.grey,
-                    size: 40.0,
-                    onPressed: () {
-                      // Navigation vers la page de notifications
-                      context.router.push(const NotificationsRoute());
-                    },
+              // Message de bienvenue en haut à gauche
+              Positioned(
+                top: 10,
+                left: 10,
+                child: Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        "Bonjour ",
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey,
+                        ),
+                      ),
+                      Text(
+                        homeState.user.name,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ],
                   ),
-                  // Icône de profil
-                  IconButton(
-                    icon: const Icon(
-                      Icons.person,
-                      color: Colors.grey,
-                      size: 26.0,
-                    ),
-                    onPressed: () {
-                      showTopMenu(context, ref);
-                    },
-                  ),
-                ],
-              ),
-            ),
-
-            // Bouton paramètres en bas à gauche
-            Positioned(
-              bottom: 20,
-              left: 20,
-              child: FloatingActionButton(
-                onPressed: () {
-                  _showTestDrawer(context);
-                },
-                backgroundColor: Colors.grey[300],
-                child: const Icon(
-                  Icons.settings,
-                  color: Colors.black54,
                 ),
               ),
-            ),
-          ],
-        )),
+
+              // Bouton menu utilisateur en haut à droite
+              Positioned(
+                top: 10,
+                right: 10,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Icône de notifications
+                    NotificationButton(
+                      backgroundColor: Colors.transparent,
+                      iconColor: Colors.grey,
+                      size: 40.0,
+                      onPressed: () {
+                        // Navigation vers la page de notifications
+                        context.router.push(const NotificationsRoute());
+                      },
+                    ),
+                    // Icône de profil
+                    IconButton(
+                      icon: const Icon(
+                        Icons.person,
+                        color: Colors.grey,
+                        size: 26.0,
+                      ),
+                      onPressed: () {
+                        showTopMenu(context, ref);
+                      },
+                    ),
+                  ],
+                ),
+              ),
+
+              // Bouton paramètres en bas à gauche
+              /*Positioned(
+                bottom: 20,
+                left: 20,
+                child: FloatingActionButton(
+                  onPressed: () {
+                    _showTestDrawer(context);
+                  },
+                  backgroundColor: Colors.grey[300],
+                  child: const Icon(
+                    Icons.settings,
+                    color: Colors.black54,
+                  ),
+                ),
+              ),*/
+              // Overlay du profil
+              if (showProfile)
+                Container(
+                  color: Colors.black.withOpacity(0.5),
+                  child: Center(
+                    child: Container(
+                      margin: const EdgeInsets.all(20),
+                      height: MediaQuery.of(context).size.height * 0.8,
+                      child: ProfileContentWidget(
+                        onClose: () {
+                          ref.read(showProfileProvider.notifier).state = false;
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }

@@ -181,7 +181,7 @@ flutter_launcher_icons:
 
 flutter_native_splash:
   color: "#ffffff"
-  image: assets/logo.png
+  image: assets/icon.png
   android: true
   ios: true
   fullscreen: true
@@ -189,6 +189,6 @@ flutter_native_splash:
 flutter_icons:
   android: true
   ios: true
-  image_path: "assets/logo.png"
+  image_path: "assets/icon.png"
   adaptive_icon_background: "#ffffff"
   adaptive_icon_foreground: "assets/logo.png"

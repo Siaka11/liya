@@ -427,7 +427,6 @@ class HomeRestaurantPage extends ConsumerWidget {
                               style: TextStyle(
                                   fontSize: 20, fontWeight: FontWeight.bold),
                             ),
-
                           ],
                         ),
                         categoriesFirebaseState.isLoading
@@ -774,12 +773,12 @@ class HomeRestaurantPage extends ConsumerWidget {
                             ),
                             Row(
                               children: [
-                               /* IconButton(
+                                /* IconButton(
                                   onPressed: () {
                                     newDishesFirebaseController.refresh();
                                   },
-                                  *//*icon: const Icon(Icons.refresh, size: 20),
-                                  tooltip: 'Actualiser',*//*
+                                  */ /*icon: const Icon(Icons.refresh, size: 20),
+                                  tooltip: 'Actualiser',*/ /*
                                 ),*/
                                 TextButton(
                                   onPressed: () {

@@ -294,10 +294,7 @@ class RestaurantDetailPage extends ConsumerWidget {
                       onPressed: () => Navigator.pop(context),
                     ),
                   ),
-                  NotificationAppBarButton(
-                    backgroundColor: Colors.white.withOpacity(0.7),
-                    iconColor: Colors.black,
-                  ),
+
                 ],
               ),
             ),

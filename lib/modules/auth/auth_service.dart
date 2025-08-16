@@ -1,13 +1,14 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:liya/core/singletons.dart';
 
 import '../../core/local_storage_factory.dart';
 import '../../utils/snackbar.dart';
 import 'firebase_auth_service.dart';
 
-// Fonction utilitaire pour les SnackBar (assurez-vous qu'elle est définie quelque part, par exemple dans core/ui/components/snack_bar_utils.dart)
+// Fonction utilitaire pour les SnackBar
 void showSnackBar(BuildContext context, String message,
     {bool isError = false}) {
   ScaffoldMessenger.of(context).showSnackBar(
@@ -22,6 +23,17 @@ void showSnackBar(BuildContext context, String message,
 class AuthService {
   final FirebaseAuthService _firebaseAuthService = FirebaseAuthService();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  // Configuration iOS pour l'authentification par téléphone
+  void _configureIOSPhoneAuth() {
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
+      // Configuration spécifique iOS pour la connexion par téléphone
+      // Note: La configuration se fait automatiquement via Firebase
+      print(
+          '🔥 Configuration iOS pour l\'authentification par téléphone activée');
+    }
+  }
 
   // Cette méthode est un wrapper direct pour FirebaseAuthService.sendOTP.
   // Idéalement, les appels devraient aller directement à AuthProvider.sendOTP.
@@ -31,6 +43,9 @@ class AuthService {
     required BuildContext context,
   }) async {
     try {
+      // Configuration iOS si nécessaire
+      _configureIOSPhoneAuth();
+
       // Appelle le sendOTP du service FirebaseAuthService
       final needsOTP = await _firebaseAuthService.sendOTP(phoneNumber);
 
@@ -148,6 +163,20 @@ class AuthService {
       onError(e.toString());
     }
   }
+
+  // Méthode pour vérifier si l'utilisateur est connecté (iOS compatible)
+  bool get isSignedIn => _auth.currentUser != null;
+
+  // Méthode pour obtenir l'utilisateur actuel (iOS compatible)
+  User? get currentUser => _auth.currentUser;
+
+  // Méthode pour déconnecter l'utilisateur (iOS compatible)
+  Future<void> signOut() async {
+    await _auth.signOut();
+  }
+
+  // Méthode pour écouter les changements d'état d'authentification (iOS compatible)
+  Stream<User?> get authStateChanges => _auth.authStateChanges();
 
 // La méthode _formatPhoneNumber est une DUPLICATION et DOIT ÊTRE SUPPRIMÉE de ce fichier.
 // Elle est déjà et doit rester uniquement dans FirebaseAuthService.

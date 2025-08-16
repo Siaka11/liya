@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../application/home_delivery_provider.dart';
 import '../../domain/entities/delivery_user.dart';
 import 'package:intl/intl.dart';
+import 'package:liya/core/services/account_management_service.dart';
 
 @RoutePage()
 class DeliveryProfilePage extends ConsumerWidget {
@@ -108,11 +109,8 @@ class DeliveryProfilePage extends ConsumerWidget {
                 child: Row(
                   children: [
                     Icon(
-                      currentUser.active
-                          ? Icons.check_circle
-                          : Icons.cancel,
-                      color:
-                          currentUser.active ? Colors.green : Colors.red,
+                      currentUser.active ? Icons.check_circle : Icons.cancel,
+                      color: currentUser.active ? Colors.green : Colors.red,
                       size: 32,
                     ),
                     const SizedBox(width: 16),
@@ -121,9 +119,7 @@ class DeliveryProfilePage extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            currentUser.active
-                                ? 'Disponible'
-                                : 'Indisponible',
+                            currentUser.active ? 'Disponible' : 'Indisponible',
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
@@ -273,7 +269,8 @@ class DeliveryProfilePage extends ConsumerWidget {
               width: double.infinity,
               child: OutlinedButton.icon(
                 onPressed: () {
-                  // TODO: Implémenter la déconnexion
+                  // Utiliser le nouveau service de gestion des comptes
+                  AccountManagementService.showLogoutDialog(context);
                 },
                 icon: const Icon(Icons.logout),
                 label: const Text('Se déconnecter'),

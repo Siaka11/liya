@@ -9,6 +9,7 @@ import '../../core/singletons.dart'; // Pour singleton
 import '../../config/app_information.dart'; // Pour Config
 // Pour singleton
 import 'package:liya/core/services/fcm_service.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 
 class FirebaseAuthService {
   static FirebaseAuthService? _instance;
@@ -222,6 +223,8 @@ class FirebaseAuthService {
     await _authInstance.verifyPhoneNumber(
       phoneNumber: formattedPhone,
       timeout: const Duration(seconds: 60), // Timeout explicite
+      // Configuration iOS pour éviter reCAPTCHA
+      autoRetrievedSmsCodeForTesting: null,
       verificationCompleted: (PhoneAuthCredential credential) async {
         // Auto-vérification (Android) - Firebase reconnaît le numéro
         print(

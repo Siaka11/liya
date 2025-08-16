@@ -309,11 +309,7 @@ class _DishDetailPageState extends ConsumerState<DishDetailPage>
                       onPressed: () => Navigator.pop(context),
                     ),
                   ),
-                  // Bouton notifications
-                  NotificationAppBarButton(
-                    backgroundColor: Colors.white70,
-                    iconColor: Colors.black,
-                  ),
+
                   // Bouton cœur (like)
                   CircleAvatar(
                     backgroundColor: Colors.white70,
