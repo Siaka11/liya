@@ -23,6 +23,7 @@ import 'package:geocoding/geocoding.dart';
 import 'package:liya/modules/restaurant/features/order/presentation/providers/modern_order_provider.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:liya/modules/restaurant/features/checkout/presentation/pages/delivery_address_page.dart';
+import 'package:liya/core/services/location_permission_service.dart';
 
 @RoutePage()
 class CheckoutPage extends ConsumerStatefulWidget {
@@ -328,16 +329,16 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
   // Obtenir la position actuelle
   Future<void> _getCurrentLocation() async {
     try {
-      // Demander les permissions de localisation
-      final permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        final requested = await Geolocator.requestPermission();
-        if (requested == LocationPermission.denied) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Permission de localisation refusée')),
-          );
-          return;
+      // Utiliser le nouveau service de permissions
+      final hasPermission =
+          await LocationPermissionService.requestLocationPermission();
+      if (!hasPermission) {
+        // Afficher un dialogue pour demander à l'utilisateur d'ouvrir les paramètres
+        final shouldOpenSettings = await _showLocationPermissionDialog();
+        if (shouldOpenSettings) {
+          await LocationPermissionService.openAppSettings();
         }
+        return;
       }
 
       // Afficher un indicateur de chargement
@@ -351,10 +352,19 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
         ),
       );
 
-      // Obtenir la position actuelle
-      final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-      );
+      // Obtenir la position actuelle avec le nouveau service
+      final position = await LocationPermissionService.getCurrentPosition();
+
+      if (position == null) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Impossible d\'obtenir la position actuelle'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
 
       // Fermer le dialogue de chargement
       Navigator.pop(context);
@@ -381,6 +391,33 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
         ),
       );
     }
+  }
+
+  // Dialogue pour demander à l'utilisateur d'ouvrir les paramètres
+  Future<bool> _showLocationPermissionDialog() async {
+    return await showDialog<bool>(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text('Permission de localisation requise'),
+              content: const Text(
+                'Pour utiliser votre position actuelle, nous avons besoin de votre permission de localisation. '
+                'Voulez-vous ouvrir les paramètres de l\'application ?',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Annuler'),
+                ),
+                ElevatedButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Ouvrir les paramètres'),
+                ),
+              ],
+            );
+          },
+        ) ??
+        false;
   }
 
   // Mettre à jour l'adresse à partir du texte
@@ -511,14 +548,6 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
           ],
         ),
         centerTitle: true,
-        actions: [
-          // Bouton de debug temporaire
-          IconButton(
-            icon: Icon(Icons.refresh, color: Colors.orange),
-            onPressed: () => _resetToYamoussoukro(),
-            tooltip: 'Réinitialiser à Yamoussoukro',
-          ),
-        ],
       ),
       body: SingleChildScrollView(
         child: Column(

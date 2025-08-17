@@ -39,8 +39,9 @@ target 'Runner' do
   # Firebase App Check pour iOS (remplace reCAPTCHA)
   pod 'FirebaseAppCheck'
   
-  # Firebase App Check pour iOS (remplace reCAPTCHA)
-  pod 'FirebaseAppCheck'
+  # Google Maps pour iOS
+  pod 'GoogleMaps'
+  pod 'GooglePlaces'
   
   target 'RunnerTests' do
     inherit! :search_paths

@@ -10,6 +10,7 @@ import 'dart:async';
 
 import '../../../../../../core/local_storage_factory.dart';
 import '../../../../../../core/singletons.dart';
+import '../../../../../../core/services/location_permission_service.dart';
 
 class DeliveryAddressPage extends ConsumerStatefulWidget {
   final LatLng? initialLocation;
@@ -51,14 +52,25 @@ class _DeliveryAddressPageState extends ConsumerState<DeliveryAddressPage> {
         _selectedLocation = widget.initialLocation;
         _selectedAddress = widget.initialAddress ?? '';
       } else {
-        // Obtenir la position actuelle
-        final position = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.high,
-        );
-        _selectedLocation = LatLng(position.latitude, position.longitude);
-
-        // Obtenir l'adresse
-        await _getAddressFromCoordinates(_selectedLocation!);
+        // Utiliser le nouveau service de permissions
+        final hasPermission = await LocationPermissionService.requestLocationPermission();
+        if (hasPermission) {
+          // Obtenir la position actuelle avec le nouveau service
+          final position = await LocationPermissionService.getCurrentPosition();
+          if (position != null) {
+            _selectedLocation = LatLng(position.latitude, position.longitude);
+            // Obtenir l'adresse
+            await _getAddressFromCoordinates(_selectedLocation!);
+          } else {
+            // Position par défaut si échec
+            _selectedLocation = const LatLng(5.3600, -4.0083);
+            _selectedAddress = 'Abidjan, Côte d\'Ivoire';
+          }
+        } else {
+          // Position par défaut si pas de permission
+          _selectedLocation = const LatLng(5.3600, -4.0083);
+          _selectedAddress = 'Abidjan, Côte d\'Ivoire';
+        }
       }
 
       _updateMarkers();
@@ -227,10 +239,36 @@ class _DeliveryAddressPageState extends ConsumerState<DeliveryAddressPage> {
         _isLoading = true;
       });
 
-      // Obtenir la position actuelle
-      final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-      );
+      // Utiliser le nouveau service de permissions
+      final hasPermission =
+          await LocationPermissionService.requestLocationPermission();
+      if (!hasPermission) {
+        // Afficher un dialogue pour demander à l'utilisateur d'ouvrir les paramètres
+        final shouldOpenSettings = await _showLocationPermissionDialog();
+        if (shouldOpenSettings) {
+          await LocationPermissionService.openAppSettings();
+        }
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+
+      // Obtenir la position actuelle avec le nouveau service
+      final position = await LocationPermissionService.getCurrentPosition();
+
+      if (position == null) {
+        setState(() {
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Impossible d\'obtenir votre position actuelle'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
 
       final newLocation = LatLng(position.latitude, position.longitude);
 
@@ -471,14 +509,14 @@ class _DeliveryAddressPageState extends ConsumerState<DeliveryAddressPage> {
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(color: Colors.blue.shade200),
                       ),
-                      *//*child: Row(
+                      */ /*child: Row(
                         children: [
                           Icon(
                             Icons.info_outline,
                             color: Colors.blue,
                             size: 20,
                           ),
-*//**//*                          SizedBox(width: 8),
+*/ /**/ /*                          SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               'Appuyez sur la carte pour changer l\'adresse ou déplacez le marqueur rouge',
@@ -487,9 +525,9 @@ class _DeliveryAddressPageState extends ConsumerState<DeliveryAddressPage> {
                                 color: Colors.blue.shade700,
                               ),
                             ),
-                          ),*//**//*
+                          ),*/ /**/ /*
                         ],
-                      ),*//*
+                      ),*/ /*
                     ),*/
                     SizedBox(height: 20),
 
@@ -541,6 +579,33 @@ class _DeliveryAddressPageState extends ConsumerState<DeliveryAddressPage> {
         ],
       ),
     );
+  }
+
+  // Dialogue pour demander à l'utilisateur d'ouvrir les paramètres
+  Future<bool> _showLocationPermissionDialog() async {
+    return await showDialog<bool>(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text('Permission de localisation requise'),
+              content: const Text(
+                'Pour utiliser votre position actuelle, nous avons besoin de votre permission de localisation. '
+                'Voulez-vous ouvrir les paramètres de l\'application ?',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Annuler'),
+                ),
+                ElevatedButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Ouvrir les paramètres'),
+                ),
+              ],
+            );
+          },
+        ) ??
+        false;
   }
 
   @override

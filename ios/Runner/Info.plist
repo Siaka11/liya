@@ -87,5 +87,17 @@
 		<false/>
 		<key>FirebaseAutomaticScreenReportingEnabled</key>
 		<false/>
+		<!-- Configuration pour Google Maps -->
+		<key>io.flutter.embedded_views_preview</key>
+		<true/>
+		<key>NSLocationUsageDescription</key>
+		<string>Cette application nécessite l'accès à votre localisation pour afficher la carte et calculer les distances de livraison.</string>
+		<key>NSLocationAlwaysUsageDescription</key>
+		<string>Cette application nécessite l'accès à votre localisation pour le suivi en temps réel des livraisons.</string>
+		<key>NSLocationTemporaryUsageDescriptionDictionary</key>
+		<dict>
+			<key>LocationWhenInUse</key>
+			<string>Cette application nécessite l'accès à votre localisation pour afficher la carte et calculer les distances de livraison.</string>
+		</dict>
 	</dict>
 </plist>
