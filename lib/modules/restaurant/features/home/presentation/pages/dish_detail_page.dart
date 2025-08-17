@@ -288,10 +288,7 @@ class _DishDetailPageState extends ConsumerState<DishDetailPage>
                       if (!widget.description.isEmpty) ...[
                         _buildDescription(),
                       ],
-                      const SizedBox(height: 24),
-                      _buildAccompanimentsSection(ref),
                       SizedBox(height: 30),
-
                       // Contrôle de quantité directement dans le contenu principal
                       Container(
                         margin: const EdgeInsets.symmetric(horizontal: 10),
@@ -360,6 +357,8 @@ class _DishDetailPageState extends ConsumerState<DishDetailPage>
                           ],
                         ),
                       ),
+                      const SizedBox(height: 24),
+                      _buildAccompanimentsSection(ref),
                       SizedBox(height: 140),
                     ],
                   ),

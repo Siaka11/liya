@@ -1,8 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/search_result.dart';
-import '../../domain/usecases/search_products.dart';
-import '../../data/datasources/search_remote_data_source.dart';
 import '../../data/repositories/search_repository_impl.dart';
+import '../../data/datasources/search_firestore_data_source.dart';
 
 class SearchState {
   final bool isLoading;
@@ -28,27 +27,85 @@ class SearchState {
   }
 }
 
+// Provider pour la source de données Firestore
+final searchFirestoreDataSourceProvider =
+    Provider<SearchFirestoreDataSource>((ref) {
+  return SearchFirestoreDataSource();
+});
+
+// Provider pour le repository
+final searchRepositoryProvider = Provider<SearchRepositoryImpl>((ref) {
+  final dataSource = ref.watch(searchFirestoreDataSourceProvider);
+  return SearchRepositoryImpl(remoteDataSource: dataSource);
+});
+
 final searchProvider =
     StateNotifierProvider<SearchNotifier, SearchState>((ref) {
-  final dataSource =
-      SearchRemoteDataSourceImpl(apiUrl: 'http://api-restaurant.toptelsig.com');
-  final repository = SearchRepositoryImpl(dataSource);
-  final usecase = SearchProducts(repository);
-  return SearchNotifier(usecase);
+  final repository = ref.watch(searchRepositoryProvider);
+  return SearchNotifier(repository);
 });
 
 class SearchNotifier extends StateNotifier<SearchState> {
-  final SearchProducts usecase;
-  SearchNotifier(this.usecase) : super(SearchState());
+  final SearchRepositoryImpl _repository;
+  SearchNotifier(this._repository) : super(SearchState());
 
   Future<void> search(String query) async {
+    if (query.trim().isEmpty) {
+      state = state.copyWith(isLoading: false, results: [], error: null);
+      return;
+    }
+
     state = state.copyWith(isLoading: true, error: null);
     try {
-      final results = await usecase(query);
+      final results = await _repository.search(query);
       state = state.copyWith(isLoading: false, results: results, error: null);
     } catch (e) {
       state = state.copyWith(
-          isLoading: false, error: 'Erreur lors de la recherche');
+          isLoading: false, error: 'Erreur lors de la recherche: $e');
     }
+  }
+
+  /// Recherche avancée avec filtres
+  Future<void> advancedSearch({
+    required String query,
+    String? category,
+    String? restaurantId,
+    double? minPrice,
+    double? maxPrice,
+  }) async {
+    if (query.trim().isEmpty) {
+      state = state.copyWith(isLoading: false, results: [], error: null);
+      return;
+    }
+
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      final results = await _repository.advancedSearch(
+        query: query,
+        category: category,
+        restaurantId: restaurantId,
+        minPrice: minPrice,
+        maxPrice: maxPrice,
+      );
+      state = state.copyWith(isLoading: false, results: results, error: null);
+    } catch (e) {
+      state = state.copyWith(
+          isLoading: false, error: 'Erreur lors de la recherche avancée: $e');
+    }
+  }
+
+  /// Obtenir des suggestions de recherche
+  Future<List<String>> getSearchSuggestions(String query) async {
+    try {
+      return await _repository.getSearchSuggestions(query);
+    } catch (e) {
+      print('❌ Erreur suggestions: $e');
+      return [];
+    }
+  }
+
+  /// Effacer les résultats de recherche
+  void clearSearch() {
+    state = state.copyWith(results: [], error: null);
   }
 }

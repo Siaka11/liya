@@ -4,18 +4,24 @@ import '../../../../core/failure.dart';
 import '../../domain/entities/dish.dart';
 import '../../domain/repositories/dish_repository.dart';
 import '../datasources/dish_remote_data_source.dart';
+import '../datasources/dish_firestore_data_source.dart';
 
 class DishRepositoryImpl implements DishRepository {
   final DishRemoteDataSource remoteDataSource;
+  final DishFirestoreDataSource firestoreDataSource;
 
-  DishRepositoryImpl({required this.remoteDataSource});
+  DishRepositoryImpl({
+    required this.remoteDataSource,
+    required this.firestoreDataSource,
+  });
 
   @override
   Future<Either<Failure, List<Dish>>> getDishesByRestaurant(
       String restaurantId) async {
     try {
+      // Utiliser Firestore au lieu de MySQL
       final dishModels =
-          await remoteDataSource.getDishesByRestaurant(restaurantId);
+          await firestoreDataSource.getDishesByRestaurant(restaurantId);
       return Right(dishModels); // Conversion implicite de DishModel à Dish
     } catch (e) {
       return Left(ServerFailure());

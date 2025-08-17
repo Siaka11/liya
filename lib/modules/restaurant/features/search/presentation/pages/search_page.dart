@@ -62,7 +62,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
       appBar: AppBar(
         title:
             const Text('Recherche', style: TextStyle(color: Colors.deepOrange)),
-        leading:SizedBox(),
+        leading: SizedBox(),
       ),
       body: Column(
         children: [
