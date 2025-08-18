@@ -42,14 +42,19 @@ class PopularDishesFirebaseNotifier
       // 2. Trier par rating puis par date de création
       // TODO: Quand order_count sera disponible, changer pour :
       // .orderBy('order_count', descending: true)
-      // .orderBy('rating', descending: true)
+      // Option 1: Sans orderBy pour éviter l'index composite
       final dishesSnapshot = await _firestore
           .collection('dishes')
-          .where('isAvailable', isEqualTo: true)
-          .orderBy('rating', descending: true)
-          .orderBy('createdAt', descending: true)
+          .orderBy('createdAt', descending: false)
           .limit(20)
           .get();
+
+      // Option 2: Avec orderBy mais sans where (si vous voulez garder le tri)
+      // final dishesSnapshot = await _firestore
+      //     .collection('dishes')
+      //     .orderBy('createdAt', descending: false)
+      //     .limit(20)
+      //     .get();
 
       final List<Map<String, dynamic>> dishes = [];
 

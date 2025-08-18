@@ -394,6 +394,13 @@ class _LieuPageState extends ConsumerState<LieuPage> {
                             hint: '',
                             onSaved: (v) => quartier = v ?? '',
                           ),
+                          _buildField(
+                            label: 'Numéro de téléphone',
+                            controller: _phoneController,
+                            hint: '',
+                            onSaved: (v) => phone = v ?? '',
+                            isRequired: false,
+                          ),
                         ],
                       ),
 
@@ -411,9 +418,16 @@ class _LieuPageState extends ConsumerState<LieuPage> {
                           ),
                           _buildField(
                             label: 'Lieu de livraison du colis',
+                            controller: _quartierController,
+                            hint: '',
+                            onSaved: (v) => quartier = v ?? '',
+                          ),
+                          _buildField(
+                            label: 'Numéro de téléphone',
                             controller: _phoneController,
                             hint: '',
                             onSaved: (v) => phone = v ?? '',
+                            isRequired: false,
                           ),
                         ],
                       ),

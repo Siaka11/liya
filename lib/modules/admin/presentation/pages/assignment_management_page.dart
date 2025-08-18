@@ -30,41 +30,65 @@ class _AssignmentManagementPageState extends State<AssignmentManagementPage> {
     setState(() => _isLoading = true);
 
     try {
-      // Charger les commandes en attente
+      // Charger les commandes en attente (nourritures)
       final ordersSnapshot = await _firestore
           .collection('orders')
-          .where('status', whereIn: ['pending', 'confirmed']).get();
+          .where('status', whereIn: [
+            'pending',
+            'confirmed',
+            'preparing',
+            'reception',
+            'enRoute'
+          ])
+          .orderBy('createdAt', descending: true)
+          .get();
 
       final orders = ordersSnapshot.docs.map((doc) {
         final data = doc.data();
         return {
           'id': doc.id,
           'type': 'order',
-          'customerName': data['customerName'] ?? 'Client inconnu',
-          'customerAddress': data['customerAddress'] ?? 'Adresse non spécifiée',
-          'total': data['total'] ?? 0.0,
+          'orderNumber': doc.id,
+          'customerName':
+              data['delivery_name'] ?? data['phoneNumber'] ?? 'Client inconnu',
+          'customerAddress': data['address'] ?? 'Adresse non spécifiée',
+          'total': data['total'] ?? data['totalAmount'] ?? 0.0,
           'status': data['status'] ?? 'pending',
-          'createdAt': data['createdAt'],
-          'assignedTo': data['assignedTo'],
+          'createdAt': data['createdAt'] != null
+              ? (data['createdAt'] is Timestamp
+                  ? (data['createdAt'] as Timestamp).toDate()
+                  : DateTime.tryParse(data['createdAt'].toString()) ??
+                      DateTime.now())
+              : DateTime.now(),
+          'assignedTo': data['assignedTo'] ?? data['deliveryUserId'],
+          'restaurantName': data['restaurantName'] ?? 'Restaurant inconnu',
         };
       }).toList();
 
       // Charger les colis en attente
       final parcelsSnapshot = await _firestore
           .collection('parcels')
-          .where('status', whereIn: ['reception', 'enRoute']).get();
+          .where('status', whereIn: ['reception', 'enRoute', 'pickup'])
+          .orderBy('createdAt', descending: true)
+          .get();
 
       final parcels = parcelsSnapshot.docs.map((doc) {
         final data = doc.data();
         return {
           'id': doc.id,
           'type': 'parcel',
+          'orderNumber': doc.id,
           'expediteurNom': data['expediteurNom'] ?? 'Expéditeur inconnu',
           'destinataireNom': data['destinataireNom'] ?? 'Destinataire inconnu',
           'expediteurLieu': data['expediteurLieu'] ?? 'Lieu non spécifié',
           'destinataireLieu': data['destinataireLieu'] ?? 'Lieu non spécifié',
           'status': data['status'] ?? 'reception',
-          'createdAt': data['createdAt'],
+          'createdAt': data['createdAt'] != null
+              ? (data['createdAt'] is Timestamp
+                  ? (data['createdAt'] as Timestamp).toDate()
+                  : DateTime.tryParse(data['createdAt'].toString()) ??
+                      DateTime.now())
+              : DateTime.now(),
           'assignedTo': data['assignedTo'],
         };
       }).toList();
@@ -72,12 +96,13 @@ class _AssignmentManagementPageState extends State<AssignmentManagementPage> {
       // Charger les livreurs disponibles
       final deliverySnapshot = await _firestore
           .collection('users')
-          .where('role', isEqualTo: 'delivery')
-          .where('isActive', isEqualTo: true)
+          .where('role', isEqualTo: 'livreur')
           .get();
 
       final deliveryUsers = deliverySnapshot.docs.map((doc) {
         final data = doc.data();
+        print(
+            'DEBUG: Livreur trouvé - ID: ${doc.id}, Role: ${data['role']}, Name: ${data['name']}');
         return {
           'id': doc.id,
           'name': data['name'] ?? 'Livreur inconnu',
@@ -86,6 +111,11 @@ class _AssignmentManagementPageState extends State<AssignmentManagementPage> {
           'currentLocation': data['currentLocation'],
         };
       }).toList();
+
+      print('DEBUG: Nombre de livreurs trouvés: ${deliveryUsers.length}');
+
+      print('DEBUG: Commandes trouvées: ${orders.length}');
+      print('DEBUG: Colis trouvés: ${parcels.length}');
 
       setState(() {
         _pendingOrders = orders;
@@ -115,11 +145,25 @@ class _AssignmentManagementPageState extends State<AssignmentManagementPage> {
       final collection = item['type'] == 'order' ? 'orders' : 'parcels';
       final status = item['type'] == 'order' ? 'assigned' : 'enRoute';
 
+      // Vérifier que l'élément n'est pas déjà assigné
+      if (item['assignedTo'] != null && item['assignedTo'].isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                '${item['type'] == 'order' ? 'La commande' : 'Le colis'} est déjà assigné'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+
+      // Mettre à jour l'assignation
       await _firestore.collection(collection).doc(item['id']).update({
         'assignedTo': deliveryUser['phoneNumber'],
         'assignedToName': deliveryUser['name'],
         'status': status,
         'assignedAt': FieldValue.serverTimestamp(),
+        'lastUpdated': FieldValue.serverTimestamp(),
       });
 
       // Envoyer une notification au livreur
@@ -355,12 +399,25 @@ class _AssignmentManagementPageState extends State<AssignmentManagementPage> {
                   color: isOrder ? Colors.blue : Colors.green,
                 ),
                 const SizedBox(width: 8),
-                Text(
-                  isOrder ? 'Commande' : 'Colis',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isOrder ? 'Commande' : 'Colis',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      item['orderNumber'] ?? 'N/A',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
                 const Spacer(),
                 Container(

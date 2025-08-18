@@ -43,8 +43,11 @@ class ModernDishCard extends ConsumerWidget {
     final quantity = ref.watch(itemQuantityProvider(id));
 
     return Container(
-      width: 400,
-      height: 200,
+      // Contraintes flexibles qui s'adaptent au contexte parent
+      constraints: BoxConstraints(
+        minHeight: 180, // Hauteur minimale pour la cohérence
+        maxHeight: 220, // Hauteur maximale pour éviter les cartes trop grandes
+      ),
       child: Card(
         elevation: 0.5,
         shape: RoundedRectangleBorder(
@@ -58,12 +61,12 @@ class ModernDishCard extends ConsumerWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Image du plat - hauteur fixe
+                  // Image du plat - hauteur proportionnelle
                   ClipRRect(
                     borderRadius:
                         const BorderRadius.vertical(top: Radius.circular(12)),
                     child: Container(
-                      height: 100,
+                      height: 120, // Hauteur proportionnelle
                       width: double.infinity,
                       child: Image.network(
                         imageUrl,
@@ -80,8 +83,8 @@ class ModernDishCard extends ConsumerWidget {
                     ),
                   ),
 
-                  // Contenu de la carte - hauteur fixe
-                  Expanded(
+                  // Contenu de la carte - hauteur flexible
+                  Flexible(
                     child: Padding(
                       padding: const EdgeInsets.all(8),
                       child: Column(

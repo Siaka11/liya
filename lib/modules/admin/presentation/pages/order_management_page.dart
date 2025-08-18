@@ -27,59 +27,85 @@ class _OrderManagementPageState extends ConsumerState<OrderManagementPage> {
 
   Future<void> _loadOrders() async {
     try {
-      // Charger les commandes de restaurant
-      final restaurantOrdersSnapshot =
-          await FirebaseFirestore.instance.collection('orders').get();
+      // Charger TOUTES les commandes de restaurant (même assignées)
+      final restaurantOrdersSnapshot = await FirebaseFirestore.instance
+          .collection('orders')
+          .orderBy('createdAt', descending: true)
+          .get();
 
       List<Map<String, dynamic>> restaurantOrders =
           restaurantOrdersSnapshot.docs.map((doc) {
         final data = doc.data();
+
         return {
           'id': doc.id,
           'type': 'restaurant',
-          'clientName': data['clientName'] ?? 'Client inconnu',
-          'clientPhone': data['clientPhone'] ?? 'Téléphone inconnu',
+          'orderNumber': doc.id,
+          'clientName':
+              data['delivery_name'] ?? data['phoneNumber'] ?? 'Client inconnu',
+          'clientPhone': data['delivery_phone_number'] ??
+              data['phone'] ??
+              data['phoneNumber'] ??
+              'Téléphone inconnu',
           'restaurantName': data['restaurantName'] ?? 'Restaurant inconnu',
-          'totalAmount': data['totalAmount']?.toDouble() ?? 0.0,
+          'totalAmount': (data['total'] ?? 0.0).toDouble(),
           'status': data['status'] ?? 'reception',
-          'deliveryAddress': data['deliveryAddress'] ?? 'Adresse inconnue',
+          'deliveryAddress': data['address'] ?? 'Adresse inconnue',
           'deliveryUserId': data['deliveryUserId'],
           'deliveryUserName': data['deliveryUserName'],
           'createdAt': data['createdAt'] != null
-              ? (data['createdAt'] as Timestamp).toDate()
+              ? (data['createdAt'] is Timestamp
+                  ? (data['createdAt'] as Timestamp).toDate()
+                  : DateTime.tryParse(data['createdAt'].toString()) ??
+                      DateTime.now())
               : DateTime.now(),
           'items': data['items'] ?? [],
         };
       }).toList();
 
-      // Charger les colis
-      final parcelsSnapshot =
-          await FirebaseFirestore.instance.collection('parcels').get();
+      // Charger TOUS les colis (même assignés)
+      final parcelsSnapshot = await FirebaseFirestore.instance
+          .collection('parcels')
+          .orderBy('createdAt', descending: true)
+          .get();
 
       List<Map<String, dynamic>> parcels = parcelsSnapshot.docs.map((doc) {
         final data = doc.data();
+
         return {
           'id': doc.id,
           'type': 'parcel',
-          'clientName': data['clientName'] ?? 'Client inconnu',
-          'clientPhone': data['clientPhone'] ?? 'Téléphone inconnu',
-          'description': data['description'] ?? 'Description inconnue',
-          'totalAmount': data['price']?.toDouble() ?? 0.0,
+          'orderNumber': doc.id,
+          'clientName':
+              '${data['expediteurNom'] ?? 'Expéditeur'} → ${data['destinataireNom'] ?? 'Destinataire'}',
+          'clientPhone': data['phoneNumber'] ?? 'Téléphone inconnu',
+          'description': data['descriptionColis'] ?? 'Description inconnue',
+          'totalAmount': (data['prix'] ?? 0.0).toDouble(),
           'status': data['status'] ?? 'reception',
           'pickupAddress':
-              data['pickupAddress'] ?? 'Adresse de collecte inconnue',
+              data['expediteurLieu'] ?? 'Adresse de collecte inconnue',
           'deliveryAddress':
-              data['deliveryAddress'] ?? 'Adresse de livraison inconnue',
+              data['destinataireLieu'] ?? 'Adresse de livraison inconnue',
           'deliveryUserId': data['deliveryUserId'],
           'deliveryUserName': data['deliveryUserName'],
           'createdAt': data['createdAt'] != null
-              ? (data['createdAt'] as Timestamp).toDate()
+              ? (data['createdAt'] is Timestamp
+                  ? (data['createdAt'] as Timestamp).toDate()
+                  : DateTime.tryParse(data['createdAt'].toString()) ??
+                      DateTime.now())
               : DateTime.now(),
         };
       }).toList();
 
       setState(() {
-        orders = [...restaurantOrders, ...parcels];
+        // Séparer clairement les commandes et colis
+        final allOrders = [
+          ...restaurantOrders.map(
+              (order) => {...order, 'displayType': '🍽️ Commande Restaurant'}),
+          ...parcels.map((parcel) => {...parcel, 'displayType': '📦 Colis'}),
+        ];
+
+        orders = allOrders;
         orders.sort((a, b) => b['createdAt'].compareTo(a['createdAt']));
         isLoading = false;
       });
@@ -95,6 +121,7 @@ class _OrderManagementPageState extends ConsumerState<OrderManagementPage> {
 
   List<Map<String, dynamic>> get filteredOrders {
     return orders.where((order) {
+      // Recherche par nom client, téléphone, restaurant ou description
       final matchesSearch = searchQuery.isEmpty ||
           order['clientName']
               .toString()
@@ -105,10 +132,18 @@ class _OrderManagementPageState extends ConsumerState<OrderManagementPage> {
               order['restaurantName']
                   .toString()
                   .toLowerCase()
+                  .contains(searchQuery.toLowerCase())) ||
+          (order['type'] == 'parcel' &&
+              order['description']
+                  .toString()
+                  .toLowerCase()
                   .contains(searchQuery.toLowerCase()));
 
+      // Filtrage par statut
       final matchesStatus =
           selectedStatus == 'all' || order['status'] == selectedStatus;
+
+      // Filtrage par type (restaurant ou colis)
       final matchesType =
           selectedType == 'all' || order['type'] == selectedType;
 
@@ -156,13 +191,23 @@ class _OrderManagementPageState extends ConsumerState<OrderManagementPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
+              _buildDetailRow('Numéro', order['orderNumber'] ?? 'N/A'),
               _buildDetailRow(
                   'Type',
                   order['type'] == 'restaurant'
-                      ? 'Commande restaurant'
-                      : 'Colis'),
-              _buildDetailRow('Client', order['clientName']),
-              _buildDetailRow('Téléphone', order['clientPhone']),
+                      ? '🍽️ Commande restaurant'
+                      : '📦 Colis'),
+              _buildDetailRow(
+                  'Client',
+                  order['delivery_name'] ??
+                      order['phoneNumber'] ??
+                      'Client inconnu'),
+              _buildDetailRow(
+                  'Téléphone',
+                  order['delivery_phone_number'] ??
+                      order['phone'] ??
+                      order['phoneNumber'] ??
+                      'Téléphone inconnu'),
               if (order['type'] == 'restaurant') ...[
                 _buildDetailRow('Restaurant', order['restaurantName']),
                 _buildDetailRow(
@@ -441,9 +486,22 @@ class _OrderManagementPageState extends ConsumerState<OrderManagementPage> {
         title: Row(
           children: [
             Expanded(
-              child: Text(
-                order['clientName'],
-                style: const TextStyle(fontWeight: FontWeight.bold),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    order['orderNumber'] ?? 'N/A',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  Text(
+                    order['clientName'],
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ],
               ),
             ),
             Container(
@@ -516,10 +574,9 @@ class _OrderManagementPageState extends ConsumerState<OrderManagementPage> {
             const SizedBox(height: 4),
             Row(
               children: [
-                const Icon(Icons.euro, size: 16, color: Colors.grey),
                 const SizedBox(width: 4),
                 Text(
-                  '${order['totalAmount']} €',
+                  '${order['totalAmount']} CFA',
                   style: const TextStyle(
                       fontSize: 12, fontWeight: FontWeight.bold),
                 ),
@@ -570,7 +627,7 @@ class _OrderManagementPageState extends ConsumerState<OrderManagementPage> {
                 ],
               ),
             ),
-            const PopupMenuItem(
+            /*const PopupMenuItem(
               value: 'assign',
               child: Row(
                 children: [
@@ -579,7 +636,7 @@ class _OrderManagementPageState extends ConsumerState<OrderManagementPage> {
                   Text('Assigner'),
                 ],
               ),
-            ),
+            ),*/
           ],
         ),
       ),

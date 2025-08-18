@@ -159,7 +159,7 @@ class ParcelDetailPage extends ConsumerWidget {
             ),
 
             // Bouton d'action
-            if (parcelStatus == ParcelStatus.reception)
+           /* if (parcelStatus == ParcelStatus.reception)
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -177,7 +177,7 @@ class ParcelDetailPage extends ConsumerWidget {
                   child: const Text('Accepter la livraison',
                       style: TextStyle(fontSize: 18)),
                 ),
-              ),
+              ),*/
           ],
         ),
       ),

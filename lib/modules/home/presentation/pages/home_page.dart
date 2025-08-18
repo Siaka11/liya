@@ -566,7 +566,7 @@ class HomePage extends ConsumerWidget {
               ),
 
               // Bouton paramètres en bas à gauche
-              /*Positioned(
+              Positioned(
                 bottom: 20,
                 left: 20,
                 child: FloatingActionButton(
@@ -579,7 +579,7 @@ class HomePage extends ConsumerWidget {
                     color: Colors.black54,
                   ),
                 ),
-              ),*/
+              ),
               // Overlay du profil
               if (showProfile)
                 Container(

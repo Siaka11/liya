@@ -411,216 +411,6 @@ class HomeRestaurantPage extends ConsumerWidget {
                       ],
                     ),
                   ),
-                  // Section Catégories
-                  const SizedBox(height: 10),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              "Catégories",
-                              style: TextStyle(
-                                  fontSize: 20, fontWeight: FontWeight.bold),
-                            ),
-                          ],
-                        ),
-                        categoriesFirebaseState.isLoading
-                            ? Center(child: CircularProgressIndicator())
-                            : categoriesFirebaseState.error != null
-                                ? Center(
-                                    child: Text(categoriesFirebaseState.error!))
-                                : categoriesFirebaseState.categories == null ||
-                                        categoriesFirebaseState
-                                            .categories!.isEmpty
-                                    ? Center(
-                                        child:
-                                            Text("Aucune catégorie disponible"))
-                                    : SizedBox(
-                                        height: 120,
-                                        child: ListView.builder(
-                                          scrollDirection: Axis.horizontal,
-                                          itemCount: categoriesFirebaseState
-                                              .categories!.length,
-                                          itemBuilder: (context, index) {
-                                            final category =
-                                                categoriesFirebaseState
-                                                    .categories![index];
-                                            return Padding(
-                                              padding: const EdgeInsets.only(
-                                                  right: 16),
-                                              child: GestureDetector(
-                                                onTap: () {
-                                                  Navigator.push(
-                                                    context,
-                                                    MaterialPageRoute(
-                                                      builder: (context) =>
-                                                          DishesByCategoryPage(
-                                                        categoryId:
-                                                            category['id'],
-                                                        categoryName:
-                                                            category['name'],
-                                                      ),
-                                                    ),
-                                                  );
-                                                },
-                                                child: Container(
-                                                  width: 100,
-                                                  child: Column(
-                                                    children: [
-                                                      Container(
-                                                        width: 70,
-                                                        height: 70,
-                                                        decoration:
-                                                            BoxDecoration(
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(35),
-                                                          border: Border.all(
-                                                            color: Colors
-                                                                .grey[300]!,
-                                                            width: 1,
-                                                          ),
-                                                        ),
-                                                        child: ClipRRect(
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(35),
-                                                          child: category['imageUrl'] !=
-                                                                      null &&
-                                                                  category[
-                                                                          'imageUrl']
-                                                                      .isNotEmpty
-                                                              ? Image.network(
-                                                                  category[
-                                                                      'imageUrl'],
-                                                                  fit: BoxFit
-                                                                      .cover,
-                                                                  width: 70,
-                                                                  height: 70,
-                                                                  errorBuilder: (context,
-                                                                          error,
-                                                                          stackTrace) =>
-                                                                      Container(
-                                                                    decoration:
-                                                                        BoxDecoration(
-                                                                      borderRadius:
-                                                                          BorderRadius.circular(
-                                                                              35),
-                                                                      color: Color(int.parse(category['color']?.replaceFirst(
-                                                                              '#',
-                                                                              '0xFF') ??
-                                                                          '0xFFFF6B6B')),
-                                                                    ),
-                                                                    child:
-                                                                        ClipRRect(
-                                                                      borderRadius:
-                                                                          BorderRadius.circular(
-                                                                              35),
-                                                                      child: Image
-                                                                          .asset(
-                                                                        'assets/img/basilique.png', // Image par défaut
-                                                                        fit: BoxFit
-                                                                            .cover,
-                                                                        width:
-                                                                            70,
-                                                                        height:
-                                                                            70,
-                                                                      ),
-                                                                    ),
-                                                                  ),
-                                                                  loadingBuilder:
-                                                                      (context,
-                                                                          child,
-                                                                          loadingProgress) {
-                                                                    if (loadingProgress ==
-                                                                        null)
-                                                                      return child;
-                                                                    return Container(
-                                                                      color: Colors
-                                                                              .grey[
-                                                                          200],
-                                                                      child:
-                                                                          Center(
-                                                                        child:
-                                                                            CircularProgressIndicator(
-                                                                          strokeWidth:
-                                                                              2,
-                                                                          value: loadingProgress.expectedTotalBytes != null
-                                                                              ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
-                                                                              : null,
-                                                                        ),
-                                                                      ),
-                                                                    );
-                                                                  },
-                                                                )
-                                                              : Container(
-                                                                  decoration:
-                                                                      BoxDecoration(
-                                                                    borderRadius:
-                                                                        BorderRadius.circular(
-                                                                            35),
-                                                                    color: Color(int.parse((category['color'] ??
-                                                                            '#FF6B6B')
-                                                                        .replaceFirst(
-                                                                            '#',
-                                                                            '0xFF'))),
-                                                                  ),
-                                                                  child:
-                                                                      ClipRRect(
-                                                                    borderRadius:
-                                                                        BorderRadius.circular(
-                                                                            35),
-                                                                    child: Image
-                                                                        .asset(
-                                                                      'assets/img/basilique.png', // Image par défaut
-                                                                      fit: BoxFit
-                                                                          .cover,
-                                                                      width: 70,
-                                                                      height:
-                                                                          70,
-                                                                    ),
-                                                                  ),
-                                                                ),
-                                                        ),
-                                                      ),
-                                                      const SizedBox(height: 8),
-                                                      Text(
-                                                        category['name'],
-                                                        style: const TextStyle(
-                                                          fontSize: 12,
-                                                          fontWeight:
-                                                              FontWeight.w500,
-                                                        ),
-                                                        maxLines: 2,
-                                                        textAlign:
-                                                            TextAlign.center,
-                                                        overflow: TextOverflow
-                                                            .ellipsis,
-                                                      ),
-                                                      Text(
-                                                        '${category['dishes_count']} plats',
-                                                        style: TextStyle(
-                                                          fontSize: 10,
-                                                          color:
-                                                              Colors.grey[600],
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                              ),
-                                            );
-                                          },
-                                        ),
-                                      ),
-                      ],
-                    ),
-                  ),
                   // Section Restaurants
                   const SizedBox(height: 10),
                   Padding(
@@ -754,6 +544,216 @@ class HomeRestaurantPage extends ConsumerWidget {
                                           },
                                         ),
                                       ),
+                      ],
+                    ),
+                  ),
+                  // Section Catégories
+                  const SizedBox(height: 10),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              "Catégories",
+                              style: TextStyle(
+                                  fontSize: 20, fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                        categoriesFirebaseState.isLoading
+                            ? Center(child: CircularProgressIndicator())
+                            : categoriesFirebaseState.error != null
+                            ? Center(
+                            child: Text(categoriesFirebaseState.error!))
+                            : categoriesFirebaseState.categories == null ||
+                            categoriesFirebaseState
+                                .categories!.isEmpty
+                            ? Center(
+                            child:
+                            Text("Aucune catégorie disponible"))
+                            : SizedBox(
+                          height: 120,
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: categoriesFirebaseState
+                                .categories!.length,
+                            itemBuilder: (context, index) {
+                              final category =
+                              categoriesFirebaseState
+                                  .categories![index];
+                              return Padding(
+                                padding: const EdgeInsets.only(
+                                    right: 16),
+                                child: GestureDetector(
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            DishesByCategoryPage(
+                                              categoryId:
+                                              category['id'],
+                                              categoryName:
+                                              category['name'],
+                                            ),
+                                      ),
+                                    );
+                                  },
+                                  child: Container(
+                                    width: 100,
+                                    child: Column(
+                                      children: [
+                                        Container(
+                                          width: 70,
+                                          height: 70,
+                                          decoration:
+                                          BoxDecoration(
+                                            borderRadius:
+                                            BorderRadius
+                                                .circular(35),
+                                            border: Border.all(
+                                              color: Colors
+                                                  .grey[300]!,
+                                              width: 1,
+                                            ),
+                                          ),
+                                          child: ClipRRect(
+                                            borderRadius:
+                                            BorderRadius
+                                                .circular(35),
+                                            child: category['imageUrl'] !=
+                                                null &&
+                                                category[
+                                                'imageUrl']
+                                                    .isNotEmpty
+                                                ? Image.network(
+                                              category[
+                                              'imageUrl'],
+                                              fit: BoxFit
+                                                  .cover,
+                                              width: 70,
+                                              height: 70,
+                                              errorBuilder: (context,
+                                                  error,
+                                                  stackTrace) =>
+                                                  Container(
+                                                    decoration:
+                                                    BoxDecoration(
+                                                      borderRadius:
+                                                      BorderRadius.circular(
+                                                          35),
+                                                      color: Color(int.parse(category['color']?.replaceFirst(
+                                                          '#',
+                                                          '0xFF') ??
+                                                          '0xFFFF6B6B')),
+                                                    ),
+                                                    child:
+                                                    ClipRRect(
+                                                      borderRadius:
+                                                      BorderRadius.circular(
+                                                          35),
+                                                      child: Image
+                                                          .asset(
+                                                        'assets/img/basilique.png', // Image par défaut
+                                                        fit: BoxFit
+                                                            .cover,
+                                                        width:
+                                                        70,
+                                                        height:
+                                                        70,
+                                                      ),
+                                                    ),
+                                                  ),
+                                              loadingBuilder:
+                                                  (context,
+                                                  child,
+                                                  loadingProgress) {
+                                                if (loadingProgress ==
+                                                    null)
+                                                  return child;
+                                                return Container(
+                                                  color: Colors
+                                                      .grey[
+                                                  200],
+                                                  child:
+                                                  Center(
+                                                    child:
+                                                    CircularProgressIndicator(
+                                                      strokeWidth:
+                                                      2,
+                                                      value: loadingProgress.expectedTotalBytes != null
+                                                          ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                                                          : null,
+                                                    ),
+                                                  ),
+                                                );
+                                              },
+                                            )
+                                                : Container(
+                                              decoration:
+                                              BoxDecoration(
+                                                borderRadius:
+                                                BorderRadius.circular(
+                                                    35),
+                                                color: Color(int.parse((category['color'] ??
+                                                    '#FF6B6B')
+                                                    .replaceFirst(
+                                                    '#',
+                                                    '0xFF'))),
+                                              ),
+                                              child:
+                                              ClipRRect(
+                                                borderRadius:
+                                                BorderRadius.circular(
+                                                    35),
+                                                child: Image
+                                                    .asset(
+                                                  'assets/img/basilique.png', // Image par défaut
+                                                  fit: BoxFit
+                                                      .cover,
+                                                  width: 70,
+                                                  height:
+                                                  70,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          category['name'],
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            fontWeight:
+                                            FontWeight.w500,
+                                          ),
+                                          maxLines: 2,
+                                          textAlign:
+                                          TextAlign.center,
+                                          overflow: TextOverflow
+                                              .ellipsis,
+                                        ),
+                                        Text(
+                                          '${category['dishes_count']} plats',
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            color:
+                                            Colors.grey[600],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
                       ],
                     ),
                   ),
