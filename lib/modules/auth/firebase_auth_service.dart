@@ -1,4 +1,5 @@
 import 'dart:async'; // Nécessaire pour Completer
+import 'dart:io' show Platform; // Pour détecter la plateforme
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -10,6 +11,7 @@ import '../../config/app_information.dart'; // Pour Config
 // Pour singleton
 import 'package:liya/core/services/fcm_service.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
+import '../../core/services/recaptcha_service.dart';
 
 class FirebaseAuthService {
   static FirebaseAuthService? _instance;
@@ -35,6 +37,12 @@ class FirebaseAuthService {
     try {
       _auth = FirebaseAuth.instance;
       _firestore = FirebaseFirestore.instance;
+
+      // Configuration Firebase Auth pour iOS - App Attest sera géré par main.dart
+      if (Platform.isIOS) {
+        print('🍎 Configuration Firebase Auth pour iOS - App Attest activé');
+      }
+
       print('✅ Firebase Auth et Firestore initialisés');
     } catch (e) {
       print('❌ Erreur initialisation Firebase Auth: $e');
@@ -220,11 +228,32 @@ class FirebaseAuthService {
     await clearVerificationId();
     print('🗑️ VerificationId précédent nettoyé');
 
+    // Initialiser reCAPTCHA Enterprise si nécessaire
+    try {
+      await RecaptchaService().initialize();
+      print('✅ reCAPTCHA Enterprise initialisé');
+    } catch (e) {
+      print('⚠️ Erreur initialisation reCAPTCHA: $e');
+    }
+
+    // Forcer l'activation d'App Check avant l'authentification
+    try {
+      await FirebaseAppCheck.instance.activate(
+        appleProvider: AppleProvider.appAttest,
+      );
+      print('✅ App Check App Attest activé avant authentification');
+    } catch (e) {
+      print('⚠️ Erreur activation App Check: $e');
+    }
+
     await _authInstance.verifyPhoneNumber(
       phoneNumber: formattedPhone,
       timeout: const Duration(seconds: 60), // Timeout explicite
-      // Configuration iOS pour éviter reCAPTCHA
+      // Configuration iOS pour App Attest et éviter reCAPTCHA
       autoRetrievedSmsCodeForTesting: null,
+      // Désactiver explicitement reCAPTCHA pour iOS
+      forceResendingToken: null,
+
       verificationCompleted: (PhoneAuthCredential credential) async {
         // Auto-vérification (Android) - Firebase reconnaît le numéro
         print(

@@ -1554,6 +1554,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.4.0"
+  recaptcha_enterprise_flutter:
+    dependency: "direct main"
+    description:
+      name: recaptcha_enterprise_flutter
+      sha256: "1b825306c700ff937a37475f5cbbceaa8bc0ff4ac7f1c4bcdbb24e47268ced44"
+      url: "https://pub.dev"
+    source: hosted
+    version: "18.7.1"
   result_dart:
     dependency: transitive
     description:

@@ -11,6 +11,7 @@ import 'firebase_options.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:liya/modules/auth/firebase_auth_service.dart';
 import 'package:liya/core/services/fcm_service.dart';
+import 'package:liya/core/services/recaptcha_service.dart';
 
 import 'app.dart';
 import 'modules/home/presentation/pages/home_page.dart'; // Pour PromoPopupManager
@@ -45,6 +46,21 @@ void main() async {
 
   // Initialiser Firebase
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // ⚡️ Activer App Check avec App Attest
+  await FirebaseAppCheck.instance.activate(
+    appleProvider: AppleProvider.appAttest, // ou deviceCheck si App Attest pas dispo
+    webProvider: ReCaptchaV3Provider('6LeyyaArAAAAANN4NE9DyZ6PUjqxehmHRebNsWzN'),
+  );
+
+  // 🔐 Initialiser reCAPTCHA Enterprise
+  try {
+    await RecaptchaService().initialize();
+    print('✅ reCAPTCHA Enterprise initialisé au démarrage');
+  } catch (e) {
+    print('⚠️ Erreur initialisation reCAPTCHA Enterprise: $e');
+  }
+
 
   // Configurer Firebase Messaging
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);

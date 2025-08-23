@@ -2,6 +2,7 @@ import UIKit
 import Flutter
 import GoogleMaps
 import Firebase
+import FirebaseAppCheck
 import UserNotifications
 
 @main
@@ -12,6 +13,9 @@ import UserNotifications
   ) -> Bool {
     // Configuration Firebase
     FirebaseApp.configure()
+    
+    // ⚡️ Configuration App Check (App Attest sera géré côté Flutter)
+    // Note: App Attest est configuré dans main.dart avec FirebaseAppCheck.instance.activate
     
     // Configuration Google Maps - Remplacez par votre clé API
     GMSServices.provideAPIKey("AIzaSyCQsF-eLOazXu1Kwe1eToCej-IgjKmPzgg")
