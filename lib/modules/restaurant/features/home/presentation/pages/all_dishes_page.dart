@@ -8,6 +8,7 @@ import 'package:liya/modules/restaurant/features/order/presentation/widgets/mode
 import '../../../../../../core/local_storage_factory.dart';
 import '../../../../../../core/singletons.dart';
 import '../../../../../../routes/app_router.gr.dart';
+import '../../../order/presentation/widgets/floating_order_button.dart';
 import '../../application/popular_dishes_firebase_provider.dart';
 import '../widget/popular_dish_card.dart';
 import 'package:liya/modules/restaurant/features/home/presentation/pages/dish_detail_page.dart';
@@ -96,6 +97,9 @@ class AllDishesPage extends ConsumerWidget {
                         );
                       },
                     ),
+      // Ajout du bouton flottant
+      floatingActionButton: const FloatingOrderButton(),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 }

@@ -375,7 +375,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Position actuelle utilisée'),
-          backgroundColor: Colors.green,
+          backgroundColor: Colors.red,
         ),
       );
     } catch (e) {
@@ -471,7 +471,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Adresse mise à jour'),
-          backgroundColor: Colors.green,
+          backgroundColor: Colors.red,
         ),
       );
     } catch (e) {
@@ -617,7 +617,6 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                     right: 16,
                     child: Container(
                       decoration: BoxDecoration(
-                        color: Colors.white,
                         borderRadius: BorderRadius.circular(8),
                         boxShadow: [
                           BoxShadow(
@@ -657,7 +656,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                         icon: Icon(Icons.edit_location),
                         tooltip: 'Modifier l\'adresse',
                         style: IconButton.styleFrom(
-                          backgroundColor: Colors.transparent,
+                          backgroundColor: Colors.white,
                         ),
                       ),
                     ),
@@ -704,7 +703,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
+                  /*Row(
                     children: [
                       Icon(Icons.access_time, size: 20),
                       SizedBox(width: 8),
@@ -726,7 +725,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                         ),
                       ),
                     ],
-                  ),
+                  ),*/
                   SizedBox(height: 16),
 
                   // Frais de livraison
@@ -756,7 +755,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                     SizedBox(height: 16),
                   ],
 
-                  Row(
+                  /*Row(
                     children: [
                       Expanded(
                         child: Container(
@@ -798,7 +797,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                         ),
                       ),
                       SizedBox(width: 16),
-/*                      Expanded(
+*//*                      Expanded(
                         child: Container(
                           padding: EdgeInsets.all(16),
                           decoration: BoxDecoration(
@@ -807,7 +806,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                           ),
                           child: Column(
                             children: [
-                             */ /* Text(
+                             *//* *//* Text(
                                 'Programmer',
                                 style: TextStyle(
                                   color: Colors.grey[600],
@@ -817,13 +816,13 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                               Text(
                                 'Choisir une heure',
                                 style: TextStyle(color: Colors.grey),
-                              ),*/ /*
+                              ),*//* *//*
                             ],
                           ),
                         ),
-                      ),*/
+                      ),*//*
                     ],
-                  ),
+                  ),*/
                 ],
               ),
             ),
@@ -841,10 +840,8 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (selectedAddress != null)
-                    Icon(Icons.check_circle, color: UIColors.orange, size: 20),
                   SizedBox(width: 8),
-                  Icon(Icons.edit_location, color: UIColors.orange),
+                  Icon(Icons.arrow_forward_ios, color: UIColors.orange),
                 ],
               ),
               onTap: () async {

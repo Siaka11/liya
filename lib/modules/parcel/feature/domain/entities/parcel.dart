@@ -9,6 +9,8 @@ class Parcel {
   final String? phoneNumber;
   final String? instructions;
   final String? ville;
+  final String? expediteurPhone;
+  final String? destinatairePhone;
   final double? prix;
   final String? colisDescription;
   final List<Map<String, dynamic>>? colisList;
@@ -41,5 +43,7 @@ class Parcel {
     this.destinataireLieu,
     this.descriptionColis,
     this.typeProduit,
+    this.expediteurPhone,
+    this.destinatairePhone,
   });
 }
