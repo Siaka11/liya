@@ -154,260 +154,54 @@ class HomeRestaurantPage extends ConsumerWidget {
                                       ? Center(
                                           child: Text(
                                               "Aucun plat populaire disponible"))
-                                      : SingleChildScrollView(
-                                          scrollDirection: Axis.horizontal,
-                                          child: Row(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              for (int i = 0;
-                                                  i <
-                                                      popularDishesFirebaseState
-                                                          .dishes!.length;
-                                                  i += 2)
-                                                Padding(
-                                                  padding:
-                                                      const EdgeInsets.only(
-                                                          right: 10),
-                                                  child: Row(
-                                                    children: [
-                                                      // Utiliser ModernDishCard au lieu de PopularDishCard
-                                                      Container(
-                                                        width: 160,
-                                                        child: ModernDishCard(
-                                                          id: popularDishesFirebaseState
-                                                              .dishes![i]['id'],
-                                                          name:
-                                                              popularDishesFirebaseState
-                                                                      .dishes![
-                                                                  i]['name'],
-                                                          price:
-                                                              popularDishesFirebaseState
-                                                                  .dishes![i]
-                                                                      ['price']
-                                                                  .toString(),
-                                                          imageUrl:
-                                                              popularDishesFirebaseState
-                                                                      .dishes![i]
-                                                                  ['image_url'],
-                                                          restaurantId:
-                                                              popularDishesFirebaseState
-                                                                      .dishes![i]
-                                                                  [
-                                                                  'restaurant_id'],
-                                                          description:
-                                                              popularDishesFirebaseState
-                                                                      .dishes![i]
-                                                                  [
-                                                                  'description'],
-                                                          // Paramètres de popularité
-                                                          orderCount: popularDishesFirebaseState
-                                                                      .dishes![i]
-                                                                  [
-                                                                  'order_count'] ??
-                                                              0,
-                                                          rating: (popularDishesFirebaseState
-                                                                          .dishes![i]
-                                                                      [
-                                                                      'rating'] ??
-                                                                  0.0)
-                                                              .toDouble(),
-                                                          ratingCount:
-                                                              popularDishesFirebaseState
-                                                                          .dishes![i]
-                                                                      [
-                                                                      'rating_count'] ??
-                                                                  0,
-                                                          // Paramètres de promotion
-                                                          isOnSale: popularDishesFirebaseState
-                                                                      .dishes![i]
-                                                                  [
-                                                                  'is_on_sale'] ??
-                                                              false,
-                                                          originalPrice:
-                                                              popularDishesFirebaseState
-                                                                  .dishes![i][
-                                                                      'original_price']
-                                                                  ?.toDouble(),
-                                                          discountPercentage:
-                                                              popularDishesFirebaseState
-                                                                  .dishes![i][
-                                                                      'discount_percentage']
-                                                                  ?.toDouble(),
-                                                          onTap: () {
-                                                            // Navigation vers la page de détail du plat
-                                                            Navigator.push(
-                                                              context,
-                                                              MaterialPageRoute(
-                                                                builder:
-                                                                    (context) =>
-                                                                        DishDetailPage(
-                                                                  id: popularDishesFirebaseState
-                                                                          .dishes![
-                                                                      i]['id'],
-                                                                  restaurantId:
-                                                                      popularDishesFirebaseState
-                                                                              .dishes![i]
-                                                                          [
-                                                                          'restaurant_id'],
-                                                                  name: popularDishesFirebaseState
-                                                                          .dishes![
-                                                                      i]['name'],
-                                                                  price: popularDishesFirebaseState
-                                                                      .dishes![
-                                                                          i][
-                                                                          'price']
-                                                                      .toString(),
-                                                                  imageUrl: popularDishesFirebaseState
-                                                                          .dishes![i]
-                                                                      [
-                                                                      'image_url'],
-                                                                  rating: popularDishesFirebaseState
-                                                                      .dishes![
-                                                                          i][
-                                                                          'rating']
-                                                                      .toString(),
-                                                                  description:
-                                                                      popularDishesFirebaseState
-                                                                              .dishes![i]
-                                                                          [
-                                                                          'description'],
-                                                                ),
-                                                              ),
-                                                            );
-                                                          },
+                                      : SizedBox(
+                                          height: 220,
+                                          child: ListView.builder(
+                                            scrollDirection: Axis.horizontal,
+                                            itemCount: popularDishesFirebaseState.dishes!.length,
+                                            itemBuilder: (context, index) {
+                                              final dish = popularDishesFirebaseState.dishes![index];
+                                              return Container(
+                                                width: 160,
+                                                margin: const EdgeInsets.only(right: 16),
+                                                child: ModernDishCard(
+                                                  id: dish['id'],
+                                                  name: dish['name'],
+                                                  price: dish['price'].toString(),
+                                                  imageUrl: dish['image_url'],
+                                                  restaurantId: dish['restaurant_id'],
+                                                  description: dish['description'],
+                                                  // Paramètres de popularité
+                                                  orderCount: dish['order_count'] ?? 0,
+                                                  rating: (dish['rating'] ?? 0.0).toDouble(),
+                                                  ratingCount: dish['rating_count'] ?? 0,
+                                                  // Paramètres de promotion
+                                                  isOnSale: dish['is_on_sale'] ?? false,
+                                                  originalPrice: dish['original_price']?.toDouble(),
+                                                  discountPercentage: dish['discount_percentage']?.toDouble(),
+                                                  onTap: () {
+                                                    // Navigation vers la page de détail du plat
+                                                    Navigator.push(
+                                                      context,
+                                                      MaterialPageRoute(
+                                                        builder: (context) => DishDetailPage(
+                                                          id: dish['id'],
+                                                          restaurantId: dish['restaurant_id'],
+                                                          name: dish['name'],
+                                                          price: dish['price'].toString(),
+                                                          imageUrl: dish['image_url'],
+                                                          rating: dish['rating'].toString(),
+                                                          description: dish['description'],
                                                         ),
                                                       ),
-                                                      if (i + 1 <
-                                                          popularDishesFirebaseState
-                                                              .dishes!.length)
-                                                        Padding(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .only(
-                                                                  left: 10),
-                                                          child: Container(
-                                                            width: 160,
-                                                            child:
-                                                                ModernDishCard(
-                                                              id: popularDishesFirebaseState
-                                                                      .dishes![
-                                                                  i + 1]['id'],
-                                                              name: popularDishesFirebaseState
-                                                                      .dishes![
-                                                                  i + 1]['name'],
-                                                              price: popularDishesFirebaseState
-                                                                  .dishes![
-                                                                      i + 1]
-                                                                      ['price']
-                                                                  .toString(),
-                                                              imageUrl: popularDishesFirebaseState
-                                                                          .dishes![
-                                                                      i + 1]
-                                                                  ['image_url'],
-                                                              restaurantId:
-                                                                  popularDishesFirebaseState
-                                                                              .dishes![
-                                                                          i + 1]
-                                                                      [
-                                                                      'restaurant_id'],
-                                                              description:
-                                                                  popularDishesFirebaseState
-                                                                              .dishes![
-                                                                          i + 1]
-                                                                      [
-                                                                      'description'],
-                                                              // Paramètres de popularité
-                                                              orderCount: popularDishesFirebaseState
-                                                                              .dishes![
-                                                                          i + 1]
-                                                                      [
-                                                                      'order_count'] ??
-                                                                  0,
-                                                              rating: (popularDishesFirebaseState.dishes![i +
-                                                                              1]
-                                                                          [
-                                                                          'rating'] ??
-                                                                      0.0)
-                                                                  .toDouble(),
-                                                              ratingCount: popularDishesFirebaseState
-                                                                              .dishes![
-                                                                          i + 1]
-                                                                      [
-                                                                      'rating_count'] ??
-                                                                  0,
-                                                              // Paramètres de promotion
-                                                              isOnSale: popularDishesFirebaseState
-                                                                              .dishes![
-                                                                          i + 1]
-                                                                      [
-                                                                      'is_on_sale'] ??
-                                                                  false,
-                                                              originalPrice:
-                                                                  popularDishesFirebaseState
-                                                                      .dishes![
-                                                                          i + 1]
-                                                                          [
-                                                                          'original_price']
-                                                                      ?.toDouble(),
-                                                              discountPercentage:
-                                                                  popularDishesFirebaseState
-                                                                      .dishes![
-                                                                          i + 1]
-                                                                          [
-                                                                          'discount_percentage']
-                                                                      ?.toDouble(),
-                                                              onTap: () {
-                                                                Navigator.push(
-                                                                  context,
-                                                                  MaterialPageRoute(
-                                                                    builder:
-                                                                        (context) =>
-                                                                            DishDetailPage(
-                                                                      id: popularDishesFirebaseState.dishes![i +
-                                                                              1]
-                                                                          [
-                                                                          'id'],
-                                                                      restaurantId:
-                                                                          popularDishesFirebaseState.dishes![i + 1]
-                                                                              [
-                                                                              'restaurant_id'],
-                                                                      name: popularDishesFirebaseState.dishes![i +
-                                                                              1]
-                                                                          [
-                                                                          'name'],
-                                                                      price: popularDishesFirebaseState.dishes![i +
-                                                                              1]
-                                                                          [
-                                                                          'price'],
-                                                                      imageUrl: popularDishesFirebaseState.dishes![i +
-                                                                              1]
-                                                                          [
-                                                                          'image_url'],
-                                                                      rating: popularDishesFirebaseState
-                                                                          .dishes![
-                                                                              i + 1]
-                                                                              [
-                                                                              'rating']
-                                                                          .toString(),
-                                                                      description:
-                                                                          popularDishesFirebaseState.dishes![i + 1]
-                                                                              [
-                                                                              'description'],
-                                                                    ),
-                                                                  ),
-                                                                );
-                                                              },
-                                                            ),
-                                                          ),
-                                                        ),
-                                                    ],
-                                                  ),
+                                                    );
+                                                  },
                                                 ),
-                                            ],
+                                              );
+                                            },
                                           ),
                                         ),
-                        ),
+                        )
                       ],
                     ),
                   ),

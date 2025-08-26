@@ -66,7 +66,7 @@ class RestaurantFirebaseCard extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          Row(
+                          /*Row(
                             children: [
                               Icon(
                                 Icons.star,
@@ -81,7 +81,7 @@ class RestaurantFirebaseCard extends StatelessWidget {
                                 ),
                               ),
                             ],
-                          ),
+                          ),*/
                         ],
                       ),
                       const SizedBox(height: 4),

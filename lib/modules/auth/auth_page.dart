@@ -309,7 +309,7 @@ class _AuthPageState extends ConsumerState<AuthPage>
                           paddingLeft: 12,
                           keyboardType: TextInputType.phone,
                           placeholder:
-                              "0701234567", // Placeholder pour guider l'utilisateur
+                              "0707070707", // Placeholder pour guider l'utilisateur
                         ),
                       ),
                       const SizedBox(height: 10),

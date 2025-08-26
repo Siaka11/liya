@@ -36,9 +36,9 @@ class _ParcelBottomNavBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return BottomNavigationBar(
       items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
-        BottomNavigationBarItem(icon: Icon(Icons.local_shipping), label: ''),
-        BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: ''),
+        BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Accueil'),
+        BottomNavigationBarItem(icon: Icon(Icons.local_shipping, color: Colors.deepOrange), label: 'Mes livraisons'),
+        BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: 'Menu principal'),
       ],
       currentIndex: 1,
       onTap: (index) {

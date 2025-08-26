@@ -82,7 +82,7 @@ class _ColisInfoPageState extends State<ColisInfoPage> {
             TextField(
               controller: _descController,
               decoration: const InputDecoration(
-                hintText: 'Description',
+                hintText: 'Description - nature du colis',
                 filled: true,
                 fillColor: Colors.white,
                 border: OutlineInputBorder(
@@ -109,7 +109,7 @@ class _ColisInfoPageState extends State<ColisInfoPage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('Votre emballage',
+                              const Text('Votre emballage ( Facultatif )',
                                   style:
                                       TextStyle(fontWeight: FontWeight.bold)),
                               const SizedBox(height: 8),

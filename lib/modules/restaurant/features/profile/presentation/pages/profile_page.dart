@@ -9,6 +9,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../../../core/local_storage_factory.dart';
+import '../../../../../../core/services/phone_call_service.dart';
 import '../../../../../../core/singletons.dart';
 import '../../../../../../routes/app_router.gr.dart';
 import '../../../../../auth/auth_provider.dart';
@@ -34,31 +35,21 @@ class ProfilePage extends ConsumerWidget {
   }
 
   Future<void> _callNumber(BuildContext context, String number) async {
-    final Uri phoneUri = Uri.parse('tel:$number');
-
     try {
-      final hasPermission = await _requestCallPermission();
+      debugPrint('Tentative d\'appel vers: $number');
 
-      if (!hasPermission) {
-        // Permission refusée, proposer de copier le numéro
-        _showCopySnackBar(context, number);
-        return;
-      }
+      final success = await PhoneCallService.makeCall(number);
 
-      if (await canLaunchUrl(phoneUri)) {
-        final launched = await launchUrl(
-          phoneUri,
-          mode: LaunchMode.externalApplication,
-        );
-        if (!launched) {
-          _showCopySnackBar(context, number);
-        }
-      } else {
+      if (!success) {
         _showCopySnackBar(context, number);
       }
     } catch (e) {
+      debugPrint('Erreur lors de l\'appel: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur lors de l\'appel : $e')),
+        SnackBar(
+          content: Text('Erreur lors de l\'appel : $e'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
@@ -181,7 +172,6 @@ class ProfilePage extends ConsumerWidget {
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text('${profile.orders.length}'),
                         const Icon(Icons.chevron_right),
                       ],
                     ),
@@ -205,7 +195,6 @@ class ProfilePage extends ConsumerWidget {
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text('${profile.orders.length}'),
                         Icon(Icons.chevron_right),
                       ],
                     ),
@@ -226,8 +215,7 @@ class ProfilePage extends ConsumerWidget {
                   ListTile(
                     leading: const Icon(Icons.contact_support_outlined),
                     title: const Text('Contact'),
-                    subtitle: Text(profile.phone ?? 'Ajouter un numéro'),
-                    trailing: const Icon(Icons.chevron_right),
+                    subtitle: Text(phoneNumber),
                     onTap: () {
                       // TODO: Naviguer vers contact
                     },
@@ -237,10 +225,6 @@ class ProfilePage extends ConsumerWidget {
                     title: const Text('Adresses'),
                     subtitle: Text(
                         '${profile.address.length} adress${profile.address.length > 1 ? "es" : ""}'),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () {
-                      // TODO: Naviguer vers adresses
-                    },
                   ),
                 ],
               ),
