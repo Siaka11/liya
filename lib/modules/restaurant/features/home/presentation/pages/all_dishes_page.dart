@@ -98,7 +98,7 @@ class AllDishesPage extends ConsumerWidget {
                       },
                     ),
       // Ajout du bouton flottant
-      floatingActionButton: const FloatingOrderButton(),
+      //floatingActionButton: const FloatingOrderButton(),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }

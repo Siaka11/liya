@@ -8,10 +8,9 @@ import '../../domain/entities/parcel.dart';
 import 'package:liya/core/local_storage_factory.dart';
 import 'dart:convert';
 import 'parcel_home_page.dart';
-import 'package:liya/core/services/navigation_service.dart';
-
-import 'package:liya/modules/home/presentation/pages/home_page.dart';
-import 'package:liya/modules/restaurant/features/profile/presentation/pages/profile_page.dart';
+// Imports pour Google Places AutoComplete
+import 'package:google_places_flutter/model/prediction.dart';
+import 'package:google_places_flutter/google_places_flutter.dart';
 
 @RoutePage()
 class LieuPage extends ConsumerStatefulWidget {
@@ -38,6 +37,9 @@ class LieuPage extends ConsumerStatefulWidget {
 class _LieuPageState extends ConsumerState<LieuPage> {
   final _formKey = GlobalKey<FormState>();
 
+  // Clé API Google Maps
+  final String googleMapsApiKey = 'AIzaSyAxPHuGGcj4WP9HWzkXoowH0zL4UC7tvIs';
+
   // ====== Controllers COHÉRENTS ======
   // Expéditeur
   final _expediteurNomController = TextEditingController();
@@ -52,9 +54,14 @@ class _LieuPageState extends ConsumerState<LieuPage> {
   // Description
   final _descriptionController = TextEditingController();
 
+  // Ville sélectionnée
+  String _selectedVille = '';
+
   @override
   void initState() {
     super.initState();
+    _selectedVille =
+        widget.ville; // Initialiser avec la ville passée en paramètre
     _loadExistingData();
   }
 
@@ -90,18 +97,41 @@ class _LieuPageState extends ConsumerState<LieuPage> {
 
         if (!widget.isReception) {
           // Cas "J'envoie un colis" : l'utilisateur est l'expéditeur
-          if (userFullName.isNotEmpty) _expediteurNomController.text = userFullName;
+          if (userFullName.isNotEmpty)
+            _expediteurNomController.text = userFullName;
           if (userPhone.isNotEmpty) _expediteurPhoneController.text = userPhone;
-          if (userAddress.isNotEmpty) _expediteurLieuController.text = userAddress;
+          if (userAddress.isNotEmpty)
+            _expediteurLieuController.text = userAddress;
         } else {
           // Cas "Je reçois un colis" : l'utilisateur est le destinataire
-          if (userFullName.isNotEmpty) _destinataireNomController.text = userFullName;
-          if (userPhone.isNotEmpty) _destinatairePhoneController.text = userPhone;
-          if (userAddress.isNotEmpty) _destinataireLieuController.text = userAddress;
+          if (userFullName.isNotEmpty)
+            _destinataireNomController.text = userFullName;
+          if (userPhone.isNotEmpty)
+            _destinatairePhoneController.text = userPhone;
+          if (userAddress.isNotEmpty)
+            _destinataireLieuController.text = userAddress;
         }
       }
     } catch (e) {
       print('⚠️ Erreur lors du chargement des données existantes: $e');
+    }
+  }
+
+  // Callback pour la sélection du lieu de l'expéditeur
+  void _onExpediteurLieuSelected(Prediction prediction) async {
+    try {
+      _expediteurLieuController.text = prediction.description ?? "";
+    } catch (e) {
+      print("❌ Erreur lors de la sélection du lieu expéditeur: $e");
+    }
+  }
+
+  // Callback pour la sélection du lieu du destinataire
+  void _onDestinataireLieuSelected(Prediction prediction) async {
+    try {
+      _destinataireLieuController.text = prediction.description ?? "";
+    } catch (e) {
+      print("❌ Erreur lors de la sélection du lieu destinataire: $e");
     }
   }
 
@@ -123,7 +153,8 @@ class _LieuPageState extends ConsumerState<LieuPage> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 const SizedBox(height: 16),
-                const Text('Je confirme ma commande', style: TextStyle(fontSize: 18)),
+                const Text('Je confirme ma commande',
+                    style: TextStyle(fontSize: 18)),
                 const SizedBox(height: 24),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -131,10 +162,12 @@ class _LieuPageState extends ConsumerState<LieuPage> {
                     OutlinedButton(
                       onPressed: () => Navigator.pop(context),
                       style: OutlinedButton.styleFrom(
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(24)),
                         side: const BorderSide(color: Color(0xFFF24E1E)),
                         foregroundColor: Color(0xFFF24E1E),
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 24, vertical: 12),
                       ),
                       child: const Text('Annuler'),
                     ),
@@ -152,7 +185,8 @@ class _LieuPageState extends ConsumerState<LieuPage> {
                         // Navigation sûre + SnackBar
                         if (mounted) {
                           Navigator.of(context).pushReplacement(
-                            MaterialPageRoute(builder: (context) => const ParcelHomePage()),
+                            MaterialPageRoute(
+                                builder: (context) => const ParcelHomePage()),
                           );
                           Future.delayed(const Duration(milliseconds: 200), () {
                             if (mounted) {
@@ -160,7 +194,8 @@ class _LieuPageState extends ConsumerState<LieuPage> {
                                 SnackBar(
                                   content: Row(
                                     children: const [
-                                      Icon(Icons.check_circle, color: Colors.white),
+                                      Icon(Icons.check_circle,
+                                          color: Colors.white),
                                       SizedBox(width: 12),
                                       Expanded(
                                         child: Text(
@@ -186,8 +221,10 @@ class _LieuPageState extends ConsumerState<LieuPage> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFF24E1E),
                         foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(24)),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 24, vertical: 12),
                       ),
                       child: const Text('Confirmer'),
                     ),
@@ -209,7 +246,8 @@ class _LieuPageState extends ConsumerState<LieuPage> {
           : userDetailsJson;
 
       final currentUserPhone = (userDetails['phoneNumber'] ?? '').toString();
-      final ville = (userDetails['ville'] ?? widget.ville).toString();
+      final ville =
+          _selectedVille; // Utiliser la ville sélectionnée par l'utilisateur
       final action = ref.read(parcelActionProvider);
 
       // Récupération valeurs
@@ -229,7 +267,9 @@ class _LieuPageState extends ConsumerState<LieuPage> {
           expediteurPhone.isEmpty ||
           destinataireNom.isEmpty ||
           destinataireLieu.isEmpty ||
-          destinatairePhone.isEmpty) {
+          destinatairePhone.isEmpty ||
+          _selectedVille.isEmpty) {
+        // Ajouter la validation de la ville
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Veuillez remplir tous les champs obligatoires'),
@@ -256,9 +296,10 @@ class _LieuPageState extends ConsumerState<LieuPage> {
         receiverName: destinataireNom,
         status: 'reception',
         createdAt: DateTime.now(),
-        address: expediteurLieu,                 // adresse expéditeur
-        phone: destinatairePhone,                // téléphone destinataire (mieux que l'utiliser pour une adresse)
-        phoneNumber: currentUserPhone,           // téléphone du user connecté
+        address: expediteurLieu, // adresse expéditeur
+        phone:
+            destinatairePhone, // téléphone destinataire (mieux que l'utiliser pour une adresse)
+        phoneNumber: currentUserPhone, // téléphone du user connecté
         instructions: instructions,
         ville: ville,
         colisDescription: widget.colisDescription,
@@ -269,18 +310,20 @@ class _LieuPageState extends ConsumerState<LieuPage> {
         // Champs détaillés et cohérents
         expediteurNom: expediteurNom,
         expediteurLieu: expediteurLieu,
-        expediteurPhone: expediteurPhone,        // <-- AJOUT
+        expediteurPhone: expediteurPhone, // <-- AJOUT
         destinataireNom: destinataireNom,
         destinataireLieu: destinataireLieu,
-        destinatairePhone: destinatairePhone,    // <-- AJOUT
+        destinatairePhone: destinatairePhone, // <-- AJOUT
         descriptionColis: descriptionColis,
         typeProduit: widget.typeProduit,
       );
 
       print('📦 === DÉBUT SAUVEGARDE COLIS ===');
       print('📦 ID: ${parcel.id}');
-      print('📦 Expéditeur: $expediteurNom | $expediteurPhone | $expediteurLieu');
-      print('📦 Destinataire: $destinataireNom | $destinatairePhone | $destinataireLieu');
+      print(
+          '📦 Expéditeur: $expediteurNom | $expediteurPhone | $expediteurLieu');
+      print(
+          '📦 Destinataire: $destinataireNom | $destinatairePhone | $destinataireLieu');
       print('📦 Instructions: $instructions');
       print('📦 Ville: ${parcel.ville}');
       print('📦 Type produit: ${widget.typeProduit}');
@@ -342,7 +385,8 @@ class _LieuPageState extends ConsumerState<LieuPage> {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFFF24E1E), width: 2),
+                    border:
+                        Border.all(color: const Color(0xFFF24E1E), width: 2),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withOpacity(0.1),
@@ -357,7 +401,9 @@ class _LieuPageState extends ConsumerState<LieuPage> {
                       // Titre principal
                       Center(
                         child: Text(
-                          widget.isReception ? 'Je reçois un Colis' : 'J\'envoie un Colis',
+                          widget.isReception
+                              ? 'Je reçois un Colis'
+                              : 'J\'envoie un Colis',
                           style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
@@ -365,7 +411,8 @@ class _LieuPageState extends ConsumerState<LieuPage> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 24),
+
+                      const SizedBox(height: 20),
 
                       // ====== Section Expéditeur
                       _buildSection(
@@ -375,9 +422,10 @@ class _LieuPageState extends ConsumerState<LieuPage> {
                             label: 'Nom et Prénom',
                             controller: _expediteurNomController,
                           ),
-                          _buildField(
+                          _buildPlaceField(
                             label: 'Lieu de réception du colis',
                             controller: _expediteurLieuController,
+                            onPlaceSelected: _onExpediteurLieuSelected,
                           ),
                           _buildField(
                             label: 'Numéro de téléphone de l\'expéditeur',
@@ -397,9 +445,10 @@ class _LieuPageState extends ConsumerState<LieuPage> {
                             label: 'Nom et Prénom',
                             controller: _destinataireNomController,
                           ),
-                          _buildField(
+                          _buildPlaceField(
                             label: 'Lieu de livraison du colis',
                             controller: _destinataireLieuController,
+                            onPlaceSelected: _onDestinataireLieuSelected,
                           ),
                           _buildField(
                             label: 'Numéro de téléphone du destinataire',
@@ -410,7 +459,6 @@ class _LieuPageState extends ConsumerState<LieuPage> {
                       ),
 
                       const SizedBox(height: 16),
-
                     ],
                   ),
                 ),
@@ -436,7 +484,8 @@ class _LieuPageState extends ConsumerState<LieuPage> {
                     },
                     child: const Text(
                       'Confirmer',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                   ),
                 ),
@@ -510,11 +559,68 @@ class _LieuPageState extends ConsumerState<LieuPage> {
               borderRadius: BorderRadius.circular(8),
               borderSide: const BorderSide(color: Color(0xFFF24E1E), width: 2),
             ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
           ),
           validator: isRequired
               ? (v) => v == null || v.trim().isEmpty ? 'Champ requis' : null
               : null,
+        ),
+        const SizedBox(height: 16),
+      ],
+    );
+  }
+
+  // Champ avec Google Places AutoComplete pour les lieux
+  Widget _buildPlaceField({
+    required String label,
+    required TextEditingController controller,
+    required Function(Prediction) onPlaceSelected,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: Colors.black87,
+          ),
+        ),
+        const SizedBox(height: 8),
+        GooglePlaceAutoCompleteTextField(
+          boxDecoration: BoxDecoration(
+            color: const Color(0xFFF8F9FA),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.grey.shade300),
+          ),
+          textEditingController: controller,
+          googleAPIKey: googleMapsApiKey,
+          debounceTime: 800,
+          isLatLngRequired: false,
+          countries: const ["ci"],
+          inputDecoration: InputDecoration(
+            hintText: "Rechercher une adresse...",
+            filled: true,
+            fillColor: const Color(0xFFF8F9FA),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide.none,
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Color(0xFFF24E1E), width: 2),
+            ),
+            prefixIcon: const Icon(Icons.search, color: Color(0xFFF24E1E)),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          ),
+          getPlaceDetailWithLatLng: onPlaceSelected,
+          itemClick: (prediction) {
+            controller.text = prediction.description ?? "";
+            onPlaceSelected(prediction);
+          },
         ),
         const SizedBox(height: 16),
       ],
@@ -528,8 +634,11 @@ class _ParcelBottomNavBar extends StatelessWidget {
     return BottomNavigationBar(
       items: const [
         BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Accueil'),
-        BottomNavigationBarItem(icon: Icon(Icons.local_shipping, color: Colors.deepOrange), label: 'Mes livraisons'),
-        BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: 'Menu principal'),
+        BottomNavigationBarItem(
+            icon: Icon(Icons.local_shipping, color: Colors.deepOrange),
+            label: 'Mes livraisons'),
+        BottomNavigationBarItem(
+            icon: Icon(Icons.dashboard), label: 'Menu principal'),
       ],
       currentIndex: 1,
       onTap: (index) {
@@ -544,6 +653,3 @@ class _ParcelBottomNavBar extends StatelessWidget {
     );
   }
 }
-
-
-

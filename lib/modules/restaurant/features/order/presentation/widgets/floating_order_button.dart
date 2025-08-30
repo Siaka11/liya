@@ -99,13 +99,13 @@ class FloatingOrderButton extends ConsumerWidget {
                           ),
                         ),
                         const SizedBox(height: 2),
-                        Text(
+                        /*Text(
                           displayRestaurantName,
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.grey[600],
                           ),
-                        ),
+                        ),*/
                       ],
                     ),
                   ),

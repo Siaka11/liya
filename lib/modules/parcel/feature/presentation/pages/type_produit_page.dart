@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'ville_page.dart';
-import 'colis_info_page.dart';
+import 'lieu_page.dart';
 import 'package:liya/modules/home/presentation/pages/home_page.dart';
 import 'package:liya/modules/parcel/feature/presentation/pages/parcel_home_page.dart';
 import 'package:liya/modules/restaurant/features/profile/presentation/pages/profile_page.dart';
@@ -40,25 +39,35 @@ class TypeProduitPage extends StatelessWidget {
             _TypeButton(
                 label: 'Document',
                 onTap: () {
+                  // Navigation directe vers LieuPage avec ville par défaut
                   Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (_) => VillePage(
+                          builder: (_) => LieuPage(
                               phoneNumber: phoneNumber,
                               typeProduit: 'Document',
-                              isReception: isReception)));
+                              isReception: isReception,
+                              ville:
+                                  'Yamoussoukro ou ville voisine', // Ville par défaut
+                              colisDescription: null,
+                              colisList: null)));
                 }),
             const SizedBox(height: 16),
             _TypeButton(
                 label: 'Colis',
                 onTap: () {
+                  // Navigation directe vers LieuPage avec ville par défaut
                   Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (_) => ColisInfoPage(
-                                phoneNumber: phoneNumber,
-                                isReception: isReception,
-                              )));
+                          builder: (_) => LieuPage(
+                              phoneNumber: phoneNumber,
+                              typeProduit: 'Colis',
+                              isReception: isReception,
+                              ville:
+                                  'Yamoussoukro ou ville voisine', // Ville par défaut
+                              colisDescription: null,
+                              colisList: null)));
                 }),
           ],
         ),
@@ -103,8 +112,11 @@ class _ParcelBottomNavBar extends StatelessWidget {
     return BottomNavigationBar(
       items: const [
         BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Accueil'),
-        BottomNavigationBarItem(icon: Icon(Icons.local_shipping, color: Colors.deepOrange), label: 'Mes livraisons'),
-        BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: 'Menu principal'),
+        BottomNavigationBarItem(
+            icon: Icon(Icons.local_shipping, color: Colors.deepOrange),
+            label: 'Mes livraisons'),
+        BottomNavigationBarItem(
+            icon: Icon(Icons.dashboard), label: 'Menu principal'),
       ],
       currentIndex: 1,
       onTap: (index) {

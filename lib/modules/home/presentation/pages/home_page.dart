@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:liya/modules/home/presentation/pages/widget/home_card_widget.dart';
@@ -15,6 +16,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/clean_test_data.dart';
 import '../../../../core/init_delivery_data.dart';
 import '../../../../core/init_restaurant_data.dart';
+import '../../../../core/services/phone_call_service.dart';
 import '../../../../core/test_beverages.dart';
 import '../../../../core/test_modern_system.dart';
 import '../../../../core/test_users_management.dart';
@@ -540,11 +542,19 @@ class HomePage extends ConsumerWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    IconButton(
+                      icon: const Icon(
+                        Icons.call,
+                        color: Colors.grey,
+                        size: 26.0,
+                      ),
+                      onPressed: () => _callNumber(context, '+2250700846546'),
+                    ),
                     // Icône de notifications
                     NotificationButton(
                       backgroundColor: Colors.transparent,
                       iconColor: Colors.grey,
-                      size: 40.0,
+                      size: 50.0,
                       onPressed: () {
                         // Navigation vers la page de notifications
                         context.router.push(const NotificationsRoute());
@@ -933,6 +943,43 @@ class HomePage extends ConsumerWidget {
       ),
     );
   }
+}
+Future<void> _callNumber(BuildContext context, String number) async {
+  try {
+    debugPrint('Tentative d\'appel vers: $number');
+
+    final success = await PhoneCallService.makeCall(number);
+
+    if (!success) {
+      _showCopySnackBar(context, number);
+    }
+  } catch (e) {
+    debugPrint('Erreur lors de l\'appel: $e');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Erreur lors de l\'appel : $e'),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+}
+void _showCopySnackBar(BuildContext context, String number) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(
+          'Impossible d\'ouvrir l\'application Téléphone.\nNuméro : $number'),
+      action: SnackBarAction(
+        label: 'Copier',
+        onPressed: () {
+          Clipboard.setData(ClipboardData(text: number));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text('Numéro copié dans le presse-papiers')),
+          );
+        },
+      ),
+    ),
+  );
 }
 
 // Page de test pour Google Maps
