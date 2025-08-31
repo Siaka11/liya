@@ -8,12 +8,12 @@ import '../../../../core/services/dish_popularity_service.dart';
 
 // Niveaux de popularité prédéfinis - TOUS COMMENCENT PAR 0
 enum PopularityLevel {
-  nouveau('Nouveau plat', 0, 0, 0.0),
-  standard('Plat standard', 0, 0, 0.0),
+  nouveau('Nouveau plat', 0, 0, 0.0);
+/*  standard('Plat standard', 0, 0, 0.0),
   apprecie('Plat apprécié', 0, 0, 0.0),
   populaire('Plat populaire', 0, 0, 0.0),
   tendance('En tendance', 0, 0, 0.0),
-  bestseller('Best-seller', 0, 0, 0.0);
+  bestseller('Best-seller', 0, 0, 0.0);*/
 
   const PopularityLevel(
       this.label, this.orderCount, this.viewCount, this.rating);
@@ -558,13 +558,13 @@ class _AddDishPageState extends State<AddDishPage> {
                                               fontWeight: FontWeight.w500,
                                             ),
                                           ),
-                                          Text(
+                                          /*Text(
                                             '${level.orderCount} commandes • ${level.rating}⭐',
                                             style: TextStyle(
                                               fontSize: 12,
                                               color: Colors.grey[600],
                                             ),
-                                          ),
+                                          ),*/
                                         ],
                                       ),
                                     ),
@@ -587,7 +587,7 @@ class _AddDishPageState extends State<AddDishPage> {
                           const SizedBox(height: 16),
 
                           // Aperçu de la popularité sélectionnée
-                          if (_selectedPopularity != null)
+                         /* if (_selectedPopularity != null)
                             Container(
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
@@ -597,7 +597,7 @@ class _AddDishPageState extends State<AddDishPage> {
                               ),
                               child: _buildPopularityPreview(),
                             ),
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 24),*/
 
                           // Section Détails
                           _buildSectionHeader('Détails', Icons.settings),
@@ -620,7 +620,7 @@ class _AddDishPageState extends State<AddDishPage> {
                           const SizedBox(height: 16),
 
                           // Nombre de sodas
-                          TextFormField(
+/*                          TextFormField(
                             controller: _sodasController,
                             decoration: InputDecoration(
                               labelText: 'Nombre de sodas',
@@ -633,7 +633,7 @@ class _AddDishPageState extends State<AddDishPage> {
                               fillColor: Colors.grey[50],
                             ),
                             keyboardType: TextInputType.number,
-                          ),
+                          ),*/
                           const SizedBox(height: 24),
 
                           // Section Image
@@ -808,7 +808,7 @@ class _AddDishPageState extends State<AddDishPage> {
     switch (level) {
       case PopularityLevel.nouveau:
         return Icons.new_releases;
-      case PopularityLevel.standard:
+      /*case PopularityLevel.standard:
         return Icons.star_border;
       case PopularityLevel.apprecie:
         return Icons.thumb_up_alt_outlined;
@@ -817,15 +817,15 @@ class _AddDishPageState extends State<AddDishPage> {
       case PopularityLevel.tendance:
         return Icons.trending_up;
       case PopularityLevel.bestseller:
-        return Icons.star;
+        return Icons.star;*/
     }
   }
 
   Color _getPopularityColor(PopularityLevel level) {
     switch (level) {
       case PopularityLevel.nouveau:
-        return Colors.blue;
-      case PopularityLevel.standard:
+        return Colors.green;
+      /*case PopularityLevel.standard:
         return Colors.orange;
       case PopularityLevel.apprecie:
         return Colors.green;
@@ -834,7 +834,7 @@ class _AddDishPageState extends State<AddDishPage> {
       case PopularityLevel.tendance:
         return Colors.indigo;
       case PopularityLevel.bestseller:
-        return Colors.red;
+        return Colors.red;*/
     }
   }
 

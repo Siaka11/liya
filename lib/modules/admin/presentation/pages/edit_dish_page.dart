@@ -292,7 +292,7 @@ class _EditDishPageState extends State<EditDishPage> {
                       controller: _descriptionController,
                       maxLines: 3,
                       decoration: InputDecoration(
-                        labelText: 'Description *',
+                        labelText: 'Description ',
                         hintText: 'Décrivez le plat...',
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -301,12 +301,7 @@ class _EditDishPageState extends State<EditDishPage> {
                         filled: true,
                         fillColor: Colors.grey[50],
                       ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Veuillez saisir une description';
-                        }
-                        return null;
-                      },
+
                     ),
                     const SizedBox(height: 24),
 

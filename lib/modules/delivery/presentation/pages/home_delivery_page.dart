@@ -171,7 +171,7 @@ class _HomeDeliveryPageState extends ConsumerState<HomeDeliveryPage> {
                 .toList()),
 
             // Section des actions
-            _buildActionsSection(),
+            /*_buildActionsSection(),*/
           ],
         ),
       ),
@@ -701,7 +701,7 @@ class _HomeDeliveryPageState extends ConsumerState<HomeDeliveryPage> {
     );
   }
 
-  Widget _buildActionsSection() {
+  /*Widget _buildActionsSection() {
     return Container(
       margin: const EdgeInsets.only(top: 16),
       child: Column(
@@ -753,7 +753,7 @@ class _HomeDeliveryPageState extends ConsumerState<HomeDeliveryPage> {
         ],
       ),
     );
-  }
+  }*/
 
   Widget _buildMapSection() {
     return Container(

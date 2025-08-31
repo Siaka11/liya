@@ -546,7 +546,7 @@ class HomePage extends ConsumerWidget {
                       icon: const Icon(
                         Icons.call,
                         color: Colors.grey,
-                        size: 26.0,
+                        size: 20.0,
                       ),
                       onPressed: () => _callNumber(context, '+2250700846546'),
                     ),
@@ -554,7 +554,7 @@ class HomePage extends ConsumerWidget {
                     NotificationButton(
                       backgroundColor: Colors.transparent,
                       iconColor: Colors.grey,
-                      size: 50.0,
+                      size: 40.0,
                       onPressed: () {
                         // Navigation vers la page de notifications
                         context.router.push(const NotificationsRoute());
@@ -565,7 +565,7 @@ class HomePage extends ConsumerWidget {
                       icon: const Icon(
                         Icons.person,
                         color: Colors.grey,
-                        size: 26.0,
+                        size: 20.0,
                       ),
                       onPressed: () {
                         showTopMenu(context, ref);
