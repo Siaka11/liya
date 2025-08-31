@@ -123,10 +123,10 @@ class _HomeDeliveryPageState extends ConsumerState<HomeDeliveryPage> {
                 ],
               ),
             ),
-            NotificationAppBarButton(
+/*            NotificationAppBarButton(
               backgroundColor: Colors.transparent,
               iconColor: Colors.white,
-            ),
+            ),*/
           ],
         ),
         actions: [
@@ -152,10 +152,10 @@ class _HomeDeliveryPageState extends ConsumerState<HomeDeliveryPage> {
             _buildStatusSection(isAvailable),
 
             // Section carte (seulement si en course)
-            if (isAvailable) _buildMapSection(),
+           // if (isAvailable) _buildMapSection(),
 
             // Section des gains et statistiques
-            _buildEarningsSection(),
+            //_buildEarningsSection(),
 
             // Section des commandes assignées
             _buildAssignedOrdersSection(assignedOrders),
@@ -320,7 +320,7 @@ class _HomeDeliveryPageState extends ConsumerState<HomeDeliveryPage> {
             ],
           ),
           const SizedBox(height: 16),
-          Row(
+          /*Row(
             children: [
               Expanded(
                 child: ElevatedButton.icon(
@@ -347,7 +347,7 @@ class _HomeDeliveryPageState extends ConsumerState<HomeDeliveryPage> {
                 ),
               ),
             ],
-          ),
+          ),*/
         ],
       ),
     );

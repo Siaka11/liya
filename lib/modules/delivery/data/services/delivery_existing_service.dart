@@ -292,16 +292,27 @@ class DeliveryExistingService {
     try {
       print('🔍 Recherche commandes restaurant pour: $phoneNumber');
 
-      // Essayer d'abord avec delivery_phone_number
+      // Le phoneNumber du livreur local correspond au champ 'assignedTo' dans Firestore
       var querySnapshot = await _firestore
           .collection('orders')
-          .where('delivery_phone_number', isEqualTo: phoneNumber)
+          .where('assignedTo', isEqualTo: phoneNumber)
           .get();
 
       print(
-          '📦 Commandes trouvées avec delivery_phone_number: ${querySnapshot.docs.length}');
+          '📦 Commandes trouvées avec assignedTo: ${querySnapshot.docs.length}');
 
-      // Si aucune commande trouvée, essayer avec delivery_phone
+      // Si aucune commande trouvée, essayer avec les anciens champs pour compatibilité
+      if (querySnapshot.docs.isEmpty) {
+        print(
+            '🔄 Aucune commande trouvée, essai avec delivery_phone_number...');
+        querySnapshot = await _firestore
+            .collection('orders')
+            .where('delivery_phone_number', isEqualTo: phoneNumber)
+            .get();
+        print(
+            '📦 Commandes trouvées avec delivery_phone_number: ${querySnapshot.docs.length}');
+      }
+
       if (querySnapshot.docs.isEmpty) {
         print('🔄 Aucune commande trouvée, essai avec delivery_phone...');
         querySnapshot = await _firestore
@@ -329,9 +340,11 @@ class DeliveryExistingService {
           customerPhoneNumber: data['phone'] ?? '',
           customerName: data['customer_name'] ?? 'Client',
           customerAddress: data['address'] ?? '',
-          deliveryPhoneNumber:
-              data['delivery_phone_number'] ?? data['delivery_phone'] ?? '',
-          deliveryName: data['delivery_name'] ?? '',
+          deliveryPhoneNumber: data['assignedTo'] ??
+              data['delivery_phone_number'] ??
+              data['delivery_phone'] ??
+              '',
+          deliveryName: data['assignedToName'] ?? data['delivery_name'] ?? '',
           type: DeliveryType.restaurant,
           status: _mapOrderStatus(data['status']),
           amount: (data['subtotal'] ?? 0.0).toDouble(),
@@ -360,16 +373,25 @@ class DeliveryExistingService {
     try {
       print('🔍 Recherche colis pour: $phoneNumber');
 
-      // Essayer d'abord avec delivery_phone_number
+      // Le phoneNumber du livreur local correspond au champ 'assignedTo' dans Firestore
       var querySnapshot = await _firestore
           .collection('parcels')
-          .where('delivery_phone_number', isEqualTo: phoneNumber)
+          .where('assignedTo', isEqualTo: phoneNumber)
           .get();
 
-      print(
-          '📦 Colis trouvés avec delivery_phone_number: ${querySnapshot.docs.length}');
+      print('📦 Colis trouvés avec assignedTo: ${querySnapshot.docs.length}');
 
-      // Si aucun colis trouvé, essayer avec delivery_phone
+      // Si aucun colis trouvé, essayer avec les anciens champs pour compatibilité
+      if (querySnapshot.docs.isEmpty) {
+        print('🔄 Aucun colis trouvé, essai avec delivery_phone_number...');
+        querySnapshot = await _firestore
+            .collection('parcels')
+            .where('delivery_phone_number', isEqualTo: phoneNumber)
+            .get();
+        print(
+            '📦 Colis trouvés avec delivery_phone_number: ${querySnapshot.docs.length}');
+      }
+
       if (querySnapshot.docs.isEmpty) {
         print('🔄 Aucun colis trouvé, essai avec delivery_phone...');
         querySnapshot = await _firestore
@@ -387,9 +409,11 @@ class DeliveryExistingService {
           customerPhoneNumber: data['phone'] ?? '',
           customerName: data['receiverName'] ?? '',
           customerAddress: data['address'] ?? '',
-          deliveryPhoneNumber:
-              data['delivery_phone_number'] ?? data['delivery_phone'] ?? '',
-          deliveryName: data['delivery_name'] ?? '',
+          deliveryPhoneNumber: data['assignedTo'] ??
+              data['delivery_phone_number'] ??
+              data['delivery_phone'] ??
+              '',
+          deliveryName: data['assignedToName'] ?? data['delivery_name'] ?? '',
           type: DeliveryType.parcel,
           status: _mapOrderStatus(data['status']),
           amount: (data['prix'] ?? 0.0).toDouble(),
@@ -577,7 +601,6 @@ class DeliveryExistingService {
       }
 
       for (final doc in parcelQuery.docs) {
-        final data = doc.data();
         totalEarnings += 800.0; // Frais de livraison fixe pour les colis
       }
 
@@ -595,6 +618,8 @@ class DeliveryExistingService {
       case 'reception':
         return DeliveryStatus.reception;
       case 'enRoute':
+        return DeliveryStatus.enRoute;
+      case 'assigned': // Nouveau statut pour les commandes assignées
         return DeliveryStatus.enRoute;
       case 'livre':
         return DeliveryStatus.livre;
