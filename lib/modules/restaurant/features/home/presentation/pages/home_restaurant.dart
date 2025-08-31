@@ -126,7 +126,7 @@ class HomeRestaurantPage extends ConsumerWidget {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              "Populaires",
+                              "Nouveaux plats",
                               style: TextStyle(
                                   fontSize: 20, fontWeight: FontWeight.bold),
                             ),
@@ -142,66 +142,267 @@ class HomeRestaurantPage extends ConsumerWidget {
                           ],
                         ),
                         SizedBox(
-                          child: popularDishesFirebaseState.isLoading
+                          child: newDishesFirebaseState.isLoading
                               ? Center(child: CircularProgressIndicator())
-                              : popularDishesFirebaseState.error != null
-                                  ? Center(
-                                      child: Text(
-                                          popularDishesFirebaseState.error!))
-                                  : popularDishesFirebaseState.dishes == null ||
-                                          popularDishesFirebaseState
-                                              .dishes!.isEmpty
-                                      ? Center(
-                                          child: Text(
-                                              "Aucun plat populaire disponible"))
-                                      : SizedBox(
-                                          height: 220,
-                                          child: ListView.builder(
-                                            scrollDirection: Axis.horizontal,
-                                            itemCount: popularDishesFirebaseState.dishes!.length,
-                                            itemBuilder: (context, index) {
-                                              final dish = popularDishesFirebaseState.dishes![index];
-                                              return Container(
-                                                width: 160,
-                                                margin: const EdgeInsets.only(right: 16),
-                                                child: ModernDishCard(
-                                                  id: dish['id'],
-                                                  name: dish['name'],
-                                                  price: dish['price'].toString(),
-                                                  imageUrl: dish['image_url'],
-                                                  restaurantId: dish['restaurant_id'],
-                                                  description: dish['description'],
-                                                  // Paramètres de popularité
-                                                  orderCount: dish['order_count'] ?? 0,
-                                                  rating: (dish['rating'] ?? 0.0).toDouble(),
-                                                  ratingCount: dish['rating_count'] ?? 0,
-                                                  // Paramètres de promotion
-                                                  isOnSale: dish['is_on_sale'] ?? false,
-                                                  originalPrice: dish['original_price']?.toDouble(),
-                                                  discountPercentage: dish['discount_percentage']?.toDouble(),
-                                                  onTap: () {
-                                                    // Navigation vers la page de détail du plat
-                                                    Navigator.push(
-                                                      context,
-                                                      MaterialPageRoute(
-                                                        builder: (context) => DishDetailPage(
-                                                          id: dish['id'],
-                                                          restaurantId: dish['restaurant_id'],
-                                                          name: dish['name'],
-                                                          price: dish['price'].toString(),
-                                                          imageUrl: dish['image_url'],
-                                                          rating: dish['rating'].toString(),
-                                                          description: dish['description'],
-                                                        ),
+                              : newDishesFirebaseState.error != null
+                              ? Center(
+                            child: Column(
+                              children: [
+                                Text(newDishesFirebaseState.error!),
+                                const SizedBox(height: 8),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    newDishesFirebaseController
+                                        .refresh();
+                                  },
+                                  child: const Text('Réessayer'),
+                                ),
+                              ],
+                            ),
+                          )
+                              : newDishesFirebaseState.dishes == null ||
+                              newDishesFirebaseState.dishes!.isEmpty
+                              ? Center(
+                            child: Column(
+                              children: [
+                                const Text(
+                                    "Aucun nouveau plat disponible"),
+                                const SizedBox(height: 8),
+                                Text(
+                                  "État: ${newDishesFirebaseState.isLoading ? 'Chargement...' : 'Terminé'}",
+                                  style: const TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey),
+                                ),
+                                const SizedBox(height: 8),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    newDishesFirebaseController
+                                        .refresh();
+                                  },
+                                  child: const Text('Actualiser'),
+                                ),
+                              ],
+                            ),
+                          )
+                              : SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                              crossAxisAlignment:
+                              CrossAxisAlignment.start,
+                              children: [
+                                for (int i = 0;
+                                i <
+                                    newDishesFirebaseState
+                                        .dishes!.length;
+                                i += 2)
+                                  Padding(
+                                    padding:
+                                    const EdgeInsets.only(
+                                        right: 10),
+                                    child: Row(
+                                      children: [
+                                        // Premier plat
+                                        Container(
+                                          width: 160,
+                                          child: ModernDishCard(
+                                            id: newDishesFirebaseState
+                                                .dishes![i]['id'],
+                                            name:
+                                            newDishesFirebaseState
+                                                .dishes![
+                                            i]['name'],
+                                            price:
+                                            newDishesFirebaseState
+                                                .dishes![i]
+                                            ['price']
+                                                .toString(),
+                                            imageUrl:
+                                            newDishesFirebaseState
+                                                .dishes![i]
+                                            ['image_url'],
+                                            restaurantId:
+                                            newDishesFirebaseState
+                                                .dishes![i]
+                                            [
+                                            'restaurant_id'],
+                                            description:
+                                            newDishesFirebaseState
+                                                .dishes![i]
+                                            [
+                                            'description'],
+                                            isOnSale: newDishesFirebaseState
+                                                .dishes![i]
+                                            [
+                                            'is_on_sale'] ??
+                                                false,
+                                            originalPrice:
+                                            newDishesFirebaseState
+                                                .dishes![i][
+                                            'original_price']
+                                                ?.toDouble(),
+                                            discountPercentage:
+                                            newDishesFirebaseState
+                                                .dishes![i][
+                                            'discount_percentage']
+                                                ?.toDouble(),
+                                            onTap: () {
+                                              // Navigation vers la page de détail du plat
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder:
+                                                      (context) =>
+                                                      DishDetailPage(
+                                                        id: newDishesFirebaseState
+                                                            .dishes![
+                                                        i]['id'],
+                                                        restaurantId:
+                                                        newDishesFirebaseState
+                                                            .dishes![i]
+                                                        [
+                                                        'restaurant_id'],
+                                                        name: newDishesFirebaseState
+                                                            .dishes![
+                                                        i]['name'],
+                                                        price: newDishesFirebaseState
+                                                            .dishes![
+                                                        i][
+                                                        'price']
+                                                            .toString(),
+                                                        imageUrl: newDishesFirebaseState
+                                                            .dishes![i]
+                                                        [
+                                                        'image_url'],
+                                                        rating: newDishesFirebaseState
+                                                            .dishes![
+                                                        i][
+                                                        'rating']
+                                                            .toString(),
+                                                        description:
+                                                        newDishesFirebaseState
+                                                            .dishes![i]
+                                                        [
+                                                        'description'],
                                                       ),
-                                                    );
-                                                  },
                                                 ),
                                               );
                                             },
                                           ),
                                         ),
-                        )
+                                        // Deuxième plat (si disponible)
+                                        if (i + 1 <
+                                            newDishesFirebaseState
+                                                .dishes!.length)
+                                          Padding(
+                                            padding:
+                                            const EdgeInsets
+                                                .only(
+                                                left: 10),
+                                            child: Container(
+                                              width: 160,
+                                              child:
+                                              ModernDishCard(
+                                                id: newDishesFirebaseState
+                                                    .dishes![
+                                                i + 1]['id'],
+                                                name: newDishesFirebaseState
+                                                    .dishes![
+                                                i + 1]['name'],
+                                                price: newDishesFirebaseState
+                                                    .dishes![
+                                                i + 1]
+                                                ['price']
+                                                    .toString(),
+                                                imageUrl: newDishesFirebaseState
+                                                    .dishes![
+                                                i + 1]
+                                                ['image_url'],
+                                                restaurantId:
+                                                newDishesFirebaseState
+                                                    .dishes![
+                                                i + 1]
+                                                [
+                                                'restaurant_id'],
+                                                description:
+                                                newDishesFirebaseState
+                                                    .dishes![
+                                                i + 1]
+                                                [
+                                                'description'],
+                                                isOnSale: newDishesFirebaseState
+                                                    .dishes![
+                                                i + 1]
+                                                [
+                                                'is_on_sale'] ??
+                                                    false,
+                                                originalPrice:
+                                                newDishesFirebaseState
+                                                    .dishes![
+                                                i + 1]
+                                                [
+                                                'original_price']
+                                                    ?.toDouble(),
+                                                discountPercentage:
+                                                newDishesFirebaseState
+                                                    .dishes![
+                                                i + 1]
+                                                [
+                                                'discount_percentage']
+                                                    ?.toDouble(),
+                                                onTap: () {
+                                                  Navigator.push(
+                                                    context,
+                                                    MaterialPageRoute(
+                                                      builder:
+                                                          (context) =>
+                                                          DishDetailPage(
+                                                            id: newDishesFirebaseState.dishes![i +
+                                                                1]
+                                                            [
+                                                            'id'],
+                                                            restaurantId:
+                                                            newDishesFirebaseState.dishes![i + 1]
+                                                            [
+                                                            'restaurant_id'],
+                                                            name: newDishesFirebaseState.dishes![i +
+                                                                1]
+                                                            [
+                                                            'name'],
+                                                            price: newDishesFirebaseState
+                                                                .dishes![
+                                                            i + 1]
+                                                            [
+                                                            'price']
+                                                                .toString(),
+                                                            imageUrl: newDishesFirebaseState.dishes![i +
+                                                                1]
+                                                            [
+                                                            'image_url'],
+                                                            rating: newDishesFirebaseState
+                                                                .dishes![
+                                                            i + 1]
+                                                            [
+                                                            'rating']
+                                                                .toString(),
+                                                            description:
+                                                            newDishesFirebaseState.dishes![i + 1]
+                                                            [
+                                                            'description'],
+                                                          ),
+                                                    ),
+                                                  );
+                                                },
+                                              ),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -561,7 +762,7 @@ class HomeRestaurantPage extends ConsumerWidget {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              "Nouveaux plats",
+                              "Populaires",
                               style: TextStyle(
                                   fontSize: 20, fontWeight: FontWeight.bold),
                             ),
@@ -589,270 +790,359 @@ class HomeRestaurantPage extends ConsumerWidget {
                           ],
                         ),
                         SizedBox(
-                          child: newDishesFirebaseState.isLoading
+                          child: popularDishesFirebaseState.isLoading
                               ? Center(child: CircularProgressIndicator())
-                              : newDishesFirebaseState.error != null
-                                  ? Center(
-                                      child: Column(
-                                        children: [
-                                          Text(newDishesFirebaseState.error!),
-                                          const SizedBox(height: 8),
-                                          ElevatedButton(
-                                            onPressed: () {
-                                              newDishesFirebaseController
-                                                  .refresh();
-                                            },
-                                            child: const Text('Réessayer'),
-                                          ),
-                                        ],
-                                      ),
-                                    )
-                                  : newDishesFirebaseState.dishes == null ||
-                                          newDishesFirebaseState.dishes!.isEmpty
-                                      ? Center(
-                                          child: Column(
-                                            children: [
-                                              const Text(
-                                                  "Aucun nouveau plat disponible"),
-                                              const SizedBox(height: 8),
-                                              Text(
-                                                "État: ${newDishesFirebaseState.isLoading ? 'Chargement...' : 'Terminé'}",
-                                                style: const TextStyle(
-                                                    fontSize: 12,
-                                                    color: Colors.grey),
-                                              ),
-                                              const SizedBox(height: 8),
-                                              ElevatedButton(
-                                                onPressed: () {
-                                                  newDishesFirebaseController
-                                                      .refresh();
-                                                },
-                                                child: const Text('Actualiser'),
-                                              ),
-                                            ],
-                                          ),
-                                        )
-                                      : SingleChildScrollView(
-                                          scrollDirection: Axis.horizontal,
-                                          child: Row(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              for (int i = 0;
-                                                  i <
-                                                      newDishesFirebaseState
-                                                          .dishes!.length;
-                                                  i += 2)
-                                                Padding(
-                                                  padding:
-                                                      const EdgeInsets.only(
-                                                          right: 10),
-                                                  child: Row(
-                                                    children: [
-                                                      // Premier plat
-                                                      Container(
-                                                        width: 160,
-                                                        child: ModernDishCard(
-                                                          id: newDishesFirebaseState
-                                                              .dishes![i]['id'],
-                                                          name:
-                                                              newDishesFirebaseState
-                                                                      .dishes![
-                                                                  i]['name'],
-                                                          price:
-                                                              newDishesFirebaseState
-                                                                  .dishes![i]
-                                                                      ['price']
-                                                                  .toString(),
-                                                          imageUrl:
-                                                              newDishesFirebaseState
-                                                                      .dishes![i]
-                                                                  ['image_url'],
-                                                          restaurantId:
-                                                              newDishesFirebaseState
-                                                                      .dishes![i]
-                                                                  [
-                                                                  'restaurant_id'],
-                                                          description:
-                                                              newDishesFirebaseState
-                                                                      .dishes![i]
-                                                                  [
-                                                                  'description'],
-                                                          isOnSale: newDishesFirebaseState
-                                                                      .dishes![i]
-                                                                  [
-                                                                  'is_on_sale'] ??
-                                                              false,
-                                                          originalPrice:
-                                                              newDishesFirebaseState
-                                                                  .dishes![i][
-                                                                      'original_price']
-                                                                  ?.toDouble(),
-                                                          discountPercentage:
-                                                              newDishesFirebaseState
-                                                                  .dishes![i][
-                                                                      'discount_percentage']
-                                                                  ?.toDouble(),
-                                                          onTap: () {
-                                                            // Navigation vers la page de détail du plat
-                                                            Navigator.push(
-                                                              context,
-                                                              MaterialPageRoute(
-                                                                builder:
-                                                                    (context) =>
-                                                                        DishDetailPage(
-                                                                  id: newDishesFirebaseState
-                                                                          .dishes![
-                                                                      i]['id'],
-                                                                  restaurantId:
-                                                                      newDishesFirebaseState
-                                                                              .dishes![i]
-                                                                          [
-                                                                          'restaurant_id'],
-                                                                  name: newDishesFirebaseState
-                                                                          .dishes![
-                                                                      i]['name'],
-                                                                  price: newDishesFirebaseState
-                                                                      .dishes![
-                                                                          i][
-                                                                          'price']
-                                                                      .toString(),
-                                                                  imageUrl: newDishesFirebaseState
-                                                                          .dishes![i]
-                                                                      [
-                                                                      'image_url'],
-                                                                  rating: newDishesFirebaseState
-                                                                      .dishes![
-                                                                          i][
-                                                                          'rating']
-                                                                      .toString(),
-                                                                  description:
-                                                                      newDishesFirebaseState
-                                                                              .dishes![i]
-                                                                          [
-                                                                          'description'],
-                                                                ),
-                                                              ),
-                                                            );
-                                                          },
-                                                        ),
-                                                      ),
-                                                      // Deuxième plat (si disponible)
-                                                      if (i + 1 <
-                                                          newDishesFirebaseState
-                                                              .dishes!.length)
-                                                        Padding(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .only(
-                                                                  left: 10),
-                                                          child: Container(
-                                                            width: 160,
-                                                            child:
-                                                                ModernDishCard(
-                                                              id: newDishesFirebaseState
-                                                                      .dishes![
-                                                                  i + 1]['id'],
-                                                              name: newDishesFirebaseState
-                                                                      .dishes![
-                                                                  i + 1]['name'],
-                                                              price: newDishesFirebaseState
-                                                                  .dishes![
-                                                                      i + 1]
-                                                                      ['price']
-                                                                  .toString(),
-                                                              imageUrl: newDishesFirebaseState
-                                                                          .dishes![
-                                                                      i + 1]
-                                                                  ['image_url'],
-                                                              restaurantId:
-                                                                  newDishesFirebaseState
-                                                                              .dishes![
-                                                                          i + 1]
-                                                                      [
-                                                                      'restaurant_id'],
-                                                              description:
-                                                                  newDishesFirebaseState
-                                                                              .dishes![
-                                                                          i + 1]
-                                                                      [
-                                                                      'description'],
-                                                              isOnSale: newDishesFirebaseState
-                                                                              .dishes![
-                                                                          i + 1]
-                                                                      [
-                                                                      'is_on_sale'] ??
-                                                                  false,
-                                                              originalPrice:
-                                                                  newDishesFirebaseState
-                                                                      .dishes![
-                                                                          i + 1]
-                                                                          [
-                                                                          'original_price']
-                                                                      ?.toDouble(),
-                                                              discountPercentage:
-                                                                  newDishesFirebaseState
-                                                                      .dishes![
-                                                                          i + 1]
-                                                                          [
-                                                                          'discount_percentage']
-                                                                      ?.toDouble(),
-                                                              onTap: () {
-                                                                Navigator.push(
-                                                                  context,
-                                                                  MaterialPageRoute(
-                                                                    builder:
-                                                                        (context) =>
-                                                                            DishDetailPage(
-                                                                      id: newDishesFirebaseState.dishes![i +
-                                                                              1]
-                                                                          [
-                                                                          'id'],
-                                                                      restaurantId:
-                                                                          newDishesFirebaseState.dishes![i + 1]
-                                                                              [
-                                                                              'restaurant_id'],
-                                                                      name: newDishesFirebaseState.dishes![i +
-                                                                              1]
-                                                                          [
-                                                                          'name'],
-                                                                      price: newDishesFirebaseState
-                                                                          .dishes![
-                                                                              i + 1]
-                                                                              [
-                                                                              'price']
-                                                                          .toString(),
-                                                                      imageUrl: newDishesFirebaseState.dishes![i +
-                                                                              1]
-                                                                          [
-                                                                          'image_url'],
-                                                                      rating: newDishesFirebaseState
-                                                                          .dishes![
-                                                                              i + 1]
-                                                                              [
-                                                                              'rating']
-                                                                          .toString(),
-                                                                      description:
-                                                                          newDishesFirebaseState.dishes![i + 1]
-                                                                              [
-                                                                              'description'],
-                                                                    ),
-                                                                  ),
-                                                                );
-                                                              },
-                                                            ),
-                                                          ),
-                                                        ),
-                                                    ],
-                                                  ),
-                                                ),
-                                            ],
+                              : popularDishesFirebaseState.error != null
+                              ? Center(
+                              child: Text(
+                                  popularDishesFirebaseState.error!))
+                              : popularDishesFirebaseState.dishes == null ||
+                              popularDishesFirebaseState
+                                  .dishes!.isEmpty
+                              ? Center(
+                              child: Text(
+                                  "Aucun plat populaire disponible"))
+                              : SizedBox(
+                            height: 220,
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: popularDishesFirebaseState.dishes!.length,
+                              itemBuilder: (context, index) {
+                                final dish = popularDishesFirebaseState.dishes![index];
+                                return Container(
+                                  width: 160,
+                                  margin: const EdgeInsets.only(right: 16),
+                                  child: ModernDishCard(
+                                    id: dish['id'],
+                                    name: dish['name'],
+                                    price: dish['price'].toString(),
+                                    imageUrl: dish['image_url'],
+                                    restaurantId: dish['restaurant_id'],
+                                    description: dish['description'],
+                                    // Paramètres de popularité
+                                    orderCount: dish['order_count'] ?? 0,
+                                    rating: (dish['rating'] ?? 0.0).toDouble(),
+                                    ratingCount: dish['rating_count'] ?? 0,
+                                    // Paramètres de promotion
+                                    isOnSale: dish['is_on_sale'] ?? false,
+                                    originalPrice: dish['original_price']?.toDouble(),
+                                    discountPercentage: dish['discount_percentage']?.toDouble(),
+                                    onTap: () {
+                                      // Navigation vers la page de détail du plat
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => DishDetailPage(
+                                            id: dish['id'],
+                                            restaurantId: dish['restaurant_id'],
+                                            name: dish['name'],
+                                            price: dish['price'].toString(),
+                                            imageUrl: dish['image_url'],
+                                            rating: dish['rating'].toString(),
+                                            description: dish['description'],
                                           ),
                                         ),
-                        ),
+                                      );
+                                    },
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        )
                       ],
                     ),
                   ),
+                  const SizedBox(height: 10),
+                  /*Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              "Les plus commandés",
+                              style: TextStyle(
+                                  fontSize: 20, fontWeight: FontWeight.bold),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                context.router.push(AllDishesRoute());
+                              },
+                              child: Icon(Icons.arrow_forward_ios, size: 16),
+                              style: TextButton.styleFrom(
+                                foregroundColor: Colors.grey,
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(
+                          child: newDishesFirebaseState.isLoading
+                              ? Center(child: CircularProgressIndicator())
+                              : newDishesFirebaseState.error != null
+                              ? Center(
+                            child: Column(
+                              children: [
+                                Text(newDishesFirebaseState.error!),
+                                const SizedBox(height: 8),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    newDishesFirebaseController
+                                        .refresh();
+                                  },
+                                  child: const Text('Réessayer'),
+                                ),
+                              ],
+                            ),
+                          )
+                              : newDishesFirebaseState.dishes == null ||
+                              newDishesFirebaseState.dishes!.isEmpty
+                              ? Center(
+                            child: Column(
+                              children: [
+                                const Text(
+                                    "Aucun nouveau plat disponible"),
+                                const SizedBox(height: 8),
+                                Text(
+                                  "État: ${newDishesFirebaseState.isLoading ? 'Chargement...' : 'Terminé'}",
+                                  style: const TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey),
+                                ),
+                                const SizedBox(height: 8),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    newDishesFirebaseController
+                                        .refresh();
+                                  },
+                                  child: const Text('Actualiser'),
+                                ),
+                              ],
+                            ),
+                          )
+                              : SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                              crossAxisAlignment:
+                              CrossAxisAlignment.start,
+                              children: [
+                                for (int i = 0;
+                                i <
+                                    newDishesFirebaseState
+                                        .dishes!.length;
+                                i += 2)
+                                  Padding(
+                                    padding:
+                                    const EdgeInsets.only(
+                                        right: 10),
+                                    child: Row(
+                                      children: [
+                                        // Premier plat
+                                        Container(
+                                          width: 160,
+                                          child: ModernDishCard(
+                                            id: newDishesFirebaseState
+                                                .dishes![i]['id'],
+                                            name:
+                                            newDishesFirebaseState
+                                                .dishes![
+                                            i]['name'],
+                                            price:
+                                            newDishesFirebaseState
+                                                .dishes![i]
+                                            ['price']
+                                                .toString(),
+                                            imageUrl:
+                                            newDishesFirebaseState
+                                                .dishes![i]
+                                            ['image_url'],
+                                            restaurantId:
+                                            newDishesFirebaseState
+                                                .dishes![i]
+                                            [
+                                            'restaurant_id'],
+                                            description:
+                                            newDishesFirebaseState
+                                                .dishes![i]
+                                            [
+                                            'description'],
+                                            isOnSale: newDishesFirebaseState
+                                                .dishes![i]
+                                            [
+                                            'is_on_sale'] ??
+                                                false,
+                                            originalPrice:
+                                            newDishesFirebaseState
+                                                .dishes![i][
+                                            'original_price']
+                                                ?.toDouble(),
+                                            discountPercentage:
+                                            newDishesFirebaseState
+                                                .dishes![i][
+                                            'discount_percentage']
+                                                ?.toDouble(),
+                                            onTap: () {
+                                              // Navigation vers la page de détail du plat
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder:
+                                                      (context) =>
+                                                      DishDetailPage(
+                                                        id: newDishesFirebaseState
+                                                            .dishes![
+                                                        i]['id'],
+                                                        restaurantId:
+                                                        newDishesFirebaseState
+                                                            .dishes![i]
+                                                        [
+                                                        'restaurant_id'],
+                                                        name: newDishesFirebaseState
+                                                            .dishes![
+                                                        i]['name'],
+                                                        price: newDishesFirebaseState
+                                                            .dishes![
+                                                        i][
+                                                        'price']
+                                                            .toString(),
+                                                        imageUrl: newDishesFirebaseState
+                                                            .dishes![i]
+                                                        [
+                                                        'image_url'],
+                                                        rating: newDishesFirebaseState
+                                                            .dishes![
+                                                        i][
+                                                        'rating']
+                                                            .toString(),
+                                                        description:
+                                                        newDishesFirebaseState
+                                                            .dishes![i]
+                                                        [
+                                                        'description'],
+                                                      ),
+                                                ),
+                                              );
+                                            },
+                                          ),
+                                        ),
+                                        // Deuxième plat (si disponible)
+                                        if (i + 1 <
+                                            newDishesFirebaseState
+                                                .dishes!.length)
+                                          Padding(
+                                            padding:
+                                            const EdgeInsets
+                                                .only(
+                                                left: 10),
+                                            child: Container(
+                                              width: 160,
+                                              child:
+                                              ModernDishCard(
+                                                id: newDishesFirebaseState
+                                                    .dishes![
+                                                i + 1]['id'],
+                                                name: newDishesFirebaseState
+                                                    .dishes![
+                                                i + 1]['name'],
+                                                price: newDishesFirebaseState
+                                                    .dishes![
+                                                i + 1]
+                                                ['price']
+                                                    .toString(),
+                                                imageUrl: newDishesFirebaseState
+                                                    .dishes![
+                                                i + 1]
+                                                ['image_url'],
+                                                restaurantId:
+                                                newDishesFirebaseState
+                                                    .dishes![
+                                                i + 1]
+                                                [
+                                                'restaurant_id'],
+                                                description:
+                                                newDishesFirebaseState
+                                                    .dishes![
+                                                i + 1]
+                                                [
+                                                'description'],
+                                                isOnSale: newDishesFirebaseState
+                                                    .dishes![
+                                                i + 1]
+                                                [
+                                                'is_on_sale'] ??
+                                                    false,
+                                                originalPrice:
+                                                newDishesFirebaseState
+                                                    .dishes![
+                                                i + 1]
+                                                [
+                                                'original_price']
+                                                    ?.toDouble(),
+                                                discountPercentage:
+                                                newDishesFirebaseState
+                                                    .dishes![
+                                                i + 1]
+                                                [
+                                                'discount_percentage']
+                                                    ?.toDouble(),
+                                                onTap: () {
+                                                  Navigator.push(
+                                                    context,
+                                                    MaterialPageRoute(
+                                                      builder:
+                                                          (context) =>
+                                                          DishDetailPage(
+                                                            id: newDishesFirebaseState.dishes![i +
+                                                                1]
+                                                            [
+                                                            'id'],
+                                                            restaurantId:
+                                                            newDishesFirebaseState.dishes![i + 1]
+                                                            [
+                                                            'restaurant_id'],
+                                                            name: newDishesFirebaseState.dishes![i +
+                                                                1]
+                                                            [
+                                                            'name'],
+                                                            price: newDishesFirebaseState
+                                                                .dishes![
+                                                            i + 1]
+                                                            [
+                                                            'price']
+                                                                .toString(),
+                                                            imageUrl: newDishesFirebaseState.dishes![i +
+                                                                1]
+                                                            [
+                                                            'image_url'],
+                                                            rating: newDishesFirebaseState
+                                                                .dishes![
+                                                            i + 1]
+                                                            [
+                                                            'rating']
+                                                                .toString(),
+                                                            description:
+                                                            newDishesFirebaseState.dishes![i + 1]
+                                                            [
+                                                            'description'],
+                                                          ),
+                                                    ),
+                                                  );
+                                                },
+                                              ),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),*/
                   const SizedBox(height: 100),
                   /*Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
