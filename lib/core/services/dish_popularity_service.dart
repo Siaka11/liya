@@ -92,7 +92,7 @@ class DishPopularityService {
 
       if (dishDoc.exists) {
         final dishData = dishDoc.data()!;
-        final popularityScore = _calculatePopularityScore(dishData);
+        final popularityScore = calculatePopularityScore(dishData);
 
         await dishDoc.reference.update({
           'popularity_score': popularityScore,
@@ -104,35 +104,52 @@ class DishPopularityService {
     }
   }
 
-  /// Calcule le score de popularité d'un plat
-  static double _calculatePopularityScore(Map<String, dynamic> dishData) {
+  /// Calcule le score de popularité d'un plat - MOYENNE SIMPLE ET COHÉRENTE (0-100)
+  static double calculatePopularityScore(Map<String, dynamic> dishData) {
     final orderCount = (dishData['order_count'] ?? 0).toDouble();
     final viewCount = (dishData['view_count'] ?? 0).toDouble();
     final rating = (dishData['rating'] ?? 0.0).toDouble();
     final ratingCount = (dishData['rating_count'] ?? 0).toDouble();
 
-    // Bonus pour les plats récemment commandés (dans les 7 derniers jours)
-    double recencyBonus = 0.0;
+    // CALCUL DE MOYENNE SIMPLE - Chaque composant sur 25 points (total = 100)
+
+    // 1. Score des commandes (25 points max)
+    // 1 commande = 5 points, plafonné à 25
+    double orderScore = (orderCount * 5.0).clamp(0, 25);
+
+    // 2. Score des vues (25 points max)
+    // 1 vue = 0.5 point, plafonné à 25
+    double viewScore = (viewCount * 0.5).clamp(0, 25);
+
+    // 3. Score des ratings (25 points max)
+    // Rating moyen × 5, mais seulement si au moins 1 avis
+    double ratingScore = 0.0;
+    if (ratingCount > 0 && rating > 0) {
+      ratingScore = (rating * 5.0).clamp(0, 25);
+    }
+
+    // 4. Score de récence (25 points max)
+    // Bonus si commande récente (derniers 30 jours)
+    double recencyScore = 0.0;
     final lastOrdered = dishData['last_ordered'];
-    if (lastOrdered != null) {
+    if (lastOrdered != null && orderCount > 0) {
       final lastOrderedDate = lastOrdered is DateTime
           ? lastOrdered
           : (lastOrdered as Timestamp).toDate();
       final daysSinceLastOrder =
           DateTime.now().difference(lastOrderedDate).inDays;
-      if (daysSinceLastOrder <= 7) {
-        recencyBonus = 50.0 - (daysSinceLastOrder * 7.0);
+
+      if (daysSinceLastOrder <= 30) {
+        // 25 points si commandé aujourd'hui, décroit linéairement
+        recencyScore = (25.0 * (30 - daysSinceLastOrder) / 30).clamp(0, 25);
       }
     }
 
-    // Formule de calcul du score
-    // order_count a plus de poids que les vues et ratings
-    final score = (orderCount * 15.0) +
-        (rating * ratingCount * 2.0) +
-        (viewCount * 0.1) +
-        recencyBonus;
+    // MOYENNE SIMPLE: addition des 4 composants
+    final totalScore = orderScore + viewScore + ratingScore + recencyScore;
 
-    return score;
+    // Score final entre 0 et 100
+    return totalScore.clamp(0, 100);
   }
 
   /// Initialise tous les plats existants avec les champs de popularité
@@ -198,6 +215,79 @@ class DishPopularityService {
       print('🔥 Recalcul terminé pour ${dishesSnapshot.docs.length} plats');
     } catch (e) {
       print('❌ Erreur lors du recalcul: $e');
+    }
+  }
+
+  /// Recalcule tous les scores de popularité avec la formule unifiée
+  static Future<void> recalculateAllPopularityScoresUnified() async {
+    try {
+      print('🔄 Recalcul unifié de tous les scores de popularité...');
+
+      final dishesSnapshot = await _firestore.collection('dishes').get();
+      int updatedCount = 0;
+
+      for (final doc in dishesSnapshot.docs) {
+        try {
+          final dishData = doc.data();
+          final newScore = calculatePopularityScore(dishData);
+
+          await doc.reference.update({
+            'popularity_score': newScore,
+            'popularity_updated_at': FieldValue.serverTimestamp(),
+          });
+
+          updatedCount++;
+
+          print(
+              '✅ Score mis à jour: ${dishData['name']} - Nouveau score: ${newScore.toStringAsFixed(2)}/100');
+        } catch (e) {
+          print('❌ Erreur mise à jour plat ${doc.id}: $e');
+        }
+      }
+
+      print(
+          '✅ Recalcul terminé: $updatedCount plats mis à jour sur ${dishesSnapshot.docs.length}');
+    } catch (e) {
+      print('❌ Erreur recalcul global des scores: $e');
+    }
+  }
+
+  /// Réinitialise toutes les données de popularité à zéro (supprime les valeurs par défaut)
+  static Future<void> resetAllPopularityToZero() async {
+    try {
+      print(
+          '🔄 Réinitialisation de toutes les données de popularité à zéro...');
+
+      final dishesSnapshot = await _firestore.collection('dishes').get();
+      int resetCount = 0;
+
+      for (final doc in dishesSnapshot.docs) {
+        try {
+          final dishData = doc.data();
+
+          await doc.reference.update({
+            'order_count': 0,
+            'view_count': 0,
+            'rating_count': 0,
+            'popularity_score': 0.0,
+            'last_ordered': null,
+            'last_viewed': null,
+            'popularity_updated_at': FieldValue.serverTimestamp(),
+          });
+
+          resetCount++;
+
+          print('✅ Données remises à zéro: ${dishData['name']}');
+        } catch (e) {
+          print('❌ Erreur réinitialisation plat ${doc.id}: $e');
+        }
+      }
+
+      print(
+          '✅ Réinitialisation terminée: $resetCount plats remis à zéro sur ${dishesSnapshot.docs.length}');
+      print('📊 Tous les plats commencent maintenant avec un score de 0/100');
+    } catch (e) {
+      print('❌ Erreur réinitialisation globale: $e');
     }
   }
 }

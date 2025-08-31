@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dish_popularity_service.dart';
 
 class DishPopularityInitializer {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -75,10 +76,17 @@ class DishPopularityInitializer {
         final initialOrderCount = (dishesSnapshot.docs.length - i) *
             2; // Multiplier par 2 pour espacer
 
+        // Calculer le score avec la formule unifiée
+        final updatedData = await doc.reference.get();
+        final currentData = updatedData.data() as Map<String, dynamic>;
+        currentData['order_count'] = initialOrderCount;
+
+        final popularityScore =
+            DishPopularityService.calculatePopularityScore(currentData);
+
         await doc.reference.update({
           'order_count': initialOrderCount,
-          'popularity_score':
-              initialOrderCount * 10.0, // Score basé sur les commandes
+          'popularity_score': popularityScore,
         });
 
         print(

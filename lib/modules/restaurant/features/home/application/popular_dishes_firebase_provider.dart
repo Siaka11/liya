@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../../../core/services/dish_popularity_service.dart';
 
 // État pour les plats populaires Firebase
 class PopularDishesFirebaseState {
@@ -33,33 +34,119 @@ class PopularDishesFirebaseNotifier
 
   PopularDishesFirebaseNotifier() : super(PopularDishesFirebaseState());
 
+  /// Méthode pour forcer l'actualisation des scores de popularité
+  Future<void> refreshPopularityScores() async {
+    try {
+      print('🔄 Actualisation forcée des scores de popularité...');
+      await DishPopularityService.recalculateAllPopularityScores();
+      print('✅ Actualisation terminée');
+    } catch (e) {
+      print('❌ Erreur lors de l\'actualisation: $e');
+    }
+  }
+
+  /// Méthode pour recalculer avec la formule unifiée
+  Future<void> unifyAllPopularityScores() async {
+    try {
+      print('🔄 Unification de tous les scores de popularité...');
+      await DishPopularityService.recalculateAllPopularityScoresUnified();
+      print('✅ Unification terminée, rechargement des plats populaires...');
+      await loadPopularDishes();
+    } catch (e) {
+      print('❌ Erreur unification scores: $e');
+    }
+  }
+
+  /// Méthode pour réinitialiser tous les scores à zéro et recalculer avec la moyenne
+  Future<void> resetToAverageScoring() async {
+    try {
+      print('🔄 Réinitialisation à la moyenne (0-100)...');
+
+      // 1. Remettre toutes les données à zéro
+      await DishPopularityService.resetAllPopularityToZero();
+
+      // 2. Recalculer avec la nouvelle formule de moyenne
+      await DishPopularityService.recalculateAllPopularityScoresUnified();
+
+      print(
+          '✅ Réinitialisation terminée, rechargement des plats populaires...');
+      await loadPopularDishes();
+
+      print(
+          '📊 Tous les plats utilisent maintenant la moyenne normalisée (0-100)');
+    } catch (e) {
+      print('❌ Erreur réinitialisation moyenne: $e');
+    }
+  }
+
+  /// Méthode pour s'assurer que les scores de popularité sont à jour
+  Future<void> ensurePopularityScores() async {
+    try {
+      print('🔄 Vérification des scores de popularité...');
+
+      // Récupérer quelques plats pour vérifier leurs scores
+      final snapshot = await _firestore.collection('dishes').limit(5).get();
+
+      bool needsUpdate = false;
+      for (final doc in snapshot.docs) {
+        final data = doc.data();
+        if (!data.containsKey('popularity_score') ||
+            !data.containsKey('view_count') ||
+            !data.containsKey('order_count')) {
+          needsUpdate = true;
+          break;
+        }
+      }
+
+      if (needsUpdate) {
+        print('⚡ Initialisation des champs de popularité manquants...');
+        // Appeler le service d'initialisation complet
+        await DishPopularityService.initializeAllExistingDishes();
+        // Recalculer les scores après initialisation
+        await DishPopularityService.recalculateAllPopularityScores();
+      }
+    } catch (e) {
+      print('⚠️ Erreur lors de la vérification des scores: $e');
+    }
+  }
+
   Future<void> loadPopularDishes() async {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      // Récupérer les plats populaires basés sur les critères suivants :
-      // 1. Plats disponibles
-      // 2. Trier par rating puis par date de création
-      // TODO: Quand order_count sera disponible, changer pour :
-      // .orderBy('order_count', descending: true)
-      // Option 1: Sans orderBy pour éviter l'index composite
-      final dishesSnapshot = await _firestore
-          .collection('dishes')
-          .orderBy('createdAt', descending: false)
-          .limit(20)
-          .get();
+      // S'assurer que les scores de popularité sont initialisés
+      await ensurePopularityScores();
 
-      // Option 2: Avec orderBy mais sans where (si vous voulez garder le tri)
-      // final dishesSnapshot = await _firestore
-      //     .collection('dishes')
-      //     .orderBy('createdAt', descending: false)
-      //     .limit(20)
-      //     .get();
+      // Récupérer les plats populaires basés sur le score de popularité
+      // Le score prend en compte : order_count, view_count, rating, et récence
+      print('🔥 Chargement des plats populaires par score de popularité...');
+
+      QuerySnapshot dishesSnapshot;
+      bool needsManualSort = false;
+
+      try {
+        // Essayer d'abord avec le tri par popularity_score
+        dishesSnapshot = await _firestore
+            .collection('dishes')
+            .orderBy('popularity_score', descending: true)
+            .limit(20)
+            .get();
+        print('✅ Tri par popularity_score réussi');
+      } catch (e) {
+        // Fallback : récupérer tous les plats et trier manuellement
+        print('⚠️ Index popularity_score non disponible, tri manuel: $e');
+        needsManualSort = true;
+        dishesSnapshot = await _firestore
+            .collection('dishes')
+            .limit(50) // Récupérer plus pour avoir le choix
+            .get();
+      }
 
       final List<Map<String, dynamic>> dishes = [];
 
       for (final doc in dishesSnapshot.docs) {
-        final dishData = doc.data();
+        final dishData = doc.data() as Map<String, dynamic>?;
+        if (dishData == null) continue;
 
         // Vérifier si le plat est disponible
         final isAvailable = dishData['isAvailable'] ?? true;
@@ -131,8 +218,11 @@ class PopularDishesFirebaseNotifier
           'preparation_time': dishData['preparation_time'] ?? 30,
           'rating': rating,
           'rating_count': dishData['rating_count'] ?? 0,
-          'order_count':
-              dishData['order_count'] ?? 0, // Ajouter le compteur de commandes
+          'order_count': dishData['order_count'] ?? 0,
+          'view_count':
+              dishData['view_count'] ?? 0, // Ajouter le compteur de vues
+          'popularity_score':
+              dishData['popularity_score'] ?? 0.0, // Score de popularité
           'is_vegetarian': dishData['is_vegetarian'] ?? false,
           'is_vegan': dishData['is_vegan'] ?? false,
           'is_gluten_free': dishData['is_gluten_free'] ?? false,
@@ -144,14 +234,29 @@ class PopularDishesFirebaseNotifier
           'updatedAt': dishData['updatedAt'],
         });
 
-        // Limiter à 10 plats maximum
-        if (dishes.length >= 10) break;
+        // Limiter à 10 plats maximum si on utilise déjà le tri Firestore
+        if (!needsManualSort && dishes.length >= 10) break;
       }
 
-      print('Plats populaires trouvés: ${dishes.length}');
+      // Si on a récupéré sans tri par popularity_score, trier manuellement
+      if (needsManualSort) {
+        print('📊 Tri manuel par popularity_score...');
+        dishes.sort((a, b) {
+          final scoreA = (a['popularity_score'] ?? 0.0) as double;
+          final scoreB = (b['popularity_score'] ?? 0.0) as double;
+          return scoreB.compareTo(scoreA); // Ordre décroissant
+        });
+
+        // Limiter à 10 après le tri
+        if (dishes.length > 10) {
+          dishes.removeRange(10, dishes.length);
+        }
+      }
+
+      print('🔥 Plats populaires trouvés: ${dishes.length}');
       for (final dish in dishes) {
         print(
-            'Plat populaire: ${dish['name']} - Rating: ${dish['rating']} - Prix: ${dish['price']} - Restaurant: ${dish['restaurant_name']}');
+            '📊 ${dish['name']} - Score: ${dish['popularity_score']} - Vues: ${dish['view_count']} - Commandes: ${dish['order_count']} - Rating: ${dish['rating']} (${dish['rating_count']} avis)');
       }
 
       state = state.copyWith(

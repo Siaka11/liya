@@ -4,15 +4,16 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'dart:io';
+import '../../../../core/services/dish_popularity_service.dart';
 
-// Niveaux de popularité prédéfinis
+// Niveaux de popularité prédéfinis - TOUS COMMENCENT PAR 0
 enum PopularityLevel {
   nouveau('Nouveau plat', 0, 0, 0.0),
-  standard('Plat standard', 2, 10, 3.0),
-  apprecie('Plat apprécié', 8, 40, 3.8),
-  populaire('Plat populaire', 20, 100, 4.2),
-  tendance('En tendance', 50, 250, 4.6),
-  bestseller('Best-seller', 100, 500, 4.8);
+  standard('Plat standard', 0, 0, 0.0),
+  apprecie('Plat apprécié', 0, 0, 0.0),
+  populaire('Plat populaire', 0, 0, 0.0),
+  tendance('En tendance', 0, 0, 0.0),
+  bestseller('Best-seller', 0, 0, 0.0);
 
   const PopularityLevel(
       this.label, this.orderCount, this.viewCount, this.rating);
@@ -216,10 +217,15 @@ class _AddDishPageState extends State<AddDishPage> {
         'rating_count': selectedLevel.orderCount > 0
             ? (selectedLevel.orderCount / 3).round()
             : 0, // Estimation du nombre d'avis
-        'popularity_score': (selectedLevel.orderCount * 15.0) +
-            (selectedLevel.rating *
-                (selectedLevel.orderCount / 3).round() *
-                2.0),
+        'popularity_score': DishPopularityService.calculatePopularityScore({
+          'order_count': selectedLevel.orderCount,
+          'view_count': selectedLevel.viewCount,
+          'rating': selectedLevel.rating,
+          'rating_count': selectedLevel.orderCount > 0
+              ? (selectedLevel.orderCount / 3).round()
+              : 0,
+          'last_ordered': selectedLevel.orderCount > 0 ? DateTime.now() : null,
+        }),
         'last_ordered':
             selectedLevel.orderCount > 0 ? FieldValue.serverTimestamp() : null,
         'last_viewed':
