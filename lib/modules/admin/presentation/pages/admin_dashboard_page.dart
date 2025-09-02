@@ -22,7 +22,7 @@ class AdminDashboardPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Section des métriques
-            Row(
+            /*Row(
               children: [
                 Expanded(
                   child: AdminMenuCard(
@@ -46,7 +46,7 @@ class AdminDashboardPage extends StatelessWidget {
                   ),
                 ),
               ],
-            ),
+            ),*/
 
             const SizedBox(height: 32),
 

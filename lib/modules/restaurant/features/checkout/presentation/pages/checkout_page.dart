@@ -1,8 +1,10 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:liya/core/ui/theme/theme.dart';
 import 'package:liya/routes/app_router.gr.dart';
+import '../../../../../../core/services/phone_call_service.dart';
 import '../../domain/entities/delivery_info.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:cloud_firestore/cloud_firestore.dart' as cf;
@@ -548,6 +550,15 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
           ],
         ),
         centerTitle: true,
+        actions: [
+          TextButton(
+            onPressed: () => _callNumber(context, '+2250700846546'),
+            child: const Text(
+              'Call center',
+              style: TextStyle(color: Colors.blue),
+            ),
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -918,7 +929,10 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
               leading: Icon(Icons.shopping_cart_outlined),
               title: Text('Résumé de la commande'),
               subtitle: Text(
+/*
                   '${widget.restaurantName} • ${widget.cartItems.length} articles'),
+*/
+                  '${widget.cartItems.length} articles'),
               children: [
                 ...widget.cartItems.map((item) => ListTile(
                       leading: ClipRRect(
@@ -1249,4 +1263,42 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
     final deliveryFeeAmount = deliveryFee?.toDouble() ?? 0.0;
     return subtotal + deliveryFeeAmount;
   }
+}
+
+Future<void> _callNumber(BuildContext context, String number) async {
+  try {
+    debugPrint('Tentative d\'appel vers: $number');
+
+    final success = await PhoneCallService.makeCall(number);
+
+    if (!success) {
+      _showCopySnackBar(context, number);
+    }
+  } catch (e) {
+    debugPrint('Erreur lors de l\'appel: $e');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Erreur lors de l\'appel : $e'),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+}
+void _showCopySnackBar(BuildContext context, String number) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(
+          'Impossible d\'ouvrir l\'application Téléphone.\nNuméro : $number'),
+      action: SnackBarAction(
+        label: 'Copier',
+        onPressed: () {
+          Clipboard.setData(ClipboardData(text: number));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text('Numéro copié dans le presse-papiers')),
+          );
+        },
+      ),
+    ),
+  );
 }

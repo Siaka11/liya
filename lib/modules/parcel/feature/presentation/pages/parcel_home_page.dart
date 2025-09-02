@@ -1,7 +1,9 @@
 import 'package:auto_route/annotations.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../../core/services/phone_call_service.dart';
 import '../../../../home/presentation/pages/home_page.dart';
 import '../providers/parcel_provider.dart';
 import '../../domain/entities/parcel.dart';
@@ -154,6 +156,17 @@ class ParcelHomePage extends ConsumerWidget {
                 error: (e, _) => Center(child: Text('Erreur: $e')),
               ),
             ),
+            Align(
+              alignment: Alignment.bottomCenter,
+              child:
+                TextButton(
+                  onPressed: () => _callNumber(context, '+2250700846546'),
+                  child: const Text(
+                    'Call center',
+                    style: TextStyle(color: Colors.deepOrange),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
@@ -211,6 +224,44 @@ class ParcelHomePage extends ConsumerWidget {
     );
   }
 }
+Future<void> _callNumber(BuildContext context, String number) async {
+  try {
+    debugPrint('Tentative d\'appel vers: $number');
+
+    final success = await PhoneCallService.makeCall(number);
+
+    if (!success) {
+      _showCopySnackBar(context, number);
+    }
+  } catch (e) {
+    debugPrint('Erreur lors de l\'appel: $e');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Erreur lors de l\'appel : $e'),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+}
+void _showCopySnackBar(BuildContext context, String number) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(
+          'Impossible d\'ouvrir l\'application Téléphone.\nNuméro : $number'),
+      action: SnackBarAction(
+        label: 'Copier',
+        onPressed: () {
+          Clipboard.setData(ClipboardData(text: number));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text('Numéro copié dans le presse-papiers')),
+          );
+        },
+      ),
+    ),
+  );
+}
+
 
 class _StatusRow extends StatelessWidget {
   final IconData icon;

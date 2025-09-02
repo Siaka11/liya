@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'colis_info_page.dart';
 import 'lieu_page.dart';
 import 'package:liya/modules/home/presentation/pages/home_page.dart';
 import 'package:liya/modules/parcel/feature/presentation/pages/parcel_home_page.dart';
@@ -60,14 +61,10 @@ class TypeProduitPage extends StatelessWidget {
                   Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (_) => LieuPage(
-                              phoneNumber: phoneNumber,
-                              typeProduit: 'Colis',
-                              isReception: isReception,
-                              ville:
-                                  'Yamoussoukro ou ville voisine', // Ville par défaut
-                              colisDescription: null,
-                              colisList: null)));
+                          builder: (_) => ColisInfoPage(
+                            phoneNumber: phoneNumber,
+                            isReception: isReception,
+                          )));
                 }),
           ],
         ),

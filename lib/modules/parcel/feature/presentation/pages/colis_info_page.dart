@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'ville_page.dart';
+import 'lieu_page.dart';
 
 class ColisInfoPage extends StatefulWidget {
   final String phoneNumber;
@@ -33,7 +33,7 @@ class _ColisInfoPageState extends State<ColisInfoPage> {
     });
   }
 
-  void _onConfirm() {
+  void _onConfirm(String phoneNumber, String isReception) {
     if (_descController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text('Veuillez remplir le champs description')));
@@ -46,12 +46,13 @@ class _ColisInfoPageState extends State<ColisInfoPage> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => VillePage(
-          phoneNumber: widget.phoneNumber,
+        builder: (_) => LieuPage(
+          phoneNumber: phoneNumber,
           typeProduit: 'Colis',
-          isReception: widget.isReception,
-          colisDescription: _descController.text,
-          colisList: colisListMap,
+          isReception: isReception == 'true',
+          ville: 'Yamoussoukro ou ville voisine', // Ville par défaut
+          colisDescription: _descController.text, // Description du colis
+          colisList: colisListMap, // Liste des colis
         ),
       ),
     );
@@ -184,7 +185,8 @@ class _ColisInfoPageState extends State<ColisInfoPage> {
                       borderRadius: BorderRadius.circular(16)),
                   padding: const EdgeInsets.symmetric(vertical: 18),
                 ),
-                onPressed: _onConfirm,
+                onPressed: () => _onConfirm(
+                    widget.phoneNumber, widget.isReception.toString()),
                 child: const Text('Confirmer', style: TextStyle(fontSize: 18)),
               ),
             ),
