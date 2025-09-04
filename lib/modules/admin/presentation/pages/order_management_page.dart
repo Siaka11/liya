@@ -102,6 +102,8 @@ class _OrderManagementPageState extends ConsumerState<OrderManagementPage> {
           'assignedAt': data['assignedAt'], // Date d'assignation
           'expediteurNom': data['expediteurNom'],
           'expediteurLieu': data['expediteurLieu'],
+          'expediteurPhone': data['expediteurPhone'],
+          'destinatairePhone': data['destinatairePhone'],
           'destinataireNom': data['destinataireNom'],
           'destinataireLieu': data['destinataireLieu'],
           'createdAt': data['createdAt'] != null

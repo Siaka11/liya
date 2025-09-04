@@ -39,7 +39,7 @@ class ParcelDetailsFullPage extends StatelessWidget {
             child: Text(
               _getStatusText(parcelData['status']),
               style: TextStyle(
-                color: _getStatusColor(parcelData['status']),
+                color: Colors.white,
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
               ),
@@ -85,8 +85,8 @@ class ParcelDetailsFullPage extends StatelessWidget {
                         'N/A'),
                 _buildInfoRow('Lieu de l\'expéditeur',
                     parcelData['expediteurLieu'] ?? 'N/A'),
-                _buildInfoRow('Téléphone du client',
-                    parcelData['phoneNumber'] ?? parcelData['phone'] ?? 'N/A'),
+                _buildInfoRow('Téléphone',
+                    parcelData['expediteurPhone'] ?? parcelData['expediteurPhone'] ?? 'N/A'),
               ],
             ),
 
@@ -104,6 +104,8 @@ class ParcelDetailsFullPage extends StatelessWidget {
                         'N/A'),
                 _buildInfoRow('Lieu du destinataire',
                     parcelData['destinataireLieu'] ?? 'N/A'),
+                _buildInfoRow('Téléphone',
+                    parcelData['destinatairePhone'] ?? parcelData['phone'] ?? 'N/A'),
               ],
             ),
 
