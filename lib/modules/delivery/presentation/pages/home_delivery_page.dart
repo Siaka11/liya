@@ -14,6 +14,8 @@ import 'dart:async';
 import '../../application/home_delivery_provider.dart';
 import '../../domain/entities/delivery_order.dart';
 import 'order_details_page.dart';
+import '../../../restaurant/features/order/presentation/pages/order_details_full_page.dart';
+import '../../../parcel/feature/presentation/pages/parcel_details_full_page.dart';
 
 @RoutePage()
 class HomeDeliveryPage extends ConsumerStatefulWidget {

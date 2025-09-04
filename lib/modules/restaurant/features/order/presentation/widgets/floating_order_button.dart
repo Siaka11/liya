@@ -166,6 +166,8 @@ class FloatingOrderButton extends ConsumerWidget {
   }
 
   void _showOrderDetails(BuildContext context, WidgetRef ref) {
+    // Pour l'instant, gardons le modal bottom sheet pour les commandes en cours
+    // Les nouvelles pages sont pour les commandes terminées/historique
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,

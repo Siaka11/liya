@@ -61,7 +61,7 @@ class AdminDashboardPage extends StatelessWidget {
               mainAxisSpacing: 16,
               childAspectRatio: 1.2,
               children: [
-                AdminMenuCard(
+                /*AdminMenuCard(
                   title: 'Livreurs',
                   subtitle: 'Gérer les livreurs',
                   icon: Icons.delivery_dining,
@@ -70,7 +70,7 @@ class AdminDashboardPage extends StatelessWidget {
                     AutoRouter.of(context)
                         .push(const DeliveryUserManagementRoute());
                   },
-                ),
+                ),*/
                 AdminMenuCard(
                   title: 'Commandes',
                   subtitle: 'Suivre les commandes',
@@ -134,7 +134,7 @@ class AdminDashboardPage extends StatelessWidget {
                     AutoRouter.of(context).push(const DishManagementRoute());
                   },
                 ),
-                AdminMenuCard(
+               /* AdminMenuCard(
                   title: 'Promotions',
                   subtitle: 'Gérer les promotions',
                   icon: Icons.local_offer,
@@ -143,7 +143,7 @@ class AdminDashboardPage extends StatelessWidget {
                     AutoRouter.of(context)
                         .push(const PromotionManagementRoute());
                   },
-                ),
+                ),*/
                 AdminMenuCard(
                   title: 'Catégories',
                   subtitle: 'Gérer les catégories',

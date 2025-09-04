@@ -6,6 +6,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:liya/core/services/notification_service.dart';
+import 'package:liya/core/services/connection_manager.dart';
 import 'core/singletons.dart';
 import 'firebase_options.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
@@ -49,8 +50,10 @@ void main() async {
 
   // ⚡️ Activer App Check avec App Attest
   await FirebaseAppCheck.instance.activate(
-    appleProvider: AppleProvider.appAttest, // ou deviceCheck si App Attest pas dispo
-    webProvider: ReCaptchaV3Provider('6LeyyaArAAAAANN4NE9DyZ6PUjqxehmHRebNsWzN'),
+    appleProvider:
+        AppleProvider.appAttest, // ou deviceCheck si App Attest pas dispo
+    webProvider:
+        ReCaptchaV3Provider('6LeyyaArAAAAANN4NE9DyZ6PUjqxehmHRebNsWzN'),
   );
 
   // 🔐 Initialiser reCAPTCHA Enterprise
@@ -61,12 +64,14 @@ void main() async {
     print('⚠️ Erreur initialisation reCAPTCHA Enterprise: $e');
   }
 
-
   // Configurer Firebase Messaging
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
   // Initialiser les singletons
   await initSingletons();
+
+  // Initialiser le gestionnaire de connexion
+  await ConnectionManager().initialize();
 
   // Forcer le nettoyage des verification_id au démarrage
   FirebaseAuthService().forceClearVerificationId();

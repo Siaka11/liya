@@ -3,6 +3,11 @@ import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
 import 'package:liya/modules/parcel/feature/presentation/pages/parcel_home_page.dart';
 import 'package:liya/modules/restaurant/features/order/presentation/pages/order_detail_page.dart';
 import 'package:liya/modules/restaurant/features/profile/presentation/pages/profile_page.dart';
+import 'package:liya/modules/restaurant/features/profile/presentation/pages/edit_profile_page.dart';
+import 'package:liya/modules/restaurant/features/profile/presentation/pages/edit_email_page.dart';
+import 'package:liya/modules/restaurant/features/profile/presentation/pages/edit_phone_page.dart';
+import 'package:liya/modules/restaurant/features/order/presentation/pages/order_details_full_page.dart';
+import 'package:liya/modules/parcel/feature/presentation/pages/parcel_details_full_page.dart';
 import 'package:liya/modules/delivery/presentation/pages/delivery_admin_dashboard_page.dart';
 import 'package:liya/modules/delivery/presentation/pages/delivery_navigation_page.dart';
 import 'package:liya/modules/admin/presentation/pages/restaurant_management_page.dart';
@@ -88,10 +93,15 @@ class AppRouter extends $AppRouter implements AutoRouteGuard {
         AutoRoute(page: ShareLocationRoute.page),
         AutoRoute(page: HomeRestaurantRoute.page),
         AutoRoute(page: DishDetailRoute.page),
-        AutoRoute(page: RestaurantDetailRoute.page),
+        AutoRoute(page: ModernRestaurantDetailRoute.page),
         AutoRoute(page: CartRoute.page),
         AutoRoute(page: CheckoutRoute.page),
         AutoRoute(page: ProfileRoute.page),
+        AutoRoute(page: EditProfileRoute.page),
+        AutoRoute(page: EditEmailRoute.page),
+        AutoRoute(page: EditPhoneRoute.page),
+        AutoRoute(page: OrderDetailsFullRoute.page),
+        AutoRoute(page: ParcelDetailsFullRoute.page),
         AutoRoute(page: SearchRoute.page),
         AutoRoute(page: OrderListRoute.page),
         AutoRoute(page: OrderDetailRoute.page),

@@ -2,6 +2,8 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../restaurant/features/order/presentation/pages/order_details_full_page.dart';
+import '../../../parcel/feature/presentation/pages/parcel_details_full_page.dart';
 
 @RoutePage()
 class OrderManagementPage extends ConsumerStatefulWidget {
@@ -42,17 +44,26 @@ class _OrderManagementPageState extends ConsumerState<OrderManagementPage> {
           'type': 'restaurant',
           'orderNumber': doc.id,
           'clientName':
-              data['delivery_name'] ?? data['phoneNumber'] ?? 'Client inconnu',
-          'clientPhone': data['delivery_phone_number'] ??
-              data['phone'] ??
-              data['phoneNumber'] ??
-              'Téléphone inconnu',
+              data['customerName'] ?? data['delivery_name'] ?? 'Client inconnu',
+          'clientPhone':
+              data['phoneNumber'] ?? data['phone'] ?? 'Téléphone inconnu',
           'restaurantName': data['restaurantName'] ?? 'Restaurant inconnu',
           'totalAmount': (data['total'] ?? 0.0).toDouble(),
           'status': data['status'] ?? 'reception',
           'deliveryAddress': data['address'] ?? 'Adresse inconnue',
-          'deliveryUserId': data['deliveryUserId'],
-          'deliveryUserName': data['deliveryUserName'],
+          'assignedTo': data['assignedTo'], // Téléphone du livreur assigné
+          'assignedToName': data['assignedToName'], // Nom du livreur assigné
+          'assignedAt': data['assignedAt'], // Date d'assignation
+          'deliveryFee': data['deliveryFee'] ?? 0.0,
+          'subtotal': data['subtotal'] ?? 0.0,
+          'deliveryTime': data['deliveryTime'] ?? 0,
+          'distance': data['distance'] ?? 0,
+          'latitude': data['latitude'],
+          'longitude': data['longitude'],
+          'deliveryInstructions': data['deliveryInstructions'],
+          'lastUpdated': data['lastUpdated'],
+          'phone': data['phone'],
+          'phoneNumber': data['phoneNumber'],
           'createdAt': data['createdAt'] != null
               ? (data['createdAt'] is Timestamp
                   ? (data['createdAt'] as Timestamp).toDate()
@@ -86,14 +97,20 @@ class _OrderManagementPageState extends ConsumerState<OrderManagementPage> {
               data['expediteurLieu'] ?? 'Adresse de collecte inconnue',
           'deliveryAddress':
               data['destinataireLieu'] ?? 'Adresse de livraison inconnue',
-          'deliveryUserId': data['deliveryUserId'],
-          'deliveryUserName': data['deliveryUserName'],
+          'assignedTo': data['assignedTo'], // Téléphone du livreur assigné
+          'assignedToName': data['assignedToName'], // Nom du livreur assigné
+          'assignedAt': data['assignedAt'], // Date d'assignation
+          'expediteurNom': data['expediteurNom'],
+          'expediteurLieu': data['expediteurLieu'],
+          'destinataireNom': data['destinataireNom'],
+          'destinataireLieu': data['destinataireLieu'],
           'createdAt': data['createdAt'] != null
               ? (data['createdAt'] is Timestamp
                   ? (data['createdAt'] as Timestamp).toDate()
                   : DateTime.tryParse(data['createdAt'].toString()) ??
                       DateTime.now())
               : DateTime.now(),
+          'typeProduit': data['typeProduit'] ?? 'Type de produit inconnu',
         };
       }).toList();
 
@@ -155,6 +172,8 @@ class _OrderManagementPageState extends ConsumerState<OrderManagementPage> {
     switch (status) {
       case 'reception':
         return 'En réception';
+      case 'assigned':
+        return 'Assigné';
       case 'enRoute':
         return 'En route';
       case 'livre':
@@ -170,6 +189,8 @@ class _OrderManagementPageState extends ConsumerState<OrderManagementPage> {
     switch (status) {
       case 'reception':
         return Colors.orange;
+      case 'assigned':
+        return Colors.brown;
       case 'enRoute':
         return Colors.blue;
       case 'livre':
@@ -182,58 +203,25 @@ class _OrderManagementPageState extends ConsumerState<OrderManagementPage> {
   }
 
   void _showOrderDetails(Map<String, dynamic> order) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Détails de la commande'),
-        content: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildDetailRow('Numéro', order['orderNumber'] ?? 'N/A'),
-              _buildDetailRow(
-                  'Type',
-                  order['type'] == 'restaurant'
-                      ? '🍽️ Commande restaurant'
-                      : '📦 Colis'),
-              _buildDetailRow(
-                  'Client',
-                  order['delivery_name'] ??
-                      order['phoneNumber'] ??
-                      'Client inconnu'),
-              _buildDetailRow(
-                  'Téléphone',
-                  order['delivery_phone_number'] ??
-                      order['phone'] ??
-                      order['phoneNumber'] ??
-                      'Téléphone inconnu'),
-              if (order['type'] == 'restaurant') ...[
-                _buildDetailRow('Restaurant', order['restaurantName']),
-                _buildDetailRow(
-                    'Articles', '${order['items'].length} articles'),
-              ] else ...[
-                _buildDetailRow('Description', order['description']),
-                _buildDetailRow('Adresse de collecte', order['pickupAddress']),
-              ],
-              _buildDetailRow('Adresse de livraison', order['deliveryAddress']),
-              _buildDetailRow('Montant', '${order['totalAmount']} €'),
-              _buildDetailRow('Statut', getStatusText(order['status'])),
-              _buildDetailRow(
-                  'Livreur', order['deliveryUserName'] ?? 'Non assigné'),
-              _buildDetailRow('Date',
-                  '${order['createdAt'].day}/${order['createdAt'].month}/${order['createdAt'].year} à ${order['createdAt'].hour}:${order['createdAt'].minute.toString().padLeft(2, '0')}'),
-            ],
-          ),
+    // Naviguer vers la page de détails appropriée
+    if (order['type'] == 'restaurant' ||
+        order['id']?.toString().startsWith('RESTO') == true) {
+      // Commande restaurant
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => OrderDetailsFullPage(orderData: order),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Fermer'),
-          ),
-        ],
-      ),
-    );
+      );
+    } else {
+      // Colis
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ParcelDetailsFullPage(parcelData: order),
+        ),
+      );
+    }
   }
 
   Widget _buildDetailRow(String label, String value) {

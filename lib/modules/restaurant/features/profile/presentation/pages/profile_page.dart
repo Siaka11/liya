@@ -6,18 +6,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:url_launcher/url_launcher.dart';
-
 import '../../../../../../core/local_storage_factory.dart';
 import '../../../../../../core/services/phone_call_service.dart';
 import '../../../../../../core/singletons.dart';
-import '../../../../../../routes/app_router.gr.dart';
-import '../../../../../auth/auth_provider.dart';
-import '../../../../../auth/info_user_provider.dart';
-import '../../../../../home/application/home_provider.dart';
 import '../../../home/presentation/widget/navigation_footer.dart';
 import '../providers/profile_provider.dart';
 import '../../../../../../core/services/account_management_service.dart';
+import 'edit_profile_page.dart';
+import 'edit_email_page.dart';
+import 'edit_phone_page.dart';
+import '../../../../../../core/ui/widgets/connectivity_debug_widget.dart';
 
 @RoutePage(name: 'ProfileRoute')
 class ProfilePage extends ConsumerWidget {
@@ -153,6 +151,35 @@ class ProfilePage extends ConsumerWidget {
                             ],
                           ),
                         ),
+                        // Bouton d'édition
+                        IconButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => EditProfilePage(
+                                  initialData: {
+                                    'id': phoneNumber,
+                                    'name': profile.name,
+                                    'lastName':
+                                        profile.name.split(' ').length > 1
+                                            ? profile.name
+                                                .split(' ')
+                                                .sublist(1)
+                                                .join(' ')
+                                            : '',
+                                    'email': profile.email,
+                                    'phoneNumber': phoneNumber,
+                                    'address': profile.address.isNotEmpty
+                                        ? profile.address.first
+                                        : '',
+                                  },
+                                ),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.edit, color: Colors.blue),
+                        ),
                       ],
                     ),
                   ),
@@ -212,19 +239,53 @@ class ProfilePage extends ConsumerWidget {
                           TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                   ),
+                  // Modifier l'email
                   ListTile(
-                    leading: const Icon(Icons.contact_support_outlined),
-                    title: const Text('Contact'),
-                    subtitle: Text(phoneNumber),
+                    leading: const Icon(Icons.email_outlined),
+                    title: const Text('Modifier l\'email'),
+                    subtitle: Text(profile.email),
+                    trailing: const Icon(Icons.chevron_right),
                     onTap: () {
-                      // TODO: Naviguer vers contact
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => EditEmailPage(
+                            currentEmail: profile.email,
+                            userId: phoneNumber,
+                          ),
+                        ),
+                      );
                     },
                   ),
+
+                  // Modifier le numéro de téléphone
+                  ListTile(
+                    leading: const Icon(Icons.phone_outlined),
+                    title: const Text('Modifier le numéro'),
+                    subtitle: Text(phoneNumber),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => EditPhonePage(
+                            currentPhone: phoneNumber,
+                            userId: phoneNumber,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+
                   ListTile(
                     leading: const Icon(Icons.location_on_outlined),
                     title: const Text('Adresses'),
                     subtitle: Text(
                         '${profile.address.length} adress${profile.address.length > 1 ? "es" : ""}'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () {
+                      // TODO: Naviguer vers la gestion des adresses
+                    },
                   ),
                 ],
               ),

@@ -5,6 +5,8 @@ import 'package:liya/modules/auth/auth_provider.dart'; // Votre AuthProvider
 import 'package:liya/core/ui/components/custom_button.dart'; // Vos composants UI
 import 'package:liya/core/ui/components/custom_field.dart'; // Vos composants UI
 import 'package:liya/routes/app_router.gr.dart'; // Vos routes générées
+import 'package:liya/core/services/connection_manager.dart';
+import 'package:liya/core/ui/widgets/connection_status_widget.dart';
 
 import '../../core/ui/theme/theme.dart'; // Votre thème UI
 import '../home/application/home_provider.dart'; // Votre HomeProvider
@@ -25,6 +27,9 @@ class _AuthPageState extends ConsumerState<AuthPage>
   bool _isSubmitting = false;
   bool _hasShownLengthError = false; // Pour éviter les SnackBar répétés
 
+  // Gestionnaire de connexion
+  final ConnectionManager _connectionManager = ConnectionManager();
+
   @override
   void initState() {
     super.initState();
@@ -42,6 +47,11 @@ class _AuthPageState extends ConsumerState<AuthPage>
 
     // Vérifier si l'utilisateur est déjà connecté
     _checkIfUserAlreadyAuthenticated();
+
+    // Définir le contexte pour le gestionnaire de connexion
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _connectionManager.setCurrentContext(context);
+    });
   }
 
   /// Vérifier si l'utilisateur est déjà authentifié
@@ -126,9 +136,23 @@ class _AuthPageState extends ConsumerState<AuthPage>
     }*/
 
     setState(() => _isSubmitting = true);
+
+    // Préparer les données d'authentification
+    final authData = {
+      'phone': _phoneController.text.trim(),
+      'timestamp': DateTime.now().toIso8601String(),
+    };
+
     try {
-      final needsOTP =
-          await ref.read(authProvider.notifier).sendOTP(_phoneController.text);
+      // Sauvegarder les données localement
+      await _connectionManager.saveRegistrationData(authData);
+
+      // Exécuter l'authentification avec gestion de connexion
+      final needsOTP = await _connectionManager.executeWithConnectionHandling(
+        () => ref.read(authProvider.notifier).sendOTP(_phoneController.text),
+        operationType: 'phone_authentication',
+        fallbackData: authData,
+      );
 
       if (mounted) {
         if (needsOTP) {
@@ -201,6 +225,12 @@ class _AuthPageState extends ConsumerState<AuthPage>
       if (mounted) {
         String errorMessage = 'Erreur: ${e.toString()}';
 
+        // Nettoyer les données locales en cas d'erreur non-réseau
+        if (!e.toString().toLowerCase().contains('network') &&
+            !e.toString().toLowerCase().contains('connection')) {
+          await _connectionManager.clearOfflineData();
+        }
+
         // Messages d'erreur plus spécifiques
         if (e.toString().contains('blocked all requests')) {
           errorMessage =
@@ -235,135 +265,138 @@ class _AuthPageState extends ConsumerState<AuthPage>
     return Scaffold(
       resizeToAvoidBottomInset:
           true, // Permet au contenu de se redimensionner quand le clavier s'ouvre
-      body: Stack(
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.orange.shade700, Colors.deepOrange.shade900],
-                begin: Alignment.bottomCenter,
-                end: Alignment.topCenter,
+      body: PageConnectionStatus(
+        showStatusBar: true,
+        child: Stack(
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.orange.shade700, Colors.deepOrange.shade900],
+                  begin: Alignment.bottomCenter,
+                  end: Alignment.topCenter,
+                ),
               ),
             ),
-          ),
-          AnimatedBuilder(
-            animation: _animation,
-            builder: (context, child) {
-              return Transform.translate(
-                offset: Offset(0, _animation.value * 300 - 60),
-                child: Opacity(
-                  opacity: 0.2,
-                  child: Image.asset(
-                    'assets/img/basilique.png',
-                    fit: BoxFit.cover,
-                    height: MediaQuery.of(context).size.height,
-                    width: MediaQuery.of(context).size.width,
+            AnimatedBuilder(
+              animation: _animation,
+              builder: (context, child) {
+                return Transform.translate(
+                  offset: Offset(0, _animation.value * 300 - 60),
+                  child: Opacity(
+                    opacity: 0.2,
+                    child: Image.asset(
+                      'assets/img/basilique.png',
+                      fit: BoxFit.cover,
+                      height: MediaQuery.of(context).size.height,
+                      width: MediaQuery.of(context).size.width,
+                    ),
                   ),
-                ),
-              );
-            },
-          ),
-          SingleChildScrollView(
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(26.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Image.asset(
-                        'assets/logo.png',
-                        fit: BoxFit.cover,
-                        height: 180.0,
-                        width: 180.0,
-                      ),
-                    ],
+                );
+              },
+            ),
+            SingleChildScrollView(
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(26.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Image.asset(
+                          'assets/logo.png',
+                          fit: BoxFit.cover,
+                          height: 180.0,
+                          width: 180.0,
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                Padding(
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        "VEUILLEZ SAISIR VOTRE NUMERO S'IL VOUS PLAÎT",
-                        style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 21,
-                            fontWeight: FontWeight.bold),
-                      ),
-                      const Text(
-                        "Ce numéro recevra un code de confirmation",
-                        style: TextStyle(color: Colors.white, fontSize: 13),
-                      ),
-                      const SizedBox(height: 30),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 55,
-                        child: CustomField(
-                          controller: _phoneController,
-                          fontSize: 21,
-                          prefixText:
-                              "", // Pas de préfixe pour éviter la suppression du 0
-                          paddingLeft: 12,
-                          keyboardType: TextInputType.phone,
-                          placeholder:
-                              "0707070707", // Placeholder pour guider l'utilisateur
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 20.0),
-                        child: Text(
-                          "Saisissez votre numéro complet (ex: 0701234567)",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      if (authState.errorMessage != null)
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Colors.red,
-                            borderRadius: BorderRadius.circular(5),
-                          ),
-                          padding: const EdgeInsets.all(8),
-                          child: Text(
-                            authState.errorMessage!,
-                            style: const TextStyle(color: Colors.white),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-                Align(
-                  alignment: Alignment.bottomCenter,
-                  child: Padding(
+                  Padding(
                     padding: const EdgeInsets.symmetric(
-                        vertical: 80, horizontal: 20),
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: CustomButton(
-                        text: _isSubmitting ? "Envoi en cours..." : "Envoyer",
-                        borderRadius: 50,
-                        onPressedButton: _isSubmitting ? null : _handleSubmit,
-                        bgColor: UIColors.white,
-                        fontSize: 18,
-                        paddingVertical: 18,
-                        width: 120,
+                        vertical: 20, horizontal: 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          "VEUILLEZ SAISIR VOTRE NUMERO S'IL VOUS PLAÎT",
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 21,
+                              fontWeight: FontWeight.bold),
+                        ),
+                        const Text(
+                          "Ce numéro recevra un code de confirmation",
+                          style: TextStyle(color: Colors.white, fontSize: 13),
+                        ),
+                        const SizedBox(height: 30),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 55,
+                          child: CustomField(
+                            controller: _phoneController,
+                            fontSize: 21,
+                            prefixText:
+                                "", // Pas de préfixe pour éviter la suppression du 0
+                            paddingLeft: 12,
+                            keyboardType: TextInputType.phone,
+                            placeholder:
+                                "0707070707", // Placeholder pour guider l'utilisateur
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 20.0),
+                          child: Text(
+                            "Saisissez votre numéro complet (ex: 0701234567)",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        if (authState.errorMessage != null)
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.red,
+                              borderRadius: BorderRadius.circular(5),
+                            ),
+                            padding: const EdgeInsets.all(8),
+                            child: Text(
+                              authState.errorMessage!,
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  Align(
+                    alignment: Alignment.bottomCenter,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 80, horizontal: 20),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: CustomButton(
+                          text: _isSubmitting ? "Envoi en cours..." : "Envoyer",
+                          borderRadius: 50,
+                          onPressedButton: _isSubmitting ? null : _handleSubmit,
+                          bgColor: UIColors.white,
+                          fontSize: 18,
+                          paddingVertical: 18,
+                          width: 120,
+                        ),
                       ),
                     ),
                   ),
-                ),
-                // Espace en bas pour éviter que le contenu soit caché par le clavier
-                SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
-              ],
+                  // Espace en bas pour éviter que le contenu soit caché par le clavier
+                  SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

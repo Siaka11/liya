@@ -7,6 +7,8 @@ import 'package:pinput/pinput.dart';
 import 'package:liya/core/ui/components/custom_button.dart';
 import 'package:liya/modules/auth/firebase_auth_service.dart';
 import 'package:liya/core/test_otp_debug.dart';
+import 'package:liya/core/services/connection_manager.dart';
+import 'package:liya/core/ui/widgets/connection_status_widget.dart';
 import 'dart:async';
 
 @RoutePage()
@@ -26,6 +28,9 @@ class _OtpPageState extends ConsumerState<OtpPage> {
   int _resendCountdown = 60; // 60 secondes d'attente
   bool _canResend = false;
 
+  // Gestionnaire de connexion
+  final ConnectionManager _connectionManager = ConnectionManager();
+
   @override
   void initState() {
     super.initState();
@@ -39,12 +44,18 @@ class _OtpPageState extends ConsumerState<OtpPage> {
 
     // Démarrer le timer pour le renvoi
     _startResendTimer();
+
+    // Définir le contexte pour le gestionnaire de connexion
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _connectionManager.setCurrentContext(context);
+    });
   }
 
   @override
   void dispose() {
     _pinController.dispose();
     _resendTimer?.cancel();
+    _connectionManager.clearCurrentContext();
     super.dispose();
   }
 

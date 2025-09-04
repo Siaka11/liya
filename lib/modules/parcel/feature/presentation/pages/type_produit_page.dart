@@ -6,13 +6,38 @@ import 'package:liya/modules/parcel/feature/presentation/pages/parcel_home_page.
 import 'package:liya/modules/restaurant/features/profile/presentation/pages/profile_page.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:liya/routes/app_router.gr.dart';
+import 'package:liya/core/services/connection_manager.dart';
+import 'package:liya/core/ui/widgets/connection_status_widget.dart';
 
-class TypeProduitPage extends StatelessWidget {
+class TypeProduitPage extends StatefulWidget {
   final String phoneNumber;
   final bool isReception;
   const TypeProduitPage(
       {Key? key, required this.phoneNumber, this.isReception = false})
       : super(key: key);
+
+  @override
+  State<TypeProduitPage> createState() => _TypeProduitPageState();
+}
+
+class _TypeProduitPageState extends State<TypeProduitPage> {
+  // Gestionnaire de connexion
+  final ConnectionManager _connectionManager = ConnectionManager();
+
+  @override
+  void initState() {
+    super.initState();
+    // Définir le contexte pour le gestionnaire de connexion
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _connectionManager.setCurrentContext(context);
+    });
+  }
+
+  @override
+  void dispose() {
+    _connectionManager.clearCurrentContext();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,6 +50,18 @@ class TypeProduitPage extends StatelessWidget {
         title: const Text('Je livre un colis',
             style: TextStyle(color: Colors.white)),
         centerTitle: true,
+        actions: [
+          // Widget de statut de connexion
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: Center(
+              child: ConnectionStatusWidget(
+                showWhenConnected: false,
+                showWhenDisconnected: true,
+              ),
+            ),
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24),
@@ -45,9 +82,9 @@ class TypeProduitPage extends StatelessWidget {
                       context,
                       MaterialPageRoute(
                           builder: (_) => LieuPage(
-                              phoneNumber: phoneNumber,
+                              phoneNumber: widget.phoneNumber,
                               typeProduit: 'Document',
-                              isReception: isReception,
+                              isReception: widget.isReception,
                               ville:
                                   'Yamoussoukro ou ville voisine', // Ville par défaut
                               colisDescription: null,
@@ -62,9 +99,9 @@ class TypeProduitPage extends StatelessWidget {
                       context,
                       MaterialPageRoute(
                           builder: (_) => ColisInfoPage(
-                            phoneNumber: phoneNumber,
-                            isReception: isReception,
-                          )));
+                                phoneNumber: widget.phoneNumber,
+                                isReception: widget.isReception,
+                              )));
                 }),
           ],
         ),

@@ -6,6 +6,8 @@ import '../../../../../routes/app_router.gr.dart';
 import '../providers/parcel_action_provider.dart';
 import '../../domain/entities/parcel.dart';
 import 'package:liya/core/local_storage_factory.dart';
+import 'package:liya/core/services/connection_manager.dart';
+import 'package:liya/core/ui/widgets/connection_status_widget.dart';
 import 'dart:convert';
 import 'parcel_home_page.dart';
 // Imports pour Google Places AutoComplete
@@ -57,11 +59,19 @@ class _LieuPageState extends ConsumerState<LieuPage> {
   // Ville sélectionnée
   String _selectedVille = '';
 
+  // Gestionnaire de connexion
+  final ConnectionManager _connectionManager = ConnectionManager();
+
   @override
   void initState() {
     super.initState();
     _selectedVille =
         widget.ville; // Initialiser avec la ville passée en paramètre
+
+    // Définir le contexte pour le gestionnaire de connexion
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _connectionManager.setCurrentContext(context);
+    });
     _loadExistingData();
   }
 
@@ -76,6 +86,7 @@ class _LieuPageState extends ConsumerState<LieuPage> {
     _destinatairePhoneController.dispose();
 
     _descriptionController.dispose();
+    _connectionManager.clearCurrentContext();
     super.dispose();
   }
 
@@ -250,6 +261,24 @@ class _LieuPageState extends ConsumerState<LieuPage> {
           _selectedVille; // Utiliser la ville sélectionnée par l'utilisateur
       final action = ref.read(parcelActionProvider);
 
+      // Préparer les données de colis
+      final parcelData = {
+        'phoneNumber': widget.phoneNumber,
+        'typeProduit': widget.typeProduit,
+        'isReception': widget.isReception,
+        'ville': ville,
+        'colisDescription': widget.colisDescription,
+        'colisList': widget.colisList,
+        'expediteurNom': _expediteurNomController.text.trim(),
+        'expediteurLieu': _expediteurLieuController.text.trim(),
+        'expediteurPhone': _expediteurPhoneController.text.trim(),
+        'destinataireNom': _destinataireNomController.text.trim(),
+        'destinataireLieu': _destinataireLieuController.text.trim(),
+        'destinatairePhone': _destinatairePhoneController.text.trim(),
+        'descriptionColis': _descriptionController.text.trim(),
+        'timestamp': DateTime.now().toIso8601String(),
+      };
+
       // Récupération valeurs
       final expediteurNom = _expediteurNomController.text.trim();
       final expediteurLieu = _expediteurLieuController.text.trim();
@@ -328,9 +357,20 @@ class _LieuPageState extends ConsumerState<LieuPage> {
       print('📦 Ville: ${parcel.ville}');
       print('📦 Type produit: ${widget.typeProduit}');
 
-      await action.addParcel.call(parcel);
+      // Sauvegarder les données localement
+      await _connectionManager.saveParcelData(parcelData);
+
+      // Exécuter la sauvegarde avec gestion de connexion
+      await _connectionManager.executeWithConnectionHandling(
+        () => action.addParcel.call(parcel),
+        operationType: 'parcel_save',
+        fallbackData: parcelData,
+      );
+
       if (mounted) {
         print('✅ Colis sauvegardé avec succès dans Firebase');
+        // Nettoyer les données locales après succès
+        await _connectionManager.clearOfflineData();
       }
     } catch (e) {
       print('❌ Erreur lors de la sauvegarde du colis: $e');
@@ -369,6 +409,18 @@ class _LieuPageState extends ConsumerState<LieuPage> {
           style: const TextStyle(color: Colors.white),
         ),
         centerTitle: true,
+        actions: [
+          // Widget de statut de connexion
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: Center(
+              child: ConnectionStatusWidget(
+                showWhenConnected: false,
+                showWhenDisconnected: true,
+              ),
+            ),
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         child: Padding(

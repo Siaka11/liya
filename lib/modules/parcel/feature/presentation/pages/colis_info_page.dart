@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'lieu_page.dart';
+import 'package:liya/core/services/connection_manager.dart';
+import 'package:liya/core/ui/widgets/connection_status_widget.dart';
 
 class ColisInfoPage extends StatefulWidget {
   final String phoneNumber;
@@ -18,8 +20,27 @@ class _ColisInfoPageState extends State<ColisInfoPage> {
     _ColisBox(),
   ];
 
+  // Gestionnaire de connexion
+  final ConnectionManager _connectionManager = ConnectionManager();
+
   int get totalColis => colisList.fold(0, (sum, c) => sum + (c.nombre ?? 0));
   int get totalPoids => colisList.fold(0, (sum, c) => sum + (c.poids ?? 0));
+
+  @override
+  void initState() {
+    super.initState();
+    // Définir le contexte pour le gestionnaire de connexion
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _connectionManager.setCurrentContext(context);
+    });
+  }
+
+  @override
+  void dispose() {
+    _descController.dispose();
+    _connectionManager.clearCurrentContext();
+    super.dispose();
+  }
 
   void _addColis() {
     setState(() {
@@ -33,7 +54,7 @@ class _ColisInfoPageState extends State<ColisInfoPage> {
     });
   }
 
-  void _onConfirm(String phoneNumber, String isReception) {
+  void _onConfirm(String phoneNumber, String isReception) async {
     if (_descController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text('Veuillez remplir le champs description')));
@@ -43,25 +64,49 @@ class _ColisInfoPageState extends State<ColisInfoPage> {
     // Convertir les objets _ColisBox en Map<String, dynamic>
     final colisListMap = colisList.map((colis) => colis.toMap()).toList();
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => LieuPage(
-          phoneNumber: phoneNumber,
-          typeProduit: 'Colis',
-          isReception: isReception == 'true',
-          ville: 'Yamoussoukro ou ville voisine', // Ville par défaut
-          colisDescription: _descController.text, // Description du colis
-          colisList: colisListMap, // Liste des colis
-        ),
-      ),
-    );
-  }
+    // Préparer les données de colis
+    final parcelData = {
+      'phoneNumber': phoneNumber,
+      'isReception': isReception,
+      'description': _descController.text,
+      'colisList': colisListMap,
+      'timestamp': DateTime.now().toIso8601String(),
+    };
 
-  @override
-  void dispose() {
-    _descController.dispose();
-    super.dispose();
+    try {
+      // Sauvegarder les données localement
+      await _connectionManager.saveParcelData(parcelData);
+
+      // Exécuter la navigation avec gestion de connexion
+      await _connectionManager.executeWithConnectionHandling(
+        () async {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => LieuPage(
+                phoneNumber: phoneNumber,
+                typeProduit: 'Colis',
+                isReception: isReception == 'true',
+                ville: 'Yamoussoukro ou ville voisine', // Ville par défaut
+                colisDescription: _descController.text, // Description du colis
+                colisList: colisListMap, // Liste des colis
+              ),
+            ),
+          );
+        },
+        operationType: 'parcel_navigation',
+        fallbackData: parcelData,
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -74,6 +119,18 @@ class _ColisInfoPageState extends State<ColisInfoPage> {
         leading: const BackButton(color: Colors.white),
         title: const Text('Colis', style: TextStyle(color: Colors.white)),
         centerTitle: true,
+        actions: [
+          // Widget de statut de connexion
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: Center(
+              child: ConnectionStatusWidget(
+                showWhenConnected: false,
+                showWhenDisconnected: true,
+              ),
+            ),
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),

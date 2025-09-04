@@ -29,15 +29,19 @@ class HomeLocalDataSourceImpl implements HomeLocalDataSource {
     print('🔄 Role de l\'utilisateur (mis à jour): $role');
 
     return [
-      const HomeOptionModel(
-        title: 'Je commande un plat',
-        icon: 'fastfood',
-      ),
-      const HomeOptionModel(
-        title: "J'expédie un colis",
-        icon: 'local_shipping',
-      ),
-      if (role == 'admin' || role == 'livreur') ...[
+      if (role == 'client' || role == 'admin' ) ...[
+        const HomeOptionModel(
+          title: 'Je commande un plat',
+          icon: 'fastfood',
+        ),
+      ],
+      if (role == 'client' || role == 'admin') ...[
+        const HomeOptionModel(
+          title: "J'expédie un colis",
+          icon: 'local_shipping',
+        ),
+      ],
+      if (role == 'livreur') ...[
         const HomeOptionModel(
           title: 'Je livre',
           icon: 'delivery_dining',

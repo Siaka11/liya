@@ -1202,6 +1202,9 @@ PODS:
     - Firebase/Firestore (= 11.15.0)
     - firebase_core
     - Flutter
+  - connectivity_plus (0.0.1):
+    - Flutter
+    - ReachabilitySwift
   - device_info_plus (0.0.1):
     - Flutter
   - Firebase/Analytics (11.15.0):
@@ -1546,6 +1549,7 @@ PODS:
   - permission_handler_apple (9.3.0):
     - Flutter
   - PromisesObjC (2.4.0)
+  - ReachabilitySwift (5.2.4)
   - recaptcha_enterprise_flutter (18.7.1):
     - Flutter
     - RecaptchaEnterprise (<= 18.7.1, >= 18.7.0)
@@ -1568,6 +1572,7 @@ PODS:
 
 DEPENDENCIES:
   - cloud_firestore (from `.symlinks/plugins/cloud_firestore/ios`)
+  - connectivity_plus (from `.symlinks/plugins/connectivity_plus/ios`)
   - device_info_plus (from `.symlinks/plugins/device_info_plus/ios`)
   - firebase_analytics (from `.symlinks/plugins/firebase_analytics/ios`)
   - firebase_app_check (from `.symlinks/plugins/firebase_app_check/ios`)
@@ -1636,6 +1641,7 @@ SPEC REPOS:
     - leveldb-library
     - nanopb
     - PromisesObjC
+    - ReachabilitySwift
     - RecaptchaEnterprise
     - RecaptchaEnterpriseSDK
     - RecaptchaInterop
@@ -1644,6 +1650,8 @@ SPEC REPOS:
 EXTERNAL SOURCES:
   cloud_firestore:
     :path: ".symlinks/plugins/cloud_firestore/ios"
+  connectivity_plus:
+    :path: ".symlinks/plugins/connectivity_plus/ios"
   device_info_plus:
     :path: ".symlinks/plugins/device_info_plus/ios"
   firebase_analytics:
@@ -1704,6 +1712,7 @@ SPEC CHECKSUMS:
   AppCheckCore: cc8fd0a3a230ddd401f326489c99990b013f0c4f
   BoringSSL-GRPC: dded2a44897e45f28f08ae87a55ee4bcd19bc508
   cloud_firestore: 8b8ad857da9a98527dab9c7ae520d0eba975bef9
+  connectivity_plus: 481668c94744c30c53b8895afb39159d1e619bdf
   device_info_plus: 21fcca2080fbcd348be798aa36c3e5ed849eefbe
   Firebase: d99ac19b909cd2c548339c2241ecd0d1599ab02e
   firebase_analytics: 740475b8bf6f9a79b04c2d55fe226a60679fe593
@@ -1757,6 +1766,7 @@ SPEC CHECKSUMS:
   path_provider_foundation: 080d55be775b7414fd5a5ef3ac137b97b097e564
   permission_handler_apple: 4ed2196e43d0651e8ff7ca3483a069d469701f2d
   PromisesObjC: f5707f49cb48b9636751c5b2e7d227e43fba9f47
+  ReachabilitySwift: 32793e867593cfc1177f5d16491e3a197d2fccda
   recaptcha_enterprise_flutter: 00b38414c923503e20fecd7170e6b2c4094265b6
   RecaptchaEnterprise: a5914ad9db6ff79eaca7258d82ecef6f10009936
   RecaptchaEnterpriseSDK: 5e72d7f19d2f679b68c25071c33b40f817e21149
