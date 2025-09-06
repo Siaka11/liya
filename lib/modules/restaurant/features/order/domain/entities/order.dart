@@ -1,4 +1,4 @@
-enum OrderStatus { reception, enRoute, livre, nonLivre }
+enum OrderStatus { reception, assigned, enRoute, livre, nonLivre }
 
 class Order {
   final String id;

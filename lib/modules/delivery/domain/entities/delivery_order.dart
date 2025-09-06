@@ -1,5 +1,6 @@
 enum DeliveryStatus {
   reception, // Commande reçue, en attente d'assignation
+  assigned, // Commande assignée à un livreur
   enRoute, // En cours de livraison
   livre, // Livraison terminée avec succès
   nonLivre, // Livraison échouée/annulée

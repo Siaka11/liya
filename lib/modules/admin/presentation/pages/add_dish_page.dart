@@ -390,7 +390,7 @@ class _AddDishPageState extends State<AddDishPage> {
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              prefixIcon: const Icon(Icons.attach_money),
+                              prefixIcon: const Icon(Icons.money),
                               filled: true,
                               fillColor: Colors.grey[50],
                             ),

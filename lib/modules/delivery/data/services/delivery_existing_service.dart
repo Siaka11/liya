@@ -620,7 +620,7 @@ class DeliveryExistingService {
       case 'enRoute':
         return DeliveryStatus.enRoute;
       case 'assigned': // Nouveau statut pour les commandes assignées
-        return DeliveryStatus.enRoute;
+        return DeliveryStatus.assigned;
       case 'livre':
         return DeliveryStatus.livre;
       case 'nonLivre':
@@ -634,6 +634,8 @@ class DeliveryExistingService {
     switch (status) {
       case DeliveryStatus.reception:
         return 'reception';
+      case DeliveryStatus.assigned:
+        return 'assigned';
       case DeliveryStatus.enRoute:
         return 'enRoute';
       case DeliveryStatus.livre:
@@ -647,6 +649,8 @@ class DeliveryExistingService {
     switch (status) {
       case DeliveryStatus.reception:
         return 'reception';
+      case DeliveryStatus.assigned:
+        return 'assigned';
       case DeliveryStatus.enRoute:
         return 'enRoute';
       case DeliveryStatus.livre:
@@ -660,6 +664,8 @@ class DeliveryExistingService {
     switch (status) {
       case DeliveryStatus.reception:
         return 'reception';
+      case DeliveryStatus.assigned:
+        return 'assigned';
       case DeliveryStatus.enRoute:
         return 'enRoute';
       case DeliveryStatus.livre:

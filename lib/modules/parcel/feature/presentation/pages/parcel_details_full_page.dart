@@ -112,7 +112,7 @@ class ParcelDetailsFullPage extends StatelessWidget {
             const SizedBox(height: 16),
 
             // Informations livreur
-            _buildInfoCard(
+          /*  _buildInfoCard(
               title: 'Informations du livreur',
               icon: Icons.delivery_dining,
               children: [
@@ -120,13 +120,13 @@ class ParcelDetailsFullPage extends StatelessWidget {
                     parcelData['assignedToName'] ?? 'Non assigné'),
                 _buildInfoRow('Téléphone du livreur',
                     parcelData['assignedTo'] ?? 'Non assigné'),
-                /*_buildInfoRow(
+                *//*_buildInfoRow(
                     'Date d\'assignation',
                     parcelData['assignedAt'] != null
                         ? _formatDate(parcelData['assignedAt'])
-                        : 'Non assigné'),*/
+                        : 'Non assigné'),*//*
               ],
-            ),
+            ),*/
 
             const SizedBox(height: 16),
 
@@ -172,7 +172,7 @@ class ParcelDetailsFullPage extends StatelessWidget {
               const SizedBox(height: 16),
 
             // Informations de livraison
-            _buildInfoCard(
+            /*_buildInfoCard(
               title: 'Informations de livraison',
               icon: Icons.local_shipping,
               children: [
@@ -182,7 +182,7 @@ class ParcelDetailsFullPage extends StatelessWidget {
                     parcelData['instructions'].isNotEmpty)
                   _buildInfoRow('Instructions', parcelData['instructions']),
               ],
-            ),
+            ),*/
 
             const SizedBox(height: 16),
 
@@ -199,7 +199,7 @@ class ParcelDetailsFullPage extends StatelessWidget {
             if (parcelData['prix'] != null) const SizedBox(height: 16),
 
             // Informations techniques
-            _buildInfoCard(
+           /* _buildInfoCard(
               title: 'Informations techniques',
               icon: Icons.info_outline,
               children: [
@@ -210,7 +210,7 @@ class ParcelDetailsFullPage extends StatelessWidget {
                   _buildInfoRow('Coordonnées',
                       '${parcelData['latitude']}, ${parcelData['longitude']}'),
               ],
-            ),
+            ),*/
 
             const SizedBox(height: 32),
           ],

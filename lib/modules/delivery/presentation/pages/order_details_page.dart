@@ -105,7 +105,7 @@ class _OrderDetailsPageState extends ConsumerState<OrderDetailsPage> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  Text(
+                  /*Text(
                     '${widget.order.deliveryFee.toStringAsFixed(0)} FCFA',
                     style: const TextStyle(
                       color: Colors.white,
@@ -119,7 +119,7 @@ class _OrderDetailsPageState extends ConsumerState<OrderDetailsPage> {
                       color: Colors.white70,
                       fontSize: 16,
                     ),
-                  ),
+                  ),*/
                 ],
               ),
             ),
@@ -150,12 +150,12 @@ class _OrderDetailsPageState extends ConsumerState<OrderDetailsPage> {
                     children: [
                       _buildInfoRow('ID', widget.order.id),
                       _buildInfoRow('Description', widget.order.description),
-                      _buildInfoRow('Montant',
+                     /* _buildInfoRow('Montant',
                           '${widget.order.amount.toStringAsFixed(0)} FCFA'),
                       _buildInfoRow('Frais de livraison',
                           '${widget.order.deliveryFee.toStringAsFixed(0)} FCFA'),
                       _buildInfoRow('Total',
-                          '${(widget.order.amount + widget.order.deliveryFee).toStringAsFixed(0)} FCFA'),
+                          '${(widget.order.amount + widget.order.deliveryFee).toStringAsFixed(0)} FCFA'),*/
                       _buildInfoRow(
                           'Statut', _getStatusText(widget.order.status)),
                       if (widget.order.createdAt != null)

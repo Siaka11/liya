@@ -92,15 +92,15 @@ class DistanceService {
     // - 15+ km : 1250 FCFA
 
     if (distanceInKm <= 2) {
-      return 300;
-    } else if (distanceInKm <= 5) {
       return 500;
-    } else if (distanceInKm <= 10) {
-      return 750;
-    } else if (distanceInKm <= 15) {
+    } else if (distanceInKm <= 5) {
       return 1000;
+    } else if (distanceInKm <= 10) {
+      return 1500;
+    } else if (distanceInKm <= 15) {
+      return 2000;
     } else {
-      return 1250;
+      return 3000;
     }
   }
 

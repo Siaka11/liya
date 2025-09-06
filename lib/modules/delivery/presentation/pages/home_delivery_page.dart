@@ -154,7 +154,7 @@ class _HomeDeliveryPageState extends ConsumerState<HomeDeliveryPage> {
             _buildStatusSection(isAvailable),
 
             // Section carte (seulement si en course)
-           // if (isAvailable) _buildMapSection(),
+            // if (isAvailable) _buildMapSection(),
 
             // Section des gains et statistiques
             //_buildEarningsSection(),
@@ -845,6 +845,8 @@ class _HomeDeliveryPageState extends ConsumerState<HomeDeliveryPage> {
 
   Color _getStatusColor(String? status) {
     switch (status) {
+      case 'assigned':
+        return Colors.orange;
       case 'enRoute':
         return Colors.blue;
       case 'livre':

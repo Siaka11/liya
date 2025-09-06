@@ -19,11 +19,13 @@ class OrderStatusTimeline extends StatelessWidget {
     switch (status) {
       case OrderStatus.reception:
         return 0;
-      case OrderStatus.enRoute:
+      case OrderStatus.assigned:
         return 1;
+      case OrderStatus.enRoute:
+        return 2;
       case OrderStatus.livre:
       case OrderStatus.nonLivre:
-        return 2;
+        return 3;
     }
   }
 
@@ -80,6 +82,8 @@ class OrderStatusTimeline extends StatelessWidget {
     switch (status) {
       case OrderStatus.reception:
         return "VOTRE COMMANDE EST PRIS EN COMPTE";
+      case OrderStatus.assigned:
+        return "VOTRE COMMANDE EST ASSIGNÉE À UN LIVREUR";
       case OrderStatus.enRoute:
         return "VOTRE LIVREUR EST ROUTE";
       case OrderStatus.livre:

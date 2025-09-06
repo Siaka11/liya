@@ -444,6 +444,13 @@ class HomePage extends ConsumerWidget {
         body: SafeArea(
           child: Stack(
             children: [
+              // Image de fond
+              Positioned.fill(
+                child: Image.asset(
+                  'assets/img/basilique.png',
+                  fit: BoxFit.cover,
+                ),
+              ),
               // Contenu principal de la HomePage
               Padding(
                 padding:
@@ -944,6 +951,7 @@ class HomePage extends ConsumerWidget {
     );
   }
 }
+
 Future<void> _callNumber(BuildContext context, String number) async {
   try {
     debugPrint('Tentative d\'appel vers: $number');
@@ -963,6 +971,7 @@ Future<void> _callNumber(BuildContext context, String number) async {
     );
   }
 }
+
 void _showCopySnackBar(BuildContext context, String number) {
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(
