@@ -770,6 +770,8 @@ class _DeliveryTrackingPageState extends ConsumerState<DeliveryTrackingPage>
     switch (status) {
       case 'reception':
         return 'En réception';
+      case 'assigned':
+        return 'Assigné à un livreur';
       case 'enRoute':
         return 'Livreur en route';
       case 'livre':

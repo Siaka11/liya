@@ -161,6 +161,8 @@ class _DeliveryDashboardPageState extends ConsumerState<DeliveryDashboardPage>
 
   Color _getStatusColor(String? status) {
     switch (status) {
+      case 'assigned':
+        return Colors.purple;
       case 'enRoute':
         return Colors.blue;
       case 'livre':

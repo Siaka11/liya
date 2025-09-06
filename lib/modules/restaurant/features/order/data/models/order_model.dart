@@ -103,6 +103,8 @@ class OrderModel extends Order {
     switch (status) {
       case 'reception':
         return OrderStatus.reception;
+      case 'assigned':
+        return OrderStatus.assigned;
       case 'enRoute':
         return OrderStatus.enRoute;
       case 'livre':

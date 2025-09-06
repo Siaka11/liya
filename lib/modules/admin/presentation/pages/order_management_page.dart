@@ -308,6 +308,8 @@ class _OrderManagementPageState extends ConsumerState<OrderManagementPage> {
                           const DropdownMenuItem(
                               value: 'reception', child: Text('En réception')),
                           const DropdownMenuItem(
+                              value: 'assigned', child: Text('Assigné')),
+                          const DropdownMenuItem(
                               value: 'enRoute', child: Text('En route')),
                           const DropdownMenuItem(
                               value: 'livre', child: Text('Livré')),

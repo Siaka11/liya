@@ -150,7 +150,7 @@ class _OrderDetailsPageState extends ConsumerState<OrderDetailsPage> {
                     children: [
                       _buildInfoRow('ID', widget.order.id),
                       _buildInfoRow('Description', widget.order.description),
-                     /* _buildInfoRow('Montant',
+                      /* _buildInfoRow('Montant',
                           '${widget.order.amount.toStringAsFixed(0)} FCFA'),
                       _buildInfoRow('Frais de livraison',
                           '${widget.order.deliveryFee.toStringAsFixed(0)} FCFA'),
@@ -453,6 +453,8 @@ class _OrderDetailsPageState extends ConsumerState<OrderDetailsPage> {
     switch (status) {
       case DeliveryStatus.reception:
         return 'En attente';
+      case DeliveryStatus.assigned:
+        return 'Assigné à un livreur';
       case DeliveryStatus.enRoute:
         return 'En cours de livraison';
       case DeliveryStatus.livre:

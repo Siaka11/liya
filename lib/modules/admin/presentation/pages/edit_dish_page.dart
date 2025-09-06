@@ -176,9 +176,17 @@ class _EditDishPageState extends State<EditDishPage> {
 
     try {
       // Upload de l'image si sélectionnée
-      String? imageUrl = _imageUrlController.text.isNotEmpty
-          ? _imageUrlController.text
-          : await _uploadImage();
+      String? imageUrl;
+      if (_selectedImage != null) {
+        // Si une nouvelle image est sélectionnée, l'uploader
+        imageUrl = await _uploadImage();
+      } else if (_imageUrlController.text.isNotEmpty) {
+        // Sinon, utiliser l'URL fournie
+        imageUrl = _imageUrlController.text;
+      } else {
+        // Garder l'image existante
+        imageUrl = widget.dishData['image_url'] ?? '';
+      }
 
       // Mettre à jour le plat
       final dishData = {
@@ -301,7 +309,6 @@ class _EditDishPageState extends State<EditDishPage> {
                         filled: true,
                         fillColor: Colors.grey[50],
                       ),
-
                     ),
                     const SizedBox(height: 24),
 
@@ -516,12 +523,13 @@ class _EditDishPageState extends State<EditDishPage> {
                             ),
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: 8),
                         Expanded(
                           child: OutlinedButton.icon(
                             onPressed: () {
                               setState(() {
                                 _selectedImage = null;
+                                _imageUrlController.clear();
                               });
                             },
                             icon: const Icon(Icons.clear),
@@ -534,6 +542,30 @@ class _EditDishPageState extends State<EditDishPage> {
                             ),
                           ),
                         ),
+                        const SizedBox(width: 8),
+                        if (widget.dishData['image_url'] != null &&
+                            widget.dishData['image_url'].isNotEmpty)
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: () {
+                                setState(() {
+                                  _selectedImage = null;
+                                  _imageUrlController.clear();
+                                });
+                              },
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                              label: const Text('Supprimer',
+                                  style: TextStyle(color: Colors.red)),
+                              style: OutlinedButton.styleFrom(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                side: const BorderSide(color: Colors.red),
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                     const SizedBox(height: 16),
