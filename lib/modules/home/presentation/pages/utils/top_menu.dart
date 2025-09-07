@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:auto_route/auto_route.dart';
 
 import '../../../../../core/singletons.dart';
 import '../../../../../routes/app_router.dart';
@@ -57,9 +58,9 @@ void showTopMenu(BuildContext context, WidgetRef ref) {
                           child: GestureDetector(
                             onTap: () {
                               Navigator.of(context).pop(); // Ferme le menu
-                              // Afficher le profil dans la HomePage
-                              ref.read(showProfileProvider.notifier).state =
-                                  true;
+                              // Naviguer vers la page de profil
+                              AutoRouter.of(context)
+                                  .push(const UserProfileRoute());
                             },
                             child: const Column(
                               mainAxisSize: MainAxisSize.min,

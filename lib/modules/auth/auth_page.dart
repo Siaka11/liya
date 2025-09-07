@@ -375,7 +375,7 @@ class _AuthPageState extends ConsumerState<AuthPage>
                     alignment: Alignment.bottomCenter,
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
-                          vertical: 80, horizontal: 20),
+                          vertical: 10, horizontal: 20),
                       child: SizedBox(
                         width: double.infinity,
                         child: CustomButton(

@@ -29,6 +29,7 @@ import '../modules/auth/otp_page.dart';
 import '../modules/auth/info_user_page.dart';
 import '../modules/share_location_page.dart';
 import '../modules/home/presentation/pages/home_page.dart';
+import '../modules/home/presentation/pages/user_profile_page.dart';
 import '../modules/admin/presentation/pages/admin_dashboard_page.dart';
 import '../modules/parcel/feature/presentation/pages/lieu_page.dart';
 import '../modules/parcel/feature/presentation/pages/parcel_status_list_page.dart';
@@ -97,6 +98,7 @@ class AppRouter extends $AppRouter implements AutoRouteGuard {
         AutoRoute(page: CartRoute.page),
         AutoRoute(page: CheckoutRoute.page),
         AutoRoute(page: ProfileRoute.page),
+        AutoRoute(page: UserProfileRoute.page),
         AutoRoute(page: EditProfileRoute.page),
         AutoRoute(page: EditEmailRoute.page),
         AutoRoute(page: EditPhoneRoute.page),

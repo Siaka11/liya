@@ -84,23 +84,21 @@ class DistanceService {
   /// Calcule les frais de livraison basés sur la distance
   /// Retourne les frais en FCFA
   static int calculateDeliveryFee(double distanceInKm) {
-    // Tarification pour livraisons locales à Yamoussoukro :
-    // - 0-2 km : 300 FCFA
-    // - 2-5 km : 500 FCFA
-    // - 5-10 km : 750 FCFA
-    // - 10-15 km : 1000 FCFA
-    // - 15+ km : 1250 FCFA
 
-    if (distanceInKm <= 2) {
+    if (distanceInKm <= 3) {
       return 500;
-    } else if (distanceInKm <= 5) {
+    } else if (distanceInKm <= 6) {
       return 1000;
-    } else if (distanceInKm <= 10) {
+    } else if (distanceInKm <= 8) {
       return 1500;
-    } else if (distanceInKm <= 15) {
+    } else if (distanceInKm <= 10) {
       return 2000;
-    } else {
+    } else if (distanceInKm <= 30) {
       return 3000;
+    } else if (distanceInKm <= 60) {
+      return 5000;
+    }else {
+      return 1000;
     }
   }
 

@@ -88,6 +88,20 @@ class ParcelHomePage extends ConsumerWidget {
                         },
                       ),
                       _StatusRow(
+                        icon: Icons.assignment_ind,
+                        label: 'ASSIGNÉ',
+                        count: statusCounts['assigned'] ?? 0,
+                        color: Colors.purple,
+                        onTap: () {
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    ParcelStatusListPage(status: 'assigned'),
+                              ));
+                        },
+                      ),
+                      _StatusRow(
                         icon: Icons.local_shipping,
                         label: 'EN ROUTE',
                         count: statusCounts['enRoute'] ?? 0,
@@ -158,15 +172,14 @@ class ParcelHomePage extends ConsumerWidget {
             ),
             Align(
               alignment: Alignment.bottomCenter,
-              child:
-                TextButton(
-                  onPressed: () => _callNumber(context, '+2250700846546'),
-                  child: const Text(
-                    'Call center',
-                    style: TextStyle(color: Colors.deepOrange),
-                  ),
+              child: TextButton(
+                onPressed: () => _callNumber(context, '+2250700846546'),
+                child: const Text(
+                  'Call center',
+                  style: TextStyle(color: Colors.deepOrange),
                 ),
               ),
+            ),
           ],
         ),
       ),
@@ -192,6 +205,7 @@ class ParcelHomePage extends ConsumerWidget {
 
     final Map<String, int> counts = {
       'reception': 0,
+      'assigned': 0,
       'enRoute': 0,
       'nonLivre': 0,
       'livre': 0,
@@ -224,6 +238,7 @@ class ParcelHomePage extends ConsumerWidget {
     );
   }
 }
+
 Future<void> _callNumber(BuildContext context, String number) async {
   try {
     debugPrint('Tentative d\'appel vers: $number');
@@ -243,6 +258,7 @@ Future<void> _callNumber(BuildContext context, String number) async {
     );
   }
 }
+
 void _showCopySnackBar(BuildContext context, String number) {
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(
@@ -261,7 +277,6 @@ void _showCopySnackBar(BuildContext context, String number) {
     ),
   );
 }
-
 
 class _StatusRow extends StatelessWidget {
   final IconData icon;
@@ -340,9 +355,12 @@ class _ParcelBottomNavBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return BottomNavigationBar(
       items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home, color: Colors.deepOrange), label: 'Accueil'),
-        BottomNavigationBarItem(icon: Icon(Icons.local_shipping), label: 'Mes livraisons'),
-        BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: 'Menu principal'),
+        BottomNavigationBarItem(
+            icon: Icon(Icons.home, color: Colors.deepOrange), label: 'Accueil'),
+        BottomNavigationBarItem(
+            icon: Icon(Icons.local_shipping), label: 'Mes livraisons'),
+        BottomNavigationBarItem(
+            icon: Icon(Icons.dashboard), label: 'Menu principal'),
       ],
       currentIndex: 0,
       onTap: (index) {

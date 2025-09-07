@@ -34,6 +34,11 @@ class DeliveryOrder {
   // Informations complètes du client
   final String? customerEmail;
   final String? customerFullName;
+  // Informations de livraison
+  final int? deliveryTime; // Temps de livraison en minutes
+  final double? distance; // Distance en km
+  final List<Map<String, dynamic>>?
+      items; // Articles commandés (pour restaurant)
 
   const DeliveryOrder({
     required this.id,
@@ -57,6 +62,9 @@ class DeliveryOrder {
     this.destinationLongitude,
     this.customerEmail,
     this.customerFullName,
+    this.deliveryTime,
+    this.distance,
+    this.items,
   });
 
   DeliveryOrder copyWith({
@@ -81,6 +89,9 @@ class DeliveryOrder {
     double? destinationLongitude,
     String? customerEmail,
     String? customerFullName,
+    int? deliveryTime,
+    double? distance,
+    List<Map<String, dynamic>>? items,
   }) {
     return DeliveryOrder(
       id: id ?? this.id,
@@ -104,6 +115,9 @@ class DeliveryOrder {
       destinationLongitude: destinationLongitude ?? this.destinationLongitude,
       customerEmail: customerEmail ?? this.customerEmail,
       customerFullName: customerFullName ?? this.customerFullName,
+      deliveryTime: deliveryTime ?? this.deliveryTime,
+      distance: distance ?? this.distance,
+      items: items ?? this.items,
     );
   }
 
@@ -130,6 +144,9 @@ class DeliveryOrder {
       'destination_longitude': destinationLongitude,
       'customer_email': customerEmail,
       'customer_full_name': customerFullName,
+      'delivery_time': deliveryTime,
+      'distance': distance,
+      'items': items,
     };
   }
 
@@ -163,6 +180,11 @@ class DeliveryOrder {
       destinationLongitude: map['destination_longitude']?.toDouble(),
       customerEmail: map['customer_email'],
       customerFullName: map['customer_full_name'],
+      deliveryTime: map['delivery_time']?.toInt(),
+      distance: map['distance']?.toDouble(),
+      items: map['items'] != null
+          ? List<Map<String, dynamic>>.from(map['items'])
+          : null,
     );
   }
 
