@@ -170,12 +170,42 @@ class ParcelHomePage extends ConsumerWidget {
                 error: (e, _) => Center(child: Text('Erreur: $e')),
               ),
             ),
+            const SizedBox(height: 50),
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.green.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: Colors.blue.withOpacity(0.3),
+                ),
+              ),
+              child: const Row(
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    color: Colors.green,
+                    size: 20,
+                  ),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      "Frais de livraison : 1 000 F CFA par colis.",
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.green,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
             Align(
               alignment: Alignment.bottomCenter,
               child: TextButton(
                 onPressed: () => _callNumber(context, '+2250700846546'),
                 child: const Text(
-                  'Call center',
+                  'Appeler le Call center',
                   style: TextStyle(color: Colors.deepOrange),
                 ),
               ),

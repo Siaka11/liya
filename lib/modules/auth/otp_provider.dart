@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:liya/modules/auth/firebase_auth_service.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:liya/routes/app_router.gr.dart';
-import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 
 // État OTP
 class OtpState {
@@ -63,17 +62,31 @@ class OtpNotifier extends StateNotifier<OtpState> {
     state = state.copyWith(isLoading: true, hasError: false, errorMessage: '');
 
     try {
+      print('🔍 Début vérification OTP avec pin: ${state.pin}');
+
+      // Vérifier que le verificationId existe avant d'essayer
+      final verificationId = await _authService.getVerificationId();
+      if (verificationId == null) {
+        throw Exception(
+            'Aucun ID de vérification trouvé. Veuillez redemander un code.');
+      }
+      print('✅ VerificationId trouvé: ${verificationId.substring(0, 10)}...');
+
       final userCredential = await _authService.verifyOTP(state.pin);
+      print('✅ OTP vérifié avec succès');
 
       if (userCredential.user != null) {
         state = state.copyWith(isVerified: true, isLoading: false);
 
         // Navigation vers la page d'informations utilisateur
         if (context.mounted) {
-          context.router.push(const InfoUserRoute());
+          print('🔄 Redirection vers InfoUserRoute');
+          // Forcer la redirection vers InfoUserRoute en remplaçant la stack
+          context.router.replace(const InfoUserRoute());
         }
       }
     } catch (e) {
+      print('❌ Erreur vérification OTP: $e');
       state = state.copyWith(
         isLoading: false,
         hasError: true,

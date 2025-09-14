@@ -168,7 +168,7 @@ class FirebaseAuthService {
         print('✅ Utilisateur trouvé dans Firestore');
 
         // Vérifier si l'utilisateur a des informations complètes
-        final hasCompleteInfo = await _hasCompleteUserInfo(existingUser);
+        final hasCompleteInfo = await hasCompleteUserInfo(existingUser);
         print('🔍 Utilisateur a des informations complètes: $hasCompleteInfo');
 
         if (hasCompleteInfo) {
@@ -715,10 +715,11 @@ class FirebaseAuthService {
   }
 
   /// Vérifie si l'utilisateur a des informations complètes
-  Future<bool> _hasCompleteUserInfo(Map<String, dynamic> userInfo) async {
+  Future<bool> hasCompleteUserInfo(Map<String, dynamic> userInfo) async {
     try {
       print('🔍 DEBUG: userInfo reçu: $userInfo');
       print('🔍 DEBUG: Type de userInfo: ${userInfo.runtimeType}');
+      print('🔍 DEBUG: Clés disponibles: ${userInfo.keys.toList()}');
 
       final name = userInfo['name']?.toString() ?? '';
       final lastname = userInfo['lastname']?.toString() ?? '';
@@ -732,13 +733,18 @@ class FirebaseAuthService {
           '🔍 DEBUG: delivery_address = "$deliveryAddress" (type: ${deliveryAddress.runtimeType})');
 
       // Vérifier si l'utilisateur a un nom et prénom non vides
-      final hasNameInfo = name.isNotEmpty &&
-          lastname.isNotEmpty &&
-          name != 'Nouveau' &&
-          lastname != 'Utilisateur';
+      // TEMPORAIRE: Plus permissif - accepter même les valeurs par défaut pour les utilisateurs existants
+      final hasNameInfo = name.isNotEmpty && lastname.isNotEmpty;
 
       // Vérifier si l'utilisateur a une adresse (address OU delivery_address)
+      // TEMPORAIRE: Plus permissif - ne pas exiger d'adresse pour l'accès direct
       final hasAddress = address.isNotEmpty || deliveryAddress.isNotEmpty;
+
+      // TEMPORAIRE: Si l'utilisateur existe dans Firestore, considérer qu'il a des infos complètes
+      // même s'il n'a que les valeurs par défaut
+      final isExistingUser = userInfo.containsKey('created_at') ||
+          userInfo.containsKey('phoneNumber') ||
+          userInfo.containsKey('role');
 
       print('🔍 Vérification infos utilisateur:');
       print('  - Nom: "$name"');
@@ -747,8 +753,28 @@ class FirebaseAuthService {
       print('  - Adresse de livraison: "$deliveryAddress"');
       print('  - A nom/prénom: $hasNameInfo');
       print('  - A adresse: $hasAddress');
+      print('  - Est utilisateur existant: $isExistingUser');
 
-      return hasNameInfo && hasAddress;
+      // TEMPORAIRE: Logique plus permissive
+      final result = isExistingUser && hasNameInfo;
+      print('  - Résultat final (permissif): $result');
+
+      // Log supplémentaire pour debug
+      if (!hasNameInfo) {
+        print('❌ Problème avec nom/prénom:');
+        print('   - name.isEmpty: ${name.isEmpty}');
+        print('   - lastname.isEmpty: ${lastname.isEmpty}');
+        print('   - name == "Nouveau": ${name == "Nouveau"}');
+        print('   - lastname == "Utilisateur": ${lastname == "Utilisateur"}');
+      }
+
+      if (!hasAddress) {
+        print('❌ Problème avec adresse:');
+        print('   - address.isEmpty: ${address.isEmpty}');
+        print('   - deliveryAddress.isEmpty: ${deliveryAddress.isEmpty}');
+      }
+
+      return result;
     } catch (e) {
       print('❌ Erreur vérification infos utilisateur: $e');
       print('❌ Stack trace: ${StackTrace.current}');

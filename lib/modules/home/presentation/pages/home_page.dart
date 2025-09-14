@@ -550,10 +550,11 @@ class HomePage extends ConsumerWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     IconButton(
-                      icon: const Icon(
-                        Icons.call,
+                      icon: Image.asset(
+                        'assets/img/cascall.png',
+                        width: 16.0,
+                        height: 16.0,
                         color: Colors.grey,
-                        size: 20.0,
                       ),
                       onPressed: () => _callNumber(context, '+2250700846546'),
                     ),

@@ -185,7 +185,7 @@ class _StatisticsPageState extends ConsumerState<StatisticsPage> {
   Widget _buildStatCard(
       String title, String value, IconData icon, Color color) {
     return Card(
-      elevation: 4,
+      elevation: 0.4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -222,7 +222,7 @@ class _StatisticsPageState extends ConsumerState<StatisticsPage> {
         statistics['orderStatuses'] as Map<String, int>? ?? {};
 
     return Card(
-      elevation: 4,
+      elevation: 0.4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -259,7 +259,7 @@ class _StatisticsPageState extends ConsumerState<StatisticsPage> {
         statistics['parcelStatuses'] as Map<String, int>? ?? {};
 
     return Card(
-      elevation: 4,
+      elevation: 0.4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -295,7 +295,7 @@ class _StatisticsPageState extends ConsumerState<StatisticsPage> {
     final userRoles = statistics['userRoles'] as Map<String, int>? ?? {};
 
     return Card(
-      elevation: 4,
+      elevation: 0.4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16),
