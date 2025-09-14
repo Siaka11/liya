@@ -159,7 +159,7 @@ class _ParcelBottomNavBar extends StatelessWidget {
         } else if (index == 1) {
           AutoRouter.of(context).replace(const ParcelHomeRoute());
         } else if (index == 2) {
-          AutoRouter.of(context).replace(const ProfileRoute());
+          AutoRouter.of(context).replace(const HomeRoute());
         }
       },
     );

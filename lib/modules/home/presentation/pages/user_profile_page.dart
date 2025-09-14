@@ -10,6 +10,7 @@ import '../../../../../core/local_storage_factory.dart';
 import '../../../../../core/singletons.dart';
 import '../../../../../core/services/phone_call_service.dart';
 import '../../../../../core/services/account_management_service.dart';
+import '../../../../../core/test_firebase_auth_deletion.dart';
 
 @RoutePage()
 class UserProfilePage extends ConsumerStatefulWidget {
@@ -56,7 +57,7 @@ class _UserProfilePageState extends ConsumerState<UserProfilePage> {
 
     setState(() {
       _nameController.text = userDetails['name'] ?? '';
-      _lastnameController.text = userDetails['lastname'] ?? '';
+      _lastnameController.text = userDetails['lastName'] ?? '';
       _emailController.text = userDetails['email'] ?? '';
       _addressController.text = userDetails['address'] ?? '';
       _phoneController.text = userDetails['phoneNumber'] ?? '';
@@ -579,6 +580,24 @@ class _UserProfilePageState extends ConsumerState<UserProfilePage> {
                       subtitle: '+225 07 00 84 65 46',
                       onTap: () => _callNumber(context, '+2250700846546'),
                     ),
+                   /* const Divider(),
+                    // Bouton de test temporaire
+                    _buildActionTile(
+                      icon: Icons.bug_report,
+                      title: 'Test suppression Firebase Auth',
+                      subtitle: 'Vérifier la suppression (DEBUG)',
+                      isDestructive: true,
+                      onTap: () async {
+                        final localStorage = LocalStorageFactory();
+                        final userDetails = localStorage.getUserDetails();
+                        if (userDetails != null) {
+                          final phoneNumber =
+                              jsonDecode(userDetails)['phoneNumber'];
+                          await FirebaseAuthDeletionTest
+                              .testCompleteUserDeletion(phoneNumber);
+                        }
+                      },
+                    ),*/
                     const Divider(),
                     _buildActionTile(
                       icon: Icons.logout,

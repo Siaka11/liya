@@ -72,10 +72,10 @@ class NavigationFooter extends ConsumerWidget {
           icon: Icon(Icons.shopping_bag),
           label: 'Commandes',
         ),
-        BottomNavigationBarItem(
+       /* BottomNavigationBarItem(
           icon: Icon(Icons.person),
           label: 'Profil',
-        ),
+        ),*/
       ],
     );
   }

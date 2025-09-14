@@ -3,16 +3,44 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:liya/modules/restaurant/features/home/presentation/pages/restaurant_detail_page.dart';
-import 'package:liya/core/ui/components/notification_button.dart';
 import '../../application/restaurants_firebase_provider.dart';
 import '../widget/restaurant_firebase_card.dart';
 
 @RoutePage()
-class AllRestaurantsPage extends ConsumerWidget {
+class AllRestaurantsPage extends ConsumerStatefulWidget {
   const AllRestaurantsPage({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AllRestaurantsPage> createState() => _AllRestaurantsPageState();
+}
+
+class _AllRestaurantsPageState extends ConsumerState<AllRestaurantsPage> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  List<Map<String, dynamic>> _filteredRestaurants = [];
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _filterRestaurants(List<Map<String, dynamic>> restaurants) {
+    if (_searchQuery.isEmpty) {
+      _filteredRestaurants = restaurants;
+    } else {
+      _filteredRestaurants = restaurants.where((restaurant) {
+        final name = (restaurant['name'] ?? '').toString().toLowerCase();
+        final description =
+            (restaurant['description'] ?? '').toString().toLowerCase();
+        final searchLower = _searchQuery.toLowerCase();
+        return name.contains(searchLower) || description.contains(searchLower);
+      }).toList();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final restaurantsState = ref.watch(restaurantsFirebaseProvider);
     final restaurantsController =
         ref.read(restaurantsFirebaseProvider.notifier);
@@ -23,6 +51,11 @@ class AllRestaurantsPage extends ConsumerWidget {
         restaurantsController.loadRestaurants();
       }
     });
+
+    // Filtrer les restaurants quand la liste ou la recherche change
+    if (restaurantsState.restaurants != null) {
+      _filterRestaurants(restaurantsState.restaurants!);
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -35,10 +68,6 @@ class AllRestaurantsPage extends ConsumerWidget {
         ),
         centerTitle: true,
         actions: [
-          NotificationAppBarButton(
-            backgroundColor: Colors.transparent,
-            iconColor: Colors.grey[700],
-          ),
           // Dropdown pour le tri
           Container(
             margin: const EdgeInsets.only(right: 8),
@@ -70,41 +99,128 @@ class AllRestaurantsPage extends ConsumerWidget {
           ),
         ],
       ),
-      body: restaurantsState.isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : restaurantsState.error != null
-              ? Center(child: Text('Erreur: ${restaurantsState.error}'))
-              : restaurantsState.restaurants == null ||
-                      restaurantsState.restaurants!.isEmpty
-                  ? const Center(child: Text('Aucun restaurant disponible'))
-                  : ListView.builder(
-                      padding: const EdgeInsets.all(16.0),
-                      itemCount: restaurantsState.restaurants!.length,
-                      itemBuilder: (context, index) {
-                        final restaurant = restaurantsState.restaurants![index];
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 16),
-                          child: RestaurantFirebaseCard(
-                            width: MediaQuery.of(context).size.width,
-                            restaurant: restaurant,
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => RestaurantDetailPage(
-                                    coverImage: restaurant['cover_image'] ?? '',
-                                    id: restaurant['id'],
-                                    name: restaurant['name'],
-                                    description:
-                                        restaurant['description'] ?? '',
+      body: Column(
+        children: [
+          // Champ de recherche
+          Container(
+            padding: const EdgeInsets.all(16.0),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Rechercher un restaurant...',
+                prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear, color: Colors.grey),
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() {
+                            _searchQuery = '';
+                          });
+                        },
+                      )
+                    : null,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.grey[300]!),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.grey[300]!),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Colors.orange, width: 2),
+                ),
+                filled: true,
+                fillColor: Colors.grey[50],
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+              ),
+              onChanged: (value) {
+                setState(() {
+                  _searchQuery = value;
+                });
+              },
+            ),
+          ),
+
+          // Liste des restaurants
+          Expanded(
+            child: restaurantsState.isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : restaurantsState.error != null
+                    ? Center(child: Text('Erreur: ${restaurantsState.error}'))
+                    : _filteredRestaurants.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.search_off,
+                                  size: 64,
+                                  color: Colors.grey[400],
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  _searchQuery.isNotEmpty
+                                      ? 'Aucun restaurant trouvé pour "$_searchQuery"'
+                                      : 'Aucun restaurant disponible',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.grey[600],
                                   ),
+                                ),
+                                if (_searchQuery.isNotEmpty) ...[
+                                  const SizedBox(height: 8),
+                                  TextButton(
+                                    onPressed: () {
+                                      _searchController.clear();
+                                      setState(() {
+                                        _searchQuery = '';
+                                      });
+                                    },
+                                    child: const Text('Effacer la recherche'),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          )
+                        : ListView.builder(
+                            padding: const EdgeInsets.all(16.0),
+                            itemCount: _filteredRestaurants.length,
+                            itemBuilder: (context, index) {
+                              final restaurant = _filteredRestaurants[index];
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 16),
+                                child: RestaurantFirebaseCard(
+                                  width: MediaQuery.of(context).size.width,
+                                  restaurant: restaurant,
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            RestaurantDetailPage(
+                                          coverImage:
+                                              restaurant['cover_image'] ?? '',
+                                          id: restaurant['id'],
+                                          name: restaurant['name'],
+                                          description:
+                                              restaurant['description'] ?? '',
+                                        ),
+                                      ),
+                                    );
+                                  },
                                 ),
                               );
                             },
                           ),
-                        );
-                      },
-                    ),
+          ),
+        ],
+      ),
     );
   }
 }

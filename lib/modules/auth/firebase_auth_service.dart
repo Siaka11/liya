@@ -168,7 +168,7 @@ class FirebaseAuthService {
         print('✅ Utilisateur trouvé dans Firestore');
 
         // Vérifier si l'utilisateur a des informations complètes
-        final hasCompleteInfo = await _hasCompleteUserInfo(existingUser);
+        final hasCompleteInfo = await hasCompleteUserInfo(existingUser);
         print('🔍 Utilisateur a des informations complètes: $hasCompleteInfo');
 
         if (hasCompleteInfo) {
@@ -425,10 +425,12 @@ class FirebaseAuthService {
             'Numéro de téléphone de l\'utilisateur Firebase introuvable.');
       }
 
-      // Normaliser le numéro pour correspondre au format des IDs de documents Firestore
+      // Utiliser le numéro de téléphone comme ID de document (votre système actuel)
+      final firebaseUID = user.uid;
       final firestorePhone = normalizePhoneForFirestore(phoneNumber);
       print(
-          '🔍 Utilisation du format Firestore pour la création/mise à jour: $firestorePhone');
+          '🔍 Utilisation du numéro de téléphone comme ID Firestore: $firestorePhone');
+      print('🔍 UID Firebase Auth: $firebaseUID');
 
       final userDoc = await _firestoreInstance
           .collection('users')
@@ -437,7 +439,7 @@ class FirebaseAuthService {
 
       if (!userDoc.exists) {
         print(
-            '👤 Création d\'un nouvel utilisateur dans Firestore pour: $firestorePhone');
+            '👤 Création d\'un nouvel utilisateur dans Firestore avec téléphone: $firestorePhone');
         // Tente de récupérer les infos de LocalStorage si elles ont été pré-saisies
         final localStorage = LocalStorageFactory();
         final localUserDetailsString = localStorage.getUserDetails();
@@ -453,6 +455,7 @@ class FirebaseAuthService {
         }
 
         await _firestoreInstance.collection('users').doc(firestorePhone).set({
+          'uid': firebaseUID, // UID Firebase Auth pour la suppression
           'phoneNumber': firestorePhone,
           'name': localUserDetails?['name'] ??
               'Nouveau', // Nom par défaut ou celui de LocalStorage
@@ -565,15 +568,19 @@ class FirebaseAuthService {
   Future<void> updateUserInfo(
       String phoneNumber, Map<String, dynamic> userData) async {
     try {
-      // Utiliser set avec merge: true pour créer le document s'il n'existe pas
+      // Utiliser le numéro de téléphone comme ID de document (votre système actuel)
+      final currentUser = _auth?.currentUser;
+      final uid = currentUser?.uid;
+
       await _firestoreInstance.collection('users').doc(phoneNumber).set({
         'phoneNumber': phoneNumber,
+        'uid': uid, // Ajouter l'UID Firebase Auth pour la suppression
         ...userData,
         'updated_at': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
 
       print(
-          '✅ Informations utilisateur mises à jour/créées dans Firestore pour: $phoneNumber');
+          '✅ Informations utilisateur mises à jour pour: $phoneNumber (UID: $uid)');
     } catch (e) {
       print('❌ Erreur mise à jour utilisateur dans Firestore: $e');
       rethrow;
@@ -715,10 +722,11 @@ class FirebaseAuthService {
   }
 
   /// Vérifie si l'utilisateur a des informations complètes
-  Future<bool> _hasCompleteUserInfo(Map<String, dynamic> userInfo) async {
+  Future<bool> hasCompleteUserInfo(Map<String, dynamic> userInfo) async {
     try {
       print('🔍 DEBUG: userInfo reçu: $userInfo');
       print('🔍 DEBUG: Type de userInfo: ${userInfo.runtimeType}');
+      print('🔍 DEBUG: Clés disponibles: ${userInfo.keys.toList()}');
 
       final name = userInfo['name']?.toString() ?? '';
       final lastname = userInfo['lastname']?.toString() ?? '';
@@ -732,13 +740,18 @@ class FirebaseAuthService {
           '🔍 DEBUG: delivery_address = "$deliveryAddress" (type: ${deliveryAddress.runtimeType})');
 
       // Vérifier si l'utilisateur a un nom et prénom non vides
-      final hasNameInfo = name.isNotEmpty &&
-          lastname.isNotEmpty &&
-          name != 'Nouveau' &&
-          lastname != 'Utilisateur';
+      // TEMPORAIRE: Plus permissif - accepter même les valeurs par défaut pour les utilisateurs existants
+      final hasNameInfo = name.isNotEmpty && lastname.isNotEmpty;
 
       // Vérifier si l'utilisateur a une adresse (address OU delivery_address)
+      // TEMPORAIRE: Plus permissif - ne pas exiger d'adresse pour l'accès direct
       final hasAddress = address.isNotEmpty || deliveryAddress.isNotEmpty;
+
+      // TEMPORAIRE: Si l'utilisateur existe dans Firestore, considérer qu'il a des infos complètes
+      // même s'il n'a que les valeurs par défaut
+      final isExistingUser = userInfo.containsKey('created_at') ||
+          userInfo.containsKey('phoneNumber') ||
+          userInfo.containsKey('role');
 
       print('🔍 Vérification infos utilisateur:');
       print('  - Nom: "$name"');
@@ -747,8 +760,28 @@ class FirebaseAuthService {
       print('  - Adresse de livraison: "$deliveryAddress"');
       print('  - A nom/prénom: $hasNameInfo');
       print('  - A adresse: $hasAddress');
+      print('  - Est utilisateur existant: $isExistingUser');
 
-      return hasNameInfo && hasAddress;
+      // TEMPORAIRE: Logique plus permissive
+      final result = isExistingUser && hasNameInfo;
+      print('  - Résultat final (permissif): $result');
+
+      // Log supplémentaire pour debug
+      if (!hasNameInfo) {
+        print('❌ Problème avec nom/prénom:');
+        print('   - name.isEmpty: ${name.isEmpty}');
+        print('   - lastname.isEmpty: ${lastname.isEmpty}');
+        print('   - name == "Nouveau": ${name == "Nouveau"}');
+        print('   - lastname == "Utilisateur": ${lastname == "Utilisateur"}');
+      }
+
+      if (!hasAddress) {
+        print('❌ Problème avec adresse:');
+        print('   - address.isEmpty: ${address.isEmpty}');
+        print('   - deliveryAddress.isEmpty: ${deliveryAddress.isEmpty}');
+      }
+
+      return result;
     } catch (e) {
       print('❌ Erreur vérification infos utilisateur: $e');
       print('❌ Stack trace: ${StackTrace.current}');

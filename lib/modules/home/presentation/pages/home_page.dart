@@ -478,7 +478,7 @@ class HomePage extends ConsumerWidget {
                       'Comment pouvons-nous vous aider ?',
                       style: TextStyle(
                         fontSize: 16,
-                        color: Colors.grey,
+                        color: Colors.black,
                       ),
                     ),
                     const SizedBox(height: 10),
@@ -546,58 +546,55 @@ class HomePage extends ConsumerWidget {
               Positioned(
                 top: 10,
                 right: 10,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
+                child: Wrap(
+                  spacing: 0, // Pas d'espacement automatique
+                  runSpacing: 0,
+                  alignment: WrapAlignment.end,
                   children: [
-                    IconButton(
-                      icon: const Icon(
-                        Icons.call,
-                        color: Colors.grey,
-                        size: 20.0,
+                    GestureDetector(
+                      onTap: () => _callNumber(context, '+2250700846546'),
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        child: Image.asset(
+                          'assets/img/cascall.png',
+                          width: 18.0,
+                          height: 18.0,
+                          color: Colors.black,
+                        ),
                       ),
-                      onPressed: () => _callNumber(context, '+2250700846546'),
                     ),
-                    // Icône de notifications
-                    NotificationButton(
-                      backgroundColor: Colors.transparent,
-                      iconColor: Colors.grey,
-                      size: 40.0,
-                      onPressed: () {
-                        // Navigation vers la page de notifications
+                    const SizedBox(width: 6),
+                    GestureDetector(
+                      onTap: () {
                         context.router.push(const NotificationsRoute());
                       },
-                    ),
-                    // Icône de profil
-                    IconButton(
-                      icon: const Icon(
-                        Icons.person,
-                        color: Colors.grey,
-                        size: 20.0,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        child: const Icon(
+                          Icons.notifications_outlined,
+                          color: Colors.black,
+                          size: 22.0,
+                        ),
                       ),
-                      onPressed: () {
+                    ),
+                    const SizedBox(width: 6),
+                    GestureDetector(
+                      onTap: () {
                         showTopMenu(context, ref);
                       },
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        child: const Icon(
+                          Icons.person_outline,
+                          color: Colors.black,
+                          size: 22.0,
+                        ),
+                      ),
                     ),
                   ],
                 ),
               ),
 
-              // Bouton paramètres en bas à gauche
-              /*Positioned(
-                bottom: 20,
-                left: 20,
-                child: FloatingActionButton(
-                  onPressed: () {
-                    _showTestDrawer(context);
-                  },
-                  backgroundColor: Colors.grey[300],
-                  child: const Icon(
-                    Icons.settings,
-                    color: Colors.black54,
-                  ),
-                ),
-              ),*/
-              // Overlay du profil
               if (showProfile)
                 Container(
                   color: Colors.black.withOpacity(0.5),

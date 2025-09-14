@@ -147,105 +147,140 @@ class _LieuPageState extends ConsumerState<LieuPage> {
   }
 
   void _showConfirmDialog() {
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (context) => Center(
-        child: Material(
-          color: Colors.transparent,
-          child: Container(
-            width: MediaQuery.of(context).size.width * 0.8,
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(32),
-              boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 16)],
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (BuildContext context) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(20),
+              topRight: Radius.circular(20),
             ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
             child: Column(
               mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 16),
-                const Text('Je confirme ma commande',
-                    style: TextStyle(fontSize: 18)),
-                const SizedBox(height: 24),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    OutlinedButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: OutlinedButton.styleFrom(
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(24)),
-                        side: const BorderSide(color: Color(0xFFF24E1E)),
-                        foregroundColor: Color(0xFFF24E1E),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 24, vertical: 12),
-                      ),
-                      child: const Text('Annuler'),
-                    ),
-                    ElevatedButton(
-                      onPressed: () async {
-                        // Sauvegarder le colis
-                        await _saveParcel();
-
-                        // Fermer le dialog
-                        if (mounted) Navigator.of(context).pop();
-
-                        // Petite pause pour laisser fermer le dialog
-                        await Future.delayed(const Duration(milliseconds: 100));
-
-                        // Navigation sûre + SnackBar
-                        if (mounted) {
-                          Navigator.of(context).pushReplacement(
-                            MaterialPageRoute(
-                                builder: (context) => const ParcelHomePage()),
-                          );
-                          Future.delayed(const Duration(milliseconds: 200), () {
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Row(
-                                    children: const [
-                                      Icon(Icons.check_circle,
-                                          color: Colors.white),
-                                      SizedBox(width: 12),
-                                      Expanded(
-                                        child: Text(
-                                          'Votre demande de colis a été prise en compte avec succès !',
-                                          style: TextStyle(fontSize: 16),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  backgroundColor: const Color(0xFF4BB543),
-                                  duration: const Duration(seconds: 4),
-                                  behavior: SnackBarBehavior.floating,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  margin: const EdgeInsets.all(16),
-                                ),
-                              );
-                            }
-                          });
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFF24E1E),
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(24)),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 24, vertical: 12),
-                      ),
-                      child: const Text('Confirmer'),
-                    ),
-                  ],
+                // Titre
+                const Text(
+                  'Confirmer votre commande',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
                 ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Voulez-vous finaliser votre demande de colis ?',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey,
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Bouton Confirmer
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(bottom: 12),
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      Navigator.of(context).pop();
+
+                      // Sauvegarder le colis
+                      await _saveParcel();
+
+                      // Petite pause pour laisser fermer le modal
+                      await Future.delayed(const Duration(milliseconds: 100));
+
+                      // Navigation sûre + SnackBar
+                      if (mounted) {
+                        Navigator.of(context).pushReplacement(
+                          MaterialPageRoute(
+                              builder: (context) => const ParcelHomePage()),
+                        );
+                        Future.delayed(const Duration(milliseconds: 200), () {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Row(
+                                  children: const [
+                                    Icon(Icons.check_circle,
+                                        color: Colors.white),
+                                    SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        'Votre demande de colis a été prise en compte avec succès !',
+                                        style: TextStyle(fontSize: 16),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                backgroundColor: const Color(0xFF4BB543),
+                                duration: const Duration(seconds: 4),
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                margin: const EdgeInsets.all(16),
+                              ),
+                            );
+                          }
+                        });
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFF24E1E),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      'Confirmer',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Bouton Annuler
+                Container(
+                  width: double.infinity,
+                  child: TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      'Annuler',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Espace en bas pour éviter les problèmes de clavier
+                SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
               ],
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -699,7 +734,7 @@ class _ParcelBottomNavBar extends StatelessWidget {
         } else if (index == 1) {
           AutoRouter.of(context).replace(const ParcelHomeRoute());
         } else if (index == 2) {
-          AutoRouter.of(context).replace(const ProfileRoute());
+          AutoRouter.of(context).replace(const HomeRoute());
         }
       },
     );

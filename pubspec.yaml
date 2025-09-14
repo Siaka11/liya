@@ -143,6 +143,7 @@ flutter:
   assets:
     - assets/
     - assets/img/basilique.png
+    - assets/img/cascall.png
     - assets/basi.jpg
     - assets/logo.png
     - assets/icon.png

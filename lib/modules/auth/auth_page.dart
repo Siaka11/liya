@@ -263,21 +263,21 @@ class _AuthPageState extends ConsumerState<AuthPage>
     final authState = ref.watch(authProvider);
 
     return Scaffold(
+      backgroundColor: Colors.orange.shade700, // Couleur de fond du Scaffold
       resizeToAvoidBottomInset:
           true, // Permet au contenu de se redimensionner quand le clavier s'ouvre
-      body: PageConnectionStatus(
-        showStatusBar: true,
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.orange.shade700, Colors.deepOrange.shade900],
+            begin: Alignment.bottomCenter,
+            end: Alignment.topCenter,
+          ),
+        ),
         child: Stack(
           children: [
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.orange.shade700, Colors.deepOrange.shade900],
-                  begin: Alignment.bottomCenter,
-                  end: Alignment.topCenter,
-                ),
-              ),
-            ),
             AnimatedBuilder(
               animation: _animation,
               builder: (context, child) {
