@@ -141,3 +141,4 @@ Votre application reste **conforme** car :
 **Solution :** Se reconnecter puis supprimer immédiatement le compte.
 
 **Votre application est conforme aux exigences Google Play !** 🎉
+

@@ -549,35 +549,45 @@ class HomePage extends ConsumerWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    IconButton(
-                      icon: Image.asset(
-                        'assets/img/cascall.png',
-                        width: 16.0,
-                        height: 16.0,
-                        color: Colors.grey,
+                    GestureDetector(
+                      onTap: () => _callNumber(context, '+2250700846546'),
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        child: Image.asset(
+                          'assets/img/cascall.png',
+                          width: 20.0,
+                          height: 20.0,
+                          color: Colors.black,
+                        ),
                       ),
-                      onPressed: () => _callNumber(context, '+2250700846546'),
                     ),
-                    // Icône de notifications
-                    NotificationButton(
-                      backgroundColor: Colors.transparent,
-                      iconColor: Colors.grey,
-                      size: 40.0,
-                      onPressed: () {
-                        // Navigation vers la page de notifications
+                    const SizedBox(width: 6),
+                    GestureDetector(
+                      onTap: () {
                         context.router.push(const NotificationsRoute());
                       },
-                    ),
-                    // Icône de profil
-                    IconButton(
-                      icon: const Icon(
-                        Icons.person,
-                        color: Colors.grey,
-                        size: 20.0,
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        child: const Icon(
+                          Icons.notifications_outlined,
+                          color: Colors.black,
+                          size: 24.0,
+                        ),
                       ),
-                      onPressed: () {
+                    ),
+                    const SizedBox(width: 6),
+                    GestureDetector(
+                      onTap: () {
                         showTopMenu(context, ref);
                       },
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        child: const Icon(
+                          Icons.person_outline,
+                          color: Colors.black,
+                          size: 24.0,
+                        ),
+                      ),
                     ),
                   ],
                 ),

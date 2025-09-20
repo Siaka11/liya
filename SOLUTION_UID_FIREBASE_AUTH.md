@@ -171,3 +171,4 @@ await UserMigrationService.checkMigrationStatus();
 - ✅ **Conformité Google Play** respectée
 
 **Testez maintenant avec un nouvel utilisateur !** 🚀
+

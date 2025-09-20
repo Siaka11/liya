@@ -206,3 +206,4 @@ service cloud.firestore {
 3. Vérifiez manuellement dans Firebase Console
 
 **Votre application est conforme aux exigences Google Play !** 🎉
+

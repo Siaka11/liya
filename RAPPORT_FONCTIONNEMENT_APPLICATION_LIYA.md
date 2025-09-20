@@ -432,3 +432,4 @@ delivery/
 *Rapport généré le : ${DateTime.now().toString().split(' ')[0]}*
 *Version application : 1.0.0+5*
 *Framework : Flutter 3.5.4+*
+

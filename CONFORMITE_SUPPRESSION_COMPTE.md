@@ -284,3 +284,4 @@ L'application LIYA est **entièrement conforme** aux exigences de Google Play St
 *Document généré le : ${DateTime.now().toString().split(' ')[0]}*
 *Version application : 1.0.0+5*
 *Statut : ✅ CONFORME*
+

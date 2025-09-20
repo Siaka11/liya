@@ -181,3 +181,4 @@ await AddUidToExistingUsers.checkUidStatus();
 - ✅ **Conformité Google Play** respectée
 
 **Testez maintenant avec un nouvel utilisateur !** 🚀
+
