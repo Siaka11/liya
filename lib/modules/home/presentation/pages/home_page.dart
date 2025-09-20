@@ -478,7 +478,7 @@ class HomePage extends ConsumerWidget {
                       'Comment pouvons-nous vous aider ?',
                       style: TextStyle(
                         fontSize: 16,
-                        color: Colors.black,
+                        color: Colors.grey,
                       ),
                     ),
                     const SizedBox(height: 10),
@@ -546,55 +546,59 @@ class HomePage extends ConsumerWidget {
               Positioned(
                 top: 10,
                 right: 10,
-                child: Wrap(
-                  spacing: 0, // Pas d'espacement automatique
-                  runSpacing: 0,
-                  alignment: WrapAlignment.end,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    GestureDetector(
-                      onTap: () => _callNumber(context, '+2250700846546'),
-                      child: Container(
-                        padding: const EdgeInsets.all(6),
-                        child: Image.asset(
-                          'assets/img/cascall.png',
-                          width: 18.0,
-                          height: 18.0,
-                          color: Colors.black,
-                        ),
+                    IconButton(
+                      icon: Image.asset(
+                        'assets/img/cascall.png',
+                        width: 16.0,
+                        height: 16.0,
+                        color: Colors.grey,
                       ),
+                      onPressed: () => _callNumber(context, '+2250700846546'),
                     ),
-                    const SizedBox(width: 6),
-                    GestureDetector(
-                      onTap: () {
+                    // Icône de notifications
+                    NotificationButton(
+                      backgroundColor: Colors.transparent,
+                      iconColor: Colors.grey,
+                      size: 40.0,
+                      onPressed: () {
+                        // Navigation vers la page de notifications
                         context.router.push(const NotificationsRoute());
                       },
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        child: const Icon(
-                          Icons.notifications_outlined,
-                          color: Colors.black,
-                          size: 22.0,
-                        ),
-                      ),
                     ),
-                    const SizedBox(width: 6),
-                    GestureDetector(
-                      onTap: () {
+                    // Icône de profil
+                    IconButton(
+                      icon: const Icon(
+                        Icons.person,
+                        color: Colors.grey,
+                        size: 20.0,
+                      ),
+                      onPressed: () {
                         showTopMenu(context, ref);
                       },
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        child: const Icon(
-                          Icons.person_outline,
-                          color: Colors.black,
-                          size: 22.0,
-                        ),
-                      ),
                     ),
                   ],
                 ),
               ),
 
+              // Bouton paramètres en bas à gauche
+              /*Positioned(
+                bottom: 20,
+                left: 20,
+                child: FloatingActionButton(
+                  onPressed: () {
+                    _showTestDrawer(context);
+                  },
+                  backgroundColor: Colors.grey[300],
+                  child: const Icon(
+                    Icons.settings,
+                    color: Colors.black54,
+                  ),
+                ),
+              ),*/
+              // Overlay du profil
               if (showProfile)
                 Container(
                   color: Colors.black.withOpacity(0.5),

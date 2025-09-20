@@ -65,6 +65,40 @@ class HomeOptionCard extends StatelessWidget {
                   color: UIColors.orange,
                 ),
               ),
+              // Texte secondaire (Ouvert tous les jours)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.access_time,
+                    size: 14,
+                    color: Colors.white,
+                  ),
+                  const SizedBox(width: 5),
+                  Text(
+                    option.availability,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 3),
+              // Localisation
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const SizedBox(width: 5),
+                  Text(
+                    option.location,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: UIColors.grey,
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
         ),
