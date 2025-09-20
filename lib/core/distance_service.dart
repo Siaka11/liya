@@ -85,13 +85,13 @@ class DistanceService {
   /// Retourne les frais en FCFA
   static int calculateDeliveryFee(double distanceInKm) {
 
-    if (distanceInKm <= 3) {
+    if (distanceInKm <= 4) {
       return 500;
-    } else if (distanceInKm <= 6) {
-      return 1000;
-    } else if (distanceInKm <= 8) {
-      return 1500;
     } else if (distanceInKm <= 10) {
+      return 1000;
+    } else if (distanceInKm <= 15) {
+      return 1500;
+    } else if (distanceInKm <= 20) {
       return 2000;
     } else if (distanceInKm <= 30) {
       return 3000;
