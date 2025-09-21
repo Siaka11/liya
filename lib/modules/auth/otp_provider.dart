@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:liya/modules/auth/firebase_auth_service.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:liya/routes/app_router.gr.dart';
+import 'package:liya/core/constants/error_messages.dart';
 
 // État OTP
 class OtpState {
@@ -67,8 +68,7 @@ class OtpNotifier extends StateNotifier<OtpState> {
       // Vérifier que le verificationId existe avant d'essayer
       final verificationId = await _authService.getVerificationId();
       if (verificationId == null) {
-        throw Exception(
-            'Aucun ID de vérification trouvé. Veuillez redemander un code.');
+        throw Exception(ErrorMessages.missingVerificationId);
       }
       print('✅ VerificationId trouvé: ${verificationId.substring(0, 10)}...');
 
@@ -87,10 +87,25 @@ class OtpNotifier extends StateNotifier<OtpState> {
       }
     } catch (e) {
       print('❌ Erreur vérification OTP: $e');
+
+      // Utiliser des messages d'erreur professionnels
+      String errorMessage = ErrorMessages.otpVerificationFailed;
+
+      // Si c'est une exception avec un message personnalisé, l'utiliser
+      if (e is Exception && e.toString().startsWith('Exception: ')) {
+        final message = e.toString().substring(11); // Enlever "Exception: "
+        if (message.startsWith('🔢') ||
+            message.startsWith('⏰') ||
+            message.startsWith('🔍') ||
+            message.startsWith('🛡️')) {
+          errorMessage = message;
+        }
+      }
+
       state = state.copyWith(
         isLoading: false,
         hasError: true,
-        errorMessage: 'Code incorrect: ${e.toString()}',
+        errorMessage: errorMessage,
       );
     }
   }
@@ -102,20 +117,19 @@ class OtpNotifier extends StateNotifier<OtpState> {
       await _authService.sendOTP(phoneNumber);
       state = state.copyWith(isLoading: false);
     } catch (e) {
-      String errorMessage = 'Erreur lors du renvoi';
+      String errorMessage = ErrorMessages.otpResendFailed;
 
-      // Messages d'erreur plus spécifiques
+      // Messages d'erreur plus spécifiques et professionnels
       if (e.toString().contains('too-many-requests')) {
-        errorMessage =
-            'Trop de demandes. Attendez quelques minutes avant de réessayer.';
+        errorMessage = ErrorMessages.otpTooManyAttempts;
       } else if (e.toString().contains('invalid-phone-number')) {
-        errorMessage = 'Numéro de téléphone invalide.';
+        errorMessage = ErrorMessages.invalidPhoneNumber;
       } else if (e.toString().contains('quota-exceeded')) {
-        errorMessage = 'Limite de SMS dépassée. Réessayez plus tard.';
+        errorMessage = ErrorMessages.quotaExceeded;
       } else if (e.toString().contains('network-request-failed')) {
-        errorMessage = 'Erreur réseau. Vérifiez votre connexion internet.';
-      } else {
-        errorMessage = 'Erreur lors du renvoi: ${e.toString()}';
+        errorMessage = ErrorMessages.networkRequestFailed;
+      } else if (e.toString().contains('app-not-authorized')) {
+        errorMessage = ErrorMessages.appNotAuthorized;
       }
 
       state = state.copyWith(

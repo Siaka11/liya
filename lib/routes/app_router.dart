@@ -27,6 +27,7 @@ import '../modules/auth/auth_provider.dart';
 import '../modules/auth/auth_page.dart';
 import '../modules/auth/otp_page.dart';
 import '../modules/auth/info_user_page.dart';
+import '../modules/auth/presentation/pages/delete_account_page.dart';
 import '../modules/share_location_page.dart';
 import '../modules/home/presentation/pages/home_page.dart';
 import '../modules/home/presentation/pages/user_profile_page.dart';
@@ -91,6 +92,7 @@ class AppRouter extends $AppRouter implements AutoRouteGuard {
         AutoRoute(page: AuthRoute.page),
         AutoRoute(page: OtpRoute.page),
         AutoRoute(page: InfoUserRoute.page),
+        AutoRoute(page: DeleteAccountRoute.page),
         AutoRoute(page: ShareLocationRoute.page),
         AutoRoute(page: HomeRestaurantRoute.page),
         AutoRoute(page: DishDetailRoute.page),

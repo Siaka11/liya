@@ -128,7 +128,7 @@ class HomeRestaurantPage extends ConsumerWidget {
                   ),
                   // Filtres régionaux
                   FilterSection(),
-                  // Section Populaires
+                  // Section Nouveaux plats
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Column(

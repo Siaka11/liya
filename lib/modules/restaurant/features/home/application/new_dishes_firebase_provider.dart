@@ -44,7 +44,7 @@ class NewDishesFirebaseNotifier extends StateNotifier<NewDishesFirebaseState> {
           .get();
 
       final List<Map<String, dynamic>> dishes = [];
-      final thirtyDaysAgo = DateTime.now().subtract(const Duration(days: 30));
+     // final thirtyDaysAgo = DateTime.now().subtract(const Duration(days: 30));
 
       for (final doc in dishesSnapshot.docs) {
         final dishData = doc.data();
@@ -57,11 +57,11 @@ class NewDishesFirebaseNotifier extends StateNotifier<NewDishesFirebaseState> {
         if (!isAvailable) continue;
 
         // Vérifier si le plat a été créé dans les 30 derniers jours
-        if (createdAt != null) {
+        /*if (createdAt != null) {
           final createdDate =
               createdAt is DateTime ? createdAt : createdAt.toDate();
           if (createdDate.isBefore(thirtyDaysAgo)) continue;
-        }
+        }*/
 
         // Récupérer les informations du restaurant
         String restaurantName = 'Restaurant inconnu';

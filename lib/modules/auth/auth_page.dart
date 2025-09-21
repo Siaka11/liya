@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:auto_route/auto_route.dart'; // Pour la navigation
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:liya/modules/auth/auth_provider.dart'; // Votre AuthProvider
 import 'package:liya/core/ui/components/custom_button.dart'; // Vos composants UI
 import 'package:liya/core/ui/components/custom_field.dart'; // Vos composants UI
 import 'package:liya/routes/app_router.gr.dart'; // Vos routes générées
 import 'package:liya/core/services/connection_manager.dart';
-import 'package:liya/core/ui/widgets/connection_status_widget.dart';
 
 import '../../core/ui/theme/theme.dart'; // Votre thème UI
 import '../home/application/home_provider.dart'; // Votre HomeProvider
@@ -44,6 +44,9 @@ class _AuthPageState extends ConsumerState<AuthPage>
     _animation = Tween<double>(begin: 1.5, end: 1.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
     );
+
+    // Récupérer le numéro sauvegardé
+    _loadSavedPhoneNumber();
 
     // Vérifier si l'utilisateur est déjà connecté
     _checkIfUserAlreadyAuthenticated();
@@ -89,6 +92,22 @@ class _AuthPageState extends ConsumerState<AuthPage>
     } else if (phoneNumber.length >= 10) {
       _hasShownLengthError =
           false; // Reset pour permettre un nouveau message si nécessaire
+    }
+  }
+
+  /// Charger le numéro de téléphone sauvegardé depuis SharedPreferences
+  Future<void> _loadSavedPhoneNumber() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedPhoneNumber = prefs.getString('last_phone_number');
+
+      if (savedPhoneNumber != null && savedPhoneNumber.isNotEmpty) {
+        _phoneController.text = savedPhoneNumber;
+        print(
+            '📱 Numéro de téléphone chargé automatiquement: $savedPhoneNumber');
+      }
+    } catch (e) {
+      print('⚠️ Erreur lors du chargement du numéro sauvegardé: $e');
     }
   }
 

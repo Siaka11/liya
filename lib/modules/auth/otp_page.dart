@@ -5,11 +5,7 @@ import 'package:liya/core/ui/theme/theme.dart';
 import 'package:liya/modules/auth/otp_provider.dart';
 import 'package:pinput/pinput.dart';
 import 'package:liya/core/ui/components/custom_button.dart';
-import 'package:liya/modules/auth/firebase_auth_service.dart';
-import 'package:liya/core/test_otp_debug.dart';
 import 'package:liya/core/services/connection_manager.dart';
-import 'package:liya/core/ui/widgets/connection_status_widget.dart';
-import 'package:liya/core/test_verification_id_debug.dart';
 import 'dart:async';
 
 @RoutePage()
@@ -121,149 +117,233 @@ class _OtpPageState extends ConsumerState<OtpPage> {
           color: UIColors.defaultColor,
         ),
         child: SafeArea(
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Image.asset(
-                      'assets/logo.png',
-                      fit: BoxFit.cover,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 10),
-              const Padding(
-                padding: EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Veuillez saisir le code envoyé",
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: UIColors.black,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 5),
-                    Text(
-                      "Nous vous avons envoyé un code de confirmation à votre numéro de téléphone",
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: UIColors.black,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(20.0),
-                    child: Pinput(
-                      length: 6,
-                      autofocus: true,
-                      controller: _pinController,
-                      onCompleted: (pin) {
-                        otpNotifier.updatePin(pin); // On met à jour le provider
-                        otpNotifier.verifyOTP(context);
-                      },
-                      defaultPinTheme: PinTheme(
-                        width: 56,
-                        height: 56,
-                        textStyle: const TextStyle(
-                          fontSize: 20,
-                          color: UIColors.black,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          border: Border.all(color: UIColors.defaultColor),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      focusedPinTheme: PinTheme(
-                        width: 56,
-                        height: 56,
-                        textStyle: const TextStyle(
-                          fontSize: 20,
-                          color: UIColors.black,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          border: Border.all(color: UIColors.black),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      errorPinTheme: PinTheme(
-                        width: 56,
-                        height: 56,
-                        textStyle: const TextStyle(
-                          fontSize: 20,
-                          color: Colors.red,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          border: Border.all(color: Colors.red),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                    ),
-                  )
-                ],
-              ),
-              const SizedBox(height: 10),
-              if (otpState.hasError && otpState.errorMessage.isNotEmpty) ...[
-                const SizedBox(height: 10),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                  child: Text(
-                    otpState.errorMessage,
-                    style: const TextStyle(color: Colors.red, fontSize: 14),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ],
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: SizedBox(
-                    width: 120,
-                    height: 30,
-                    child: otpState.isLoading
-                        ? const Center(
-                            child: SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor:
-                                    AlwaysStoppedAnimation<Color>(Colors.white),
-                              ),
-                            ),
-                          )
-                        : CustomButton(
-                            text: _canResend
-                                ? 'Renvoyer SMS'
-                                : '${_resendCountdown}s',
-                            onPressedButton: _canResend ? _resendOTP : null,
-                            bgColor: _canResend ? UIColors.orange : Colors.white,
-                            fontSize: 10,
-                            paddingVertical: 8,
-                            borderRadius: 16,
-                            width: 50),
-                  ),
-                ),
-              ),
+          child: otpState.isLoading
+              ? _buildLoadingWidget()
+              : _buildOTPWidget(otpNotifier, otpState),
+        ),
+      ),
+    );
+  }
 
+  /// Widget de chargement bien visible
+  Widget _buildLoadingWidget() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        // Logo
+        Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Image.asset(
+            'assets/logo.png',
+            fit: BoxFit.cover,
+          ),
+        ),
+        const SizedBox(height: 40),
+
+        // Spinner principal bien visible
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                spreadRadius: 5,
+                blurRadius: 15,
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Spinner principal
+              const SizedBox(
+                width: 60,
+                height: 60,
+                child: CircularProgressIndicator(
+                  strokeWidth: 4,
+                  valueColor: AlwaysStoppedAnimation<Color>(UIColors.orange),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Message de chargement
+              const Text(
+                'Vérification en cours...',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: UIColors.black,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Veuillez patienter pendant que nous vérifions votre code',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey,
+                ),
+                textAlign: TextAlign.center,
+              ),
             ],
           ),
         ),
-      ),
+        const SizedBox(height: 40),
+
+        // Message du numéro
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 40),
+          child: Text(
+            'Code envoyé au ${widget.phoneNumber}',
+            style: const TextStyle(
+              fontSize: 14,
+              color: Colors.white,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Widget principal de saisie OTP
+  Widget _buildOTPWidget(OtpNotifier otpNotifier, OtpState otpState) {
+    return Column(
+      children: [
+        // Logo
+        Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Image.asset(
+                'assets/logo.png',
+                fit: BoxFit.cover,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 10),
+
+        // Titre et description
+        const Padding(
+          padding: EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Veuillez saisir le code envoyé",
+                style: TextStyle(
+                  fontSize: 16,
+                  color: UIColors.black,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 5),
+              Text(
+                "Nous vous avons envoyé un code de confirmation à votre numéro de téléphone",
+                style: TextStyle(
+                  fontSize: 12,
+                  color: UIColors.black,
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // Champ de saisie OTP
+        Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Pinput(
+                length: 6,
+                autofocus: true,
+                controller: _pinController,
+                onCompleted: (pin) {
+                  otpNotifier.updatePin(pin);
+                  otpNotifier.verifyOTP(context);
+                },
+                defaultPinTheme: PinTheme(
+                  width: 56,
+                  height: 56,
+                  textStyle: const TextStyle(
+                    fontSize: 20,
+                    color: UIColors.black,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    border: Border.all(color: UIColors.defaultColor),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                focusedPinTheme: PinTheme(
+                  width: 56,
+                  height: 56,
+                  textStyle: const TextStyle(
+                    fontSize: 20,
+                    color: UIColors.black,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    border: Border.all(color: UIColors.black),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                errorPinTheme: PinTheme(
+                  width: 56,
+                  height: 56,
+                  textStyle: const TextStyle(
+                    fontSize: 20,
+                    color: Colors.red,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    border: Border.all(color: Colors.red),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+            )
+          ],
+        ),
+        const SizedBox(height: 10),
+
+        // Message d'erreur
+        if (otpState.hasError && otpState.errorMessage.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20.0),
+            child: Text(
+              otpState.errorMessage,
+              style: const TextStyle(color: Colors.red, fontSize: 14),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ],
+
+        // Bouton renvoyer SMS
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: SizedBox(
+              width: 120,
+              height: 30,
+              child: CustomButton(
+                text: _canResend ? 'Renvoyer SMS' : '${_resendCountdown}s',
+                onPressedButton: _canResend ? _resendOTP : null,
+                bgColor: _canResend ? UIColors.white : Colors.white,
+                fontSize: 10,
+                paddingVertical: 8,
+                borderRadius: 16,
+                width: 50,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

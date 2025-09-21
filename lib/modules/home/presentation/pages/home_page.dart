@@ -10,7 +10,6 @@ import 'package:liya/modules/home/presentation/pages/widget/profile_content_widg
 import 'package:liya/routes/app_router.gr.dart';
 import 'package:liya/modules/home/application/home_provider.dart';
 import 'package:liya/modules/home/presentation/pages/utils/top_menu.dart';
-import 'package:liya/core/ui/components/notification_button.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/clean_test_data.dart';
@@ -549,43 +548,52 @@ class HomePage extends ConsumerWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    GestureDetector(
-                      onTap: () => _callNumber(context, '+2250700846546'),
-                      child: Container(
-                        padding: const EdgeInsets.all(6),
-                        child: Image.asset(
-                          'assets/img/cascall.png',
-                          width: 20.0,
-                          height: 20.0,
-                          color: Colors.black,
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(20),
+                        onTap: () => _callNumber(context, '+2250700846546'),
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          child: Image.asset('assets/img/cascall.png',
+                              width: 16.0,
+                              height: 16.0,
+                              color: Colors.grey[800]),
                         ),
                       ),
                     ),
-                    const SizedBox(width: 6),
-                    GestureDetector(
-                      onTap: () {
-                        context.router.push(const NotificationsRoute());
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.all(6),
-                        child: const Icon(
-                          Icons.notifications_outlined,
-                          color: Colors.black,
-                          size: 24.0,
+                    const SizedBox(width: 2),
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(20),
+                        onTap: () {
+                          context.router.push(const NotificationsRoute());
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          child: Icon(
+                            Icons.notifications_outlined,
+                            color: Colors.grey[800],
+                            size: 20.0,
+                          ),
                         ),
                       ),
                     ),
-                    const SizedBox(width: 6),
-                    GestureDetector(
-                      onTap: () {
-                        showTopMenu(context, ref);
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.all(6),
-                        child: const Icon(
-                          Icons.person_outline,
-                          color: Colors.black,
-                          size: 24.0,
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(20),
+                        onTap: () {
+                          showTopMenu(context, ref);
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          child: Icon(
+                            Icons.person_outline,
+                            color: Colors.grey[800],
+                            size: 20.0,
+                          ),
                         ),
                       ),
                     ),

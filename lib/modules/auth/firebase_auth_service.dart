@@ -8,6 +8,7 @@ import 'dart:convert'; // Nécessaire pour jsonDecode
 import '../../core/local_storage_factory.dart'; // Pour stocker verificationId
 import '../../core/singletons.dart'; // Pour singleton
 import '../../config/app_information.dart'; // Pour Config
+import '../../core/constants/error_messages.dart'; // Messages d'erreur centralisés
 // Pour singleton
 import 'package:liya/core/services/fcm_service.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
@@ -275,35 +276,30 @@ class FirebaseAuthService {
         print('❌ Échec vérification Firebase: ${e.code} - ${e.message}');
         String userFriendlyMessage;
 
-        // Cas 1: Blocage Firebase
+        // Cas 1: Blocage temporaire pour sécurité
         if (e.code == 'too-many-requests' ||
             e.message?.contains('blocked all requests') == true) {
-          userFriendlyMessage =
-              'Firebase a temporairement bloqué cet appareil. Veuillez attendre quelques minutes ou utiliser un autre appareil.';
+          userFriendlyMessage = ErrorMessages.tooManyRequests;
         }
         // Cas 2: Numéro invalide
         else if (e.code == 'invalid-phone-number') {
-          userFriendlyMessage =
-              'Le numéro de téléphone est invalide. Vérifiez le format (0701234567).';
+          userFriendlyMessage = ErrorMessages.invalidPhoneNumber;
         }
         // Cas 3: Application non autorisée
         else if (e.code == 'app-not-authorized') {
-          userFriendlyMessage =
-              'L\'application n\'est pas autorisée. Vérifiez App Check et les empreintes SHA.';
+          userFriendlyMessage = ErrorMessages.appNotAuthorized;
         }
         // Cas 4: Quota dépassé
         else if (e.code == 'quota-exceeded') {
-          userFriendlyMessage = 'Limite de SMS dépassée. Réessayez plus tard.';
+          userFriendlyMessage = ErrorMessages.quotaExceeded;
         }
         // Cas 5: Erreur réseau
         else if (e.code == 'network-request-failed') {
-          userFriendlyMessage =
-              'Erreur réseau. Vérifiez votre connexion internet.';
+          userFriendlyMessage = ErrorMessages.networkRequestFailed;
         }
         // Cas 6: Erreur inconnue
         else {
-          userFriendlyMessage =
-              'Erreur lors de l\'envoi du code de vérification: ${e.message}';
+          userFriendlyMessage = ErrorMessages.unexpectedError;
         }
 
         print('📱 Message d\'erreur utilisateur: $userFriendlyMessage');
@@ -355,8 +351,7 @@ class FirebaseAuthService {
           '🔍 VerificationId récupéré: ${verificationId?.substring(0, 10)}...');
 
       if (verificationId == null) {
-        throw Exception(
-            'Aucun ID de vérification trouvé. Veuillez redemander un code.');
+        throw Exception(ErrorMessages.missingVerificationId);
       }
 
       // Créer la credential
@@ -387,14 +382,16 @@ class FirebaseAuthService {
       if (e.toString().contains('session-expired')) {
         print('🔄 Code SMS expiré, nettoyage du verificationId...');
         await clearVerificationId();
-        throw Exception(
-            'Le code SMS a expiré. Veuillez redemander un nouveau code.');
+        throw Exception(ErrorMessages.expiredOtpCode);
       } else if (e.toString().contains('invalid-verification-code')) {
         print('❌ Code OTP invalide');
-        throw Exception('Code OTP incorrect. Veuillez vérifier et réessayer.');
+        throw Exception(ErrorMessages.invalidOtpCode);
       } else if (e.toString().contains('quota-exceeded')) {
         print('❌ Quota SMS dépassé');
-        throw Exception('Trop de tentatives. Veuillez réessayer plus tard.');
+        throw Exception(ErrorMessages.otpTooManyAttempts);
+      } else if (e.toString().contains('too-many-requests')) {
+        print('❌ Trop de tentatives de vérification');
+        throw Exception(ErrorMessages.otpTooManyAttempts);
       }
 
       rethrow;
