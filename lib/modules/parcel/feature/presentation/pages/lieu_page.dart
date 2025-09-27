@@ -231,7 +231,8 @@ class _LieuPageState extends ConsumerState<LieuPage> {
                         );
 
                         // ➡️ Redirection sûre, utilisant parentContext pour accéder au routeur
-                        parentContext.router.replaceAll([const ParcelHomeRoute()]);
+                        parentContext.router
+                            .replaceAll([const ParcelHomeRoute()]);
                       }
                     },
                     style: ElevatedButton.styleFrom(
@@ -256,7 +257,8 @@ class _LieuPageState extends ConsumerState<LieuPage> {
                 Container(
                   width: double.infinity,
                   child: TextButton(
-                    onPressed: () => Navigator.of(modalContext).pop(), // Utilise modalContext
+                    onPressed: () => Navigator.of(modalContext)
+                        .pop(), // Utilise modalContext
                     style: TextButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
@@ -273,7 +275,8 @@ class _LieuPageState extends ConsumerState<LieuPage> {
                   ),
                 ),
 
-                SizedBox(height: MediaQuery.of(parentContext).viewInsets.bottom),
+                SizedBox(
+                    height: MediaQuery.of(parentContext).viewInsets.bottom),
               ],
             ),
           ),
