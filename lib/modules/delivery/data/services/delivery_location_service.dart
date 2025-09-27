@@ -142,20 +142,6 @@ class DeliveryLocationService {
     }
   }
 
-  /// Mettre à jour la position du livreur
-  static Future<void> _updateDeliveryLocation(
-      String phoneNumber, Position position) async {
-    try {
-      await _firestore.collection('users').doc(phoneNumber).update({
-        'current_latitude': position.latitude,
-        'current_longitude': position.longitude,
-        'last_location_update': FieldValue.serverTimestamp(),
-      });
-    } catch (e) {
-      print('❌ Erreur mise à jour position: $e');
-    }
-  }
-
   /// Mettre à jour la position d'un livreur
   static Future<void> _updateDriverPosition(String phoneNumber) async {
     try {
@@ -254,7 +240,8 @@ class DeliveryLocationService {
         await _firestore.collection('orders').doc(orderId).update({
           'delivery_phone_number': nearestDriver.phoneNumber,
           'delivery_name': '${nearestDriver.name} ${nearestDriver.lastname}',
-          'status': 'enRoute',
+          'status':
+              'assigned', // ✅ CORRIGÉ : statut 'assigned' au lieu de 'enRoute'
           'assigned_at': FieldValue.serverTimestamp(),
           'destination_coordinates': {
             'latitude': destinationLat,
@@ -346,7 +333,8 @@ class DeliveryLocationService {
       await _firestore.collection('orders').doc(orderId).update({
         'delivery_phone_number': driver.phoneNumber,
         'delivery_name': '${driver.name} ${driver.lastname}',
-        'status': 'enRoute',
+        'status':
+            'assigned', // ✅ CORRIGÉ : statut 'assigned' au lieu de 'enRoute'
         'assigned_at': FieldValue.serverTimestamp(),
         'destination_coordinates': {
           'latitude': destinationLat,

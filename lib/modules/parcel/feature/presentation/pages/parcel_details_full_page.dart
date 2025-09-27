@@ -85,8 +85,8 @@ class ParcelDetailsFullPage extends StatelessWidget {
                         'N/A'),
                 _buildInfoRow('Lieu de l\'expéditeur',
                     parcelData['expediteurLieu'] ?? 'N/A'),
-                _buildInfoRow('Téléphone',
-                    parcelData['expediteurPhone'] ?? parcelData['expediteurPhone'] ?? 'N/A'),
+                _buildInfoRow('Téléphone expéditeur',
+                    parcelData['expediteurPhone'] ?? 'N/A'),
               ],
             ),
 
@@ -104,31 +104,33 @@ class ParcelDetailsFullPage extends StatelessWidget {
                         'N/A'),
                 _buildInfoRow('Lieu du destinataire',
                     parcelData['destinataireLieu'] ?? 'N/A'),
-                _buildInfoRow('Téléphone',
-                    parcelData['destinatairePhone'] ?? parcelData['phone'] ?? 'N/A'),
+                _buildInfoRow('Téléphone destinataire',
+                    parcelData['destinatairePhone'] ?? 'N/A'),
               ],
             ),
 
             const SizedBox(height: 16),
 
             // Informations livreur
-          /*  _buildInfoCard(
-              title: 'Informations du livreur',
-              icon: Icons.delivery_dining,
-              children: [
-                _buildInfoRow('Nom du livreur',
-                    parcelData['assignedToName'] ?? 'Non assigné'),
-                _buildInfoRow('Téléphone du livreur',
-                    parcelData['assignedTo'] ?? 'Non assigné'),
-                *//*_buildInfoRow(
-                    'Date d\'assignation',
-                    parcelData['assignedAt'] != null
-                        ? _formatDate(parcelData['assignedAt'])
-                        : 'Non assigné'),*//*
-              ],
-            ),*/
+            if (parcelData['assignedTo'] != null ||
+                parcelData['assignedToName'] != null)
+              _buildInfoCard(
+                title: 'Informations du livreur',
+                icon: Icons.delivery_dining,
+                children: [
+                  _buildInfoRow('Nom du livreur',
+                      parcelData['assignedToName'] ?? 'Non assigné'),
+                  _buildInfoRow('Téléphone du livreur',
+                      parcelData['assignedTo'] ?? 'Non assigné'),
+                  if (parcelData['assignedAt'] != null)
+                    _buildInfoRow('Date d\'assignation',
+                        _formatDate(parcelData['assignedAt'])),
+                ],
+              ),
 
-            const SizedBox(height: 16),
+            if (parcelData['assignedTo'] != null ||
+                parcelData['assignedToName'] != null)
+              const SizedBox(height: 16),
 
             // Description du colis
             if (parcelData['descriptionColis'] != null ||
@@ -187,19 +189,57 @@ class ParcelDetailsFullPage extends StatelessWidget {
             const SizedBox(height: 16),
 
             // Informations financières
-            if (parcelData['prix'] != null)
+            if (parcelData['prix'] != null || parcelData['deliveryFee'] != null)
               _buildInfoCard(
                 title: 'Informations financières',
                 icon: Icons.account_balance_wallet,
                 children: [
-                  _buildInfoRow('Prix', '${parcelData['prix']} FCFA'),
+                  if (parcelData['prix'] != null)
+                    _buildInfoRow(
+                        'Prix du colis', '${parcelData['prix']} FCFA'),
+                  if (parcelData['deliveryFee'] != null)
+                    _buildInfoRow('Frais de livraison',
+                        '${parcelData['deliveryFee']} FCFA'),
+                  if (parcelData['prix'] != null &&
+                      parcelData['deliveryFee'] != null)
+                    _buildInfoRow('Total',
+                        '${(parcelData['prix'] + parcelData['deliveryFee'])} FCFA'),
                 ],
               ),
 
-            if (parcelData['prix'] != null) const SizedBox(height: 16),
+            if (parcelData['prix'] != null || parcelData['deliveryFee'] != null)
+              const SizedBox(height: 16),
+
+            // Actions de contact
+            _buildInfoCard(
+              title: 'Actions de contact',
+              icon: Icons.phone,
+              children: [
+                if (parcelData['expediteurPhone'] != null)
+                  _buildContactRow(
+                    'Appeler l\'expéditeur',
+                    parcelData['expediteurPhone'],
+                    Icons.phone,
+                  ),
+                if (parcelData['destinatairePhone'] != null)
+                  _buildContactRow(
+                    'Appeler le destinataire',
+                    parcelData['destinatairePhone'],
+                    Icons.phone,
+                  ),
+                if (parcelData['assignedTo'] != null)
+                  _buildContactRow(
+                    'Appeler le livreur',
+                    parcelData['assignedTo'],
+                    Icons.delivery_dining,
+                  ),
+              ],
+            ),
+
+            const SizedBox(height: 16),
 
             // Informations techniques
-           /* _buildInfoCard(
+            /* _buildInfoCard(
               title: 'Informations techniques',
               icon: Icons.info_outline,
               children: [
@@ -292,6 +332,47 @@ class ParcelDetailsFullPage extends StatelessWidget {
                 color: Colors.black87,
                 fontWeight: FontWeight.w500,
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildContactRow(String label, String phoneNumber, IconData icon) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        children: [
+          Icon(
+            icon,
+            color: const Color(0xFFF24E1E),
+            size: 20,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 14,
+                color: Colors.black87,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          ElevatedButton.icon(
+            onPressed: () {
+              // TODO: Implémenter l'appel téléphonique
+              print('Appel vers: $phoneNumber');
+            },
+            icon: const Icon(Icons.phone, size: 16),
+            label: const Text('Appeler'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFF24E1E),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
           ),
         ],

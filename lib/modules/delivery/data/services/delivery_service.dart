@@ -137,7 +137,8 @@ class DeliveryService {
       await _firestore.collection('delivery_orders').doc(orderId).update({
         'delivery_phone_number': deliveryPhoneNumber,
         'delivery_name': deliveryName,
-        'status': 'enRoute',
+        'status':
+            'assigned', // ✅ CORRIGÉ : statut 'assigned' au lieu de 'enRoute'
         'assigned_at': DateTime.now(),
       });
     } catch (e) {

@@ -582,10 +582,25 @@ class _HomeDeliveryPageState extends ConsumerState<HomeDeliveryPage> {
         statusText = 'Nouvelle livraison';
         statusIcon = Icons.assignment;
         break;
-      case DeliveryStatus.enRoute:
+      case DeliveryStatus.assigned:
         statusColor = Colors.blue;
+        statusText = 'Assigné';
+        statusIcon = Icons.assignment_ind;
+        break;
+      case DeliveryStatus.enRoute:
+        statusColor = Colors.purple;
         statusText = 'En cours de livraison';
         statusIcon = Icons.local_shipping;
+        break;
+      case DeliveryStatus.livre:
+        statusColor = Colors.green;
+        statusText = 'Livré';
+        statusIcon = Icons.check_circle;
+        break;
+      case DeliveryStatus.nonLivre:
+        statusColor = Colors.red;
+        statusText = 'Non livré';
+        statusIcon = Icons.cancel;
         break;
       default:
         statusColor = Colors.grey;
@@ -662,12 +677,8 @@ class _HomeDeliveryPageState extends ConsumerState<HomeDeliveryPage> {
             const SizedBox(height: 12),
             _buildDetailRow(
                 'Client', order.customerFullName ?? order.customerName),
-            _buildDetailRow('📞 Téléphone', order.customerPhoneNumber),
-            _buildDetailRow('📍 Adresse', order.customerAddress),
-            if (order.customerEmail != null)
-              _buildDetailRow('📧 Email', order.customerEmail!),
-            _buildDetailRow(
-                '💰 Gain', '${order.deliveryFee.toStringAsFixed(0)} FCFA'),
+            _buildDetailRow(' Téléphone', order.customerPhoneNumber),
+            _buildDetailRow(' Adresse', order.customerAddress),
           ],
         ),
       ),
@@ -675,9 +686,41 @@ class _HomeDeliveryPageState extends ConsumerState<HomeDeliveryPage> {
   }
 
   void _showOrderDetails(DeliveryOrder order) {
+    // Convertir DeliveryOrder en Map pour la page de détails complète
+    final orderData = {
+      'id': order.id,
+      'phoneNumber': order.customerPhoneNumber,
+      'phone': order.customerPhoneNumber,
+      'customer_name': order.customerName,
+      'address': order.customerAddress,
+      'assignedTo': order.deliveryPhoneNumber,
+      'assignedToName': order.deliveryName,
+      'assignedAt': order.assignedAt?.toIso8601String(),
+      'lastUpdated': order.assignedAt?.toIso8601String(),
+      'createdAt': order.createdAt.toIso8601String(),
+      'status': order.status.toString().split('.').last,
+      'subtotal': order.amount,
+      'deliveryFee': order.deliveryFee,
+      'total': order.amount + order.deliveryFee,
+      'deliveryTime': 10, // Valeur par défaut
+      'distance': 0.0, // Valeur par défaut
+      'items': [
+        {
+          'name': order.description,
+          'price': order.amount,
+          'quantity': 1,
+        }
+      ],
+      'deliveryInstructions': null,
+      'latitude': null,
+      'longitude': null,
+    };
+
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => OrderDetailsPage(order: order),
+        builder: (context) => order.type == DeliveryType.restaurant
+            ? OrderDetailsFullPage(orderData: orderData)
+            : ParcelDetailsFullPage(parcelData: orderData),
       ),
     );
   }
@@ -691,7 +734,7 @@ class _HomeDeliveryPageState extends ConsumerState<HomeDeliveryPage> {
           SizedBox(
             width: 80,
             child: Text(
-              '$label:',
+              '$label',
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
