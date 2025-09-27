@@ -148,11 +148,17 @@ class _LieuPageState extends ConsumerState<LieuPage> {
   }
 
   void _showConfirmDialog() {
+    // 1. 🔑 CAPTURER le contexte de la page parente (_LieuPageState)
+    // Ceci garantit un contexte valide pour le ScaffoldMessenger et le router
+    final parentContext = context;
+
     showModalBottomSheet(
-      context: context,
+      // Utiliser le contexte parent pour afficher le modal sur la page
+      context: parentContext,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (BuildContext context) {
+      // Le builder reçoit le contexte du modal (différent de parentContext)
+      builder: (BuildContext modalContext) {
         return Container(
           decoration: const BoxDecoration(
             color: Colors.white,
@@ -167,7 +173,6 @@ class _LieuPageState extends ConsumerState<LieuPage> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Titre
                 const Text(
                   'Confirmer votre commande',
                   style: TextStyle(
@@ -192,53 +197,41 @@ class _LieuPageState extends ConsumerState<LieuPage> {
                   margin: const EdgeInsets.only(bottom: 12),
                   child: ElevatedButton(
                     onPressed: () async {
-                      Navigator.of(context).pop();
+                      // 2. Fermer le BottomSheet avec son propre contexte
+                      Navigator.of(modalContext).pop();
 
-                      // Sauvegarder le colis
+                      // 3. Sauvegarder le colis
                       await _saveParcel();
 
-                      // Petite pause pour laisser fermer le modal
-                      await Future.delayed(const Duration(milliseconds: 100));
-
-                      // Navigation sûre + SnackBar
+                      // 4. Exécuter le SnackBar et la redirection sur le contexte parent stable
                       if (mounted) {
-                        // Navigation immédiate
-                        Navigator.of(context).pushAndRemoveUntil(
-                          MaterialPageRoute(
-                              builder: (context) => const ParcelHomePage()),
-                          (route) =>
-                              false, // Supprimer toutes les routes précédentes
+                        // ➡️ Afficher le SnackBar en utilisant parentContext (contexte stable)
+                        ScaffoldMessenger.of(parentContext).showSnackBar(
+                          SnackBar(
+                            content: Row(
+                              children: const [
+                                Icon(Icons.check_circle, color: Colors.white),
+                                SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    'Votre demande de colis a été prise en compte avec succès !',
+                                    style: TextStyle(fontSize: 16),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            backgroundColor: const Color(0xFF4BB543),
+                            duration: const Duration(seconds: 4),
+                            behavior: SnackBarBehavior.floating,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            margin: const EdgeInsets.all(16),
+                          ),
                         );
 
-                        // SnackBar après navigation
-                        Future.delayed(const Duration(milliseconds: 500), () {
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Row(
-                                  children: const [
-                                    Icon(Icons.check_circle,
-                                        color: Colors.white),
-                                    SizedBox(width: 12),
-                                    Expanded(
-                                      child: Text(
-                                        'Votre demande de colis a été prise en compte avec succès !',
-                                        style: TextStyle(fontSize: 16),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                backgroundColor: const Color(0xFF4BB543),
-                                duration: const Duration(seconds: 4),
-                                behavior: SnackBarBehavior.floating,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                margin: const EdgeInsets.all(16),
-                              ),
-                            );
-                          }
-                        });
+                        // ➡️ Redirection sûre, utilisant parentContext pour accéder au routeur
+                        parentContext.router.replaceAll([const ParcelHomeRoute()]);
                       }
                     },
                     style: ElevatedButton.styleFrom(
@@ -263,7 +256,7 @@ class _LieuPageState extends ConsumerState<LieuPage> {
                 Container(
                   width: double.infinity,
                   child: TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
+                    onPressed: () => Navigator.of(modalContext).pop(), // Utilise modalContext
                     style: TextButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
@@ -280,8 +273,7 @@ class _LieuPageState extends ConsumerState<LieuPage> {
                   ),
                 ),
 
-                // Espace en bas pour éviter les problèmes de clavier
-                SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
+                SizedBox(height: MediaQuery.of(parentContext).viewInsets.bottom),
               ],
             ),
           ),

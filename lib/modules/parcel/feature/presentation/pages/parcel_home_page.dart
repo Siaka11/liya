@@ -259,6 +259,7 @@ class ParcelHomePage extends ConsumerWidget {
         ? jsonDecode(userDetailsJson)
         : userDetailsJson;
     final phoneNumber = userDetails['phoneNumber'] ?? '';
+
     Navigator.push(
       context,
       MaterialPageRoute(
