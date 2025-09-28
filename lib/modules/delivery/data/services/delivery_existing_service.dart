@@ -385,7 +385,7 @@ class DeliveryExistingService {
             '🔄 Aucune commande trouvée, essai avec delivery_phone_number...');
         querySnapshot = await _firestore
             .collection('orders')
-            .where('delivery_phone_number', isEqualTo: phoneNumber)
+            .where('assignedTo', isEqualTo: phoneNumber)
             .where('status', whereIn: ['assigned', 'enRoute']).get();
         print(
             '📦 Commandes trouvées avec delivery_phone_number: ${querySnapshot.docs.length}');
@@ -395,7 +395,7 @@ class DeliveryExistingService {
         print('🔄 Aucune commande trouvée, essai avec delivery_phone...');
         querySnapshot = await _firestore
             .collection('orders')
-            .where('delivery_phone', isEqualTo: phoneNumber)
+            .where('assignedTo', isEqualTo: phoneNumber)
             .where('status', whereIn: ['assigned', 'enRoute']).get();
         print(
             '📦 Commandes trouvées avec delivery_phone: ${querySnapshot.docs.length}');
@@ -466,7 +466,7 @@ class DeliveryExistingService {
         print('🔄 Aucun colis trouvé, essai avec delivery_phone_number...');
         querySnapshot = await _firestore
             .collection('parcels')
-            .where('delivery_phone_number', isEqualTo: phoneNumber)
+            .where('assignedTo', isEqualTo: phoneNumber)
             .where('status', whereIn: ['assigned', 'enRoute']).get();
         print(
             '📦 Colis trouvés avec delivery_phone_number: ${querySnapshot.docs.length}');
@@ -476,7 +476,7 @@ class DeliveryExistingService {
         print('🔄 Aucun colis trouvé, essai avec delivery_phone...');
         querySnapshot = await _firestore
             .collection('parcels')
-            .where('delivery_phone', isEqualTo: phoneNumber)
+            .where('assignedTo', isEqualTo: phoneNumber)
             .where('status', whereIn: ['assigned', 'enRoute']).get();
         print(
             '📦 Colis trouvés avec delivery_phone: ${querySnapshot.docs.length}');
@@ -667,7 +667,7 @@ class DeliveryExistingService {
       // Gains des commandes restaurant
       final restaurantQuery = await _firestore
           .collection('orders')
-          .where('delivery_phone', isEqualTo: phoneNumber)
+          .where('assignedTo', isEqualTo: phoneNumber)
           .where('status', isEqualTo: 'livre')
           .where('completed_at',
               isGreaterThanOrEqualTo: startOfDay.toIso8601String())
@@ -677,7 +677,7 @@ class DeliveryExistingService {
       // Gains des colis
       final parcelQuery = await _firestore
           .collection('parcels')
-          .where('delivery_phone', isEqualTo: phoneNumber)
+          .where('assignedTo', isEqualTo: phoneNumber)
           .where('status', isEqualTo: 'livre')
           .where('completed_at',
               isGreaterThanOrEqualTo: startOfDay.toIso8601String())

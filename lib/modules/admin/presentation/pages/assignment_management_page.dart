@@ -143,7 +143,7 @@ class _AssignmentManagementPageState extends State<AssignmentManagementPage> {
       Map<String, dynamic> item, Map<String, dynamic> deliveryUser) async {
     try {
       final collection = item['type'] == 'order' ? 'orders' : 'parcels';
-      final status = item['type'] == 'order' ? 'assigned' : 'enRoute';
+      final status = item['type'] == 'order' ? 'assigned' : 'assigned';
 
       // Vérifier que l'élément n'est pas déjà assigné
       if (item['assignedTo'] != null && item['assignedTo'].isNotEmpty) {

@@ -147,144 +147,6 @@ class _LieuPageState extends ConsumerState<LieuPage> {
     }
   }
 
-  void _showConfirmDialog() {
-    // 1. 🔑 CAPTURER le contexte de la page parente (_LieuPageState)
-    // Ceci garantit un contexte valide pour le ScaffoldMessenger et le router
-    final parentContext = context;
-
-    showModalBottomSheet(
-      // Utiliser le contexte parent pour afficher le modal sur la page
-      context: parentContext,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      // Le builder reçoit le contexte du modal (différent de parentContext)
-      builder: (BuildContext modalContext) {
-        return Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(20),
-              topRight: Radius.circular(20),
-            ),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Confirmer votre commande',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Voulez-vous finaliser votre demande de colis ?',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey,
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                // Bouton Confirmer
-                Container(
-                  width: double.infinity,
-                  margin: const EdgeInsets.only(bottom: 12),
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      // 2. Fermer le BottomSheet avec son propre contexte
-                      Navigator.of(modalContext).pop();
-
-                      // 3. Sauvegarder le colis
-                      await _saveParcel();
-
-                      // 4. Exécuter le SnackBar et la redirection sur le contexte parent stable
-                      if (mounted) {
-                        // ➡️ Afficher le SnackBar en utilisant parentContext (contexte stable)
-                        ScaffoldMessenger.of(parentContext).showSnackBar(
-                          SnackBar(
-                            content: Row(
-                              children: const [
-                                Icon(Icons.check_circle, color: Colors.white),
-                                SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(
-                                    'Votre demande de colis a été prise en compte avec succès !',
-                                    style: TextStyle(fontSize: 16),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            backgroundColor: const Color(0xFF4BB543),
-                            duration: const Duration(seconds: 4),
-                            behavior: SnackBarBehavior.floating,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            margin: const EdgeInsets.all(16),
-                          ),
-                        );
-
-                        // ➡️ Redirection sûre, utilisant parentContext pour accéder au routeur
-                        parentContext.router
-                            .replaceAll([const ParcelHomeRoute()]);
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFF24E1E),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text(
-                      'Confirmer',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-
-                // Bouton Annuler
-                Container(
-                  width: double.infinity,
-                  child: TextButton(
-                    onPressed: () => Navigator.of(modalContext)
-                        .pop(), // Utilise modalContext
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text(
-                      'Annuler',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ),
-                ),
-
-                SizedBox(
-                    height: MediaQuery.of(parentContext).viewInsets.bottom),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
   Future<void> _saveParcel() async {
     try {
       final userDetailsJson = LocalStorageFactory().getUserDetails();
@@ -348,7 +210,7 @@ class _LieuPageState extends ConsumerState<LieuPage> {
         createdAt: DateTime.now(),
         address: expediteurLieu, // adresse expéditeur
         phone:
-            destinatairePhone, // téléphone destinataire (mieux que l'utiliser pour une adresse)
+        destinatairePhone, // téléphone destinataire (mieux que l'utiliser pour une adresse)
         phoneNumber: currentUserPhone, // téléphone du user connecté
         instructions: instructions,
         ville: ville,
@@ -383,7 +245,7 @@ class _LieuPageState extends ConsumerState<LieuPage> {
 
       // Exécuter la sauvegarde avec gestion de connexion
       await _connectionManager.executeWithConnectionHandling(
-        () => action.addParcel.call(parcel),
+            () => action.addParcel.call(parcel),
         operationType: 'parcel_save',
         fallbackData: parcelData,
       );
@@ -459,7 +321,7 @@ class _LieuPageState extends ConsumerState<LieuPage> {
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
                     border:
-                        Border.all(color: const Color(0xFFF24E1E), width: 2),
+                    Border.all(color: const Color(0xFFF24E1E), width: 2),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withOpacity(0.1),
@@ -550,7 +412,7 @@ class _LieuPageState extends ConsumerState<LieuPage> {
                       ),
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
-                    onPressed: () {
+                    onPressed: () async {
                       // Validation manuelle avant d'afficher le modal
                       if (_expediteurNomController.text.trim().isEmpty ||
                           _expediteurLieuController.text.trim().isEmpty ||
@@ -567,12 +429,73 @@ class _LieuPageState extends ConsumerState<LieuPage> {
                         );
                         return;
                       }
-                      _showConfirmDialog();
+
+                      // Sauvegarder directement sans popup
+                      print('🔄 Début de la sauvegarde...');
+                      await _saveParcel();
+                      print('✅ Sauvegarde terminée');
+
+                      // Afficher le message de succès AVANT la navigation
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Row(
+                              children: [
+                                Icon(Icons.check_circle, color: Colors.white),
+                                SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    'Votre demande de colis a été prise en compte avec succès !',
+                                    style: TextStyle(fontSize: 16),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            backgroundColor: Color(0xFF4BB543),
+                            duration: Duration(seconds: 2),
+                            behavior: SnackBarBehavior.floating,
+                            shape: RoundedRectangleBorder(
+                              borderRadius:
+                              BorderRadius.all(Radius.circular(12)),
+                            ),
+                            margin: EdgeInsets.all(16),
+                          ),
+                        );
+
+                        // Attendre un peu pour que l'utilisateur voie le message
+                        await Future.delayed(
+                            const Duration(milliseconds: 1500));
+
+                        // Puis naviguer
+                        print('🚀 Navigation vers ParcelHomePage...');
+                        try {
+                          Navigator.of(context).pushReplacement(
+                            MaterialPageRoute(
+                              builder: (context) => const ParcelHomePage(),
+                            ),
+                          );
+                          print(
+                              '✅ Navigation avec Navigator.pushReplacement réussie');
+                        } catch (e) {
+                          print('❌ Erreur Navigator.pushReplacement: $e');
+                          // Fallback avec push simple
+                          try {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) => const ParcelHomePage(),
+                              ),
+                            );
+                            print('✅ Navigation avec Navigator.push réussie');
+                          } catch (e2) {
+                            print('❌ Erreur Navigator.push: $e2');
+                          }
+                        }
+                      }
                     },
                     child: const Text(
                       'Confirmer',
                       style:
-                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                   ),
                 ),
@@ -647,7 +570,7 @@ class _LieuPageState extends ConsumerState<LieuPage> {
               borderSide: const BorderSide(color: Color(0xFFF24E1E), width: 2),
             ),
             contentPadding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
           ),
           validator: isRequired
               ? (v) => v == null || v.trim().isEmpty ? 'Champ requis' : null
@@ -714,7 +637,7 @@ class _LieuPageState extends ConsumerState<LieuPage> {
               borderSide: const BorderSide(color: Color(0xFFF24E1E), width: 2),
             ),
             contentPadding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
           ),
           debounceTime: 400,
           countries: const ["ci"], // Côte d'Ivoire
@@ -779,7 +702,7 @@ class _LieuPageState extends ConsumerState<LieuPage> {
             TextEditingValue(
               text: controller.text,
               selection:
-                  TextSelection.collapsed(offset: controller.text.length),
+              TextSelection.collapsed(offset: controller.text.length),
             ),
           ),
           googleAPIKey: googleMapsApiKey,
@@ -800,7 +723,7 @@ class _LieuPageState extends ConsumerState<LieuPage> {
               borderSide: const BorderSide(color: Color(0xFFF24E1E), width: 2),
             ),
             contentPadding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
           ),
           debounceTime: 400,
           countries: const ["ci"], // Côte d'Ivoire
@@ -930,7 +853,7 @@ class _GooglePlacesFieldState extends State<GooglePlacesField> {
               borderSide: const BorderSide(color: Color(0xFFF24E1E), width: 2),
             ),
             contentPadding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             prefixIcon: const Icon(Icons.location_on, color: Color(0xFFF24E1E)),
           ),
           debounceTime: 600,
