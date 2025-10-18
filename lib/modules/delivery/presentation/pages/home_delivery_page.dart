@@ -712,8 +712,8 @@ class _HomeDeliveryPageState extends ConsumerState<HomeDeliveryPage> {
         }
       ],
       'deliveryInstructions': null,
-      'latitude': null,
-      'longitude': null,
+      'latitude': order.destinationLatitude,
+      'longitude': order.destinationLongitude,
     };
 
     Navigator.of(context).push(

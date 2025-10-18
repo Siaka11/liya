@@ -414,6 +414,20 @@ class DeliveryExistingService {
 
       return querySnapshot.docs.map((doc) {
         final data = doc.data();
+        // Extraire les coordonnées depuis destination_coordinates ou latitude/longitude directes
+        double? latitude;
+        double? longitude;
+
+        if (data['destination_coordinates'] != null) {
+          final coords =
+              data['destination_coordinates'] as Map<String, dynamic>;
+          latitude = coords['latitude']?.toDouble();
+          longitude = coords['longitude']?.toDouble();
+        } else {
+          latitude = data['latitude']?.toDouble();
+          longitude = data['longitude']?.toDouble();
+        }
+
         return DeliveryOrder(
           id: doc.id,
           customerPhoneNumber: data['phone'] ?? '',
@@ -437,6 +451,8 @@ class DeliveryExistingService {
           assignedAt: data['assigned_at'] is String
               ? DateTime.parse(data['assigned_at'])
               : null,
+          destinationLatitude: latitude,
+          destinationLongitude: longitude,
         );
       }).toList();
     } catch (e) {
@@ -495,6 +511,21 @@ class DeliveryExistingService {
 
       return querySnapshot.docs.map((doc) {
         final data = doc.data();
+
+        // Extraire les coordonnées depuis destination_coordinates ou latitude/longitude directes
+        double? latitude;
+        double? longitude;
+
+        if (data['destination_coordinates'] != null) {
+          final coords =
+              data['destination_coordinates'] as Map<String, dynamic>;
+          latitude = coords['latitude']?.toDouble();
+          longitude = coords['longitude']?.toDouble();
+        } else {
+          latitude = data['latitude']?.toDouble();
+          longitude = data['longitude']?.toDouble();
+        }
+
         return DeliveryOrder(
           id: doc.id,
           customerPhoneNumber: data['phone'] ?? '',
@@ -516,6 +547,8 @@ class DeliveryExistingService {
           assignedAt: data['assigned_at'] is String
               ? DateTime.parse(data['assigned_at'])
               : null,
+          destinationLatitude: latitude,
+          destinationLongitude: longitude,
         );
       }).toList();
     } catch (e) {

@@ -20,7 +20,8 @@ import 'modules/home/presentation/pages/home_page.dart'; // Pour PromoPopupManag
 // Handler pour les notifications en arrière-plan
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  // ⚠️ NE PAS INITIALISER FIREBASE ICI - Déjà fait dans main()
+  // Firebase est automatiquement disponible pour les handlers background
   print(
       '📱 Notification reçue en arrière-plan: ${message.notification?.title}');
 }
@@ -45,16 +46,32 @@ void main() async {
   await EasyLocalization.ensureInitialized();
   await initializeDateFormatting('fr_FR', null);
 
-  // Initialiser Firebase
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  // Initialiser Firebase avec protection contre double initialisation
+  try {
+    await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform);
+    print('✅ Firebase initialisé avec succès');
+  } catch (e) {
+    if (e.toString().contains('duplicate-app')) {
+      print('⚠️ Firebase déjà initialisé, on continue...');
+    } else {
+      print('❌ Erreur initialisation Firebase: $e');
+      rethrow;
+    }
+  }
 
   // ⚡️ Activer App Check avec App Attest
-  await FirebaseAppCheck.instance.activate(
-    appleProvider:
-        AppleProvider.appAttest, // ou deviceCheck si App Attest pas dispo
-    webProvider:
-        ReCaptchaV3Provider('6LeyyaArAAAAANN4NE9DyZ6PUjqxehmHRebNsWzN'),
-  );
+  try {
+    await FirebaseAppCheck.instance.activate(
+      appleProvider:
+          AppleProvider.appAttest, // ou deviceCheck si App Attest pas dispo
+      webProvider:
+          ReCaptchaV3Provider('6LeyyaArAAAAANN4NE9DyZ6PUjqxehmHRebNsWzN'),
+    );
+    print('✅ App Check activé avec succès');
+  } catch (e) {
+    print('⚠️ Erreur activation App Check: $e');
+  }
 
   // 🔐 Initialiser reCAPTCHA Enterprise
   try {

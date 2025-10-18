@@ -1158,6 +1158,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                           content: Text(
                               'Commande enregistrée ! Total: ${total.toStringAsFixed(0)} FCFA'),
                           duration: const Duration(seconds: 2),
+                          backgroundColor: Colors.green,
                         ),
                       );
 

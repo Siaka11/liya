@@ -210,7 +210,7 @@ class _LieuPageState extends ConsumerState<LieuPage> {
         createdAt: DateTime.now(),
         address: expediteurLieu, // adresse expéditeur
         phone:
-        destinatairePhone, // téléphone destinataire (mieux que l'utiliser pour une adresse)
+            destinatairePhone, // téléphone destinataire (mieux que l'utiliser pour une adresse)
         phoneNumber: currentUserPhone, // téléphone du user connecté
         instructions: instructions,
         ville: ville,
@@ -245,7 +245,7 @@ class _LieuPageState extends ConsumerState<LieuPage> {
 
       // Exécuter la sauvegarde avec gestion de connexion
       await _connectionManager.executeWithConnectionHandling(
-            () => action.addParcel.call(parcel),
+        () => action.addParcel.call(parcel),
         operationType: 'parcel_save',
         fallbackData: parcelData,
       );
@@ -321,7 +321,7 @@ class _LieuPageState extends ConsumerState<LieuPage> {
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
                     border:
-                    Border.all(color: const Color(0xFFF24E1E), width: 2),
+                        Border.all(color: const Color(0xFFF24E1E), width: 2),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withOpacity(0.1),
@@ -456,7 +456,7 @@ class _LieuPageState extends ConsumerState<LieuPage> {
                             behavior: SnackBarBehavior.floating,
                             shape: RoundedRectangleBorder(
                               borderRadius:
-                              BorderRadius.all(Radius.circular(12)),
+                                  BorderRadius.all(Radius.circular(12)),
                             ),
                             margin: EdgeInsets.all(16),
                           ),
@@ -495,7 +495,7 @@ class _LieuPageState extends ConsumerState<LieuPage> {
                     child: const Text(
                       'Confirmer',
                       style:
-                      TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                   ),
                 ),
@@ -570,7 +570,7 @@ class _LieuPageState extends ConsumerState<LieuPage> {
               borderSide: const BorderSide(color: Color(0xFFF24E1E), width: 2),
             ),
             contentPadding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
           ),
           validator: isRequired
               ? (v) => v == null || v.trim().isEmpty ? 'Champ requis' : null
@@ -637,7 +637,7 @@ class _LieuPageState extends ConsumerState<LieuPage> {
               borderSide: const BorderSide(color: Color(0xFFF24E1E), width: 2),
             ),
             contentPadding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
           ),
           debounceTime: 400,
           countries: const ["ci"], // Côte d'Ivoire
@@ -702,7 +702,7 @@ class _LieuPageState extends ConsumerState<LieuPage> {
             TextEditingValue(
               text: controller.text,
               selection:
-              TextSelection.collapsed(offset: controller.text.length),
+                  TextSelection.collapsed(offset: controller.text.length),
             ),
           ),
           googleAPIKey: googleMapsApiKey,
@@ -723,7 +723,7 @@ class _LieuPageState extends ConsumerState<LieuPage> {
               borderSide: const BorderSide(color: Color(0xFFF24E1E), width: 2),
             ),
             contentPadding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
           ),
           debounceTime: 400,
           countries: const ["ci"], // Côte d'Ivoire
@@ -853,7 +853,7 @@ class _GooglePlacesFieldState extends State<GooglePlacesField> {
               borderSide: const BorderSide(color: Color(0xFFF24E1E), width: 2),
             ),
             contentPadding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             prefixIcon: const Icon(Icons.location_on, color: Color(0xFFF24E1E)),
           ),
           debounceTime: 600,

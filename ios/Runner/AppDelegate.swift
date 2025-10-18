@@ -11,8 +11,8 @@ import UserNotifications
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    // Configuration Firebase
-    FirebaseApp.configure()
+    // Configuration Firebase - Initialisé dans main.dart
+    // FirebaseApp.configure() // Supprimé car initialisé dans main.dart
     
     // ⚡️ Configuration App Check (App Attest sera géré côté Flutter)
     // Note: App Attest est configuré dans main.dart avec FirebaseAppCheck.instance.activate
