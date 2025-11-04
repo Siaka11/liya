@@ -10,8 +10,6 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:auto_route/auto_route.dart' as _i64;
 import 'package:flutter/material.dart' as _i65;
-import 'package:liya/core/test_beverages.dart' as _i60;
-import 'package:liya/core/test_users_management.dart' as _i61;
 import 'package:liya/modules/admin/features/dishes/data/models/dish_model.dart'
     as _i67;
 import 'package:liya/modules/admin/features/dishes/presentation/pages/dish_image_editor_page.dart'
@@ -19,7 +17,7 @@ import 'package:liya/modules/admin/features/dishes/presentation/pages/dish_image
 import 'package:liya/modules/admin/features/dishes/presentation/pages/dish_list_page.dart'
     as _i22;
 import 'package:liya/modules/admin/features/dishes/presentation/pages/restaurant_select_page.dart'
-    as _i53;
+    as _i55;
 import 'package:liya/modules/admin/presentation/pages/add_dish_page.dart'
     as _i1;
 import 'package:liya/modules/admin/presentation/pages/admin_dashboard_page.dart'
@@ -37,22 +35,22 @@ import 'package:liya/modules/admin/presentation/pages/edit_dish_page.dart'
 import 'package:liya/modules/admin/presentation/pages/image_management_page.dart'
     as _i32;
 import 'package:liya/modules/admin/presentation/pages/order_management_page.dart'
-    as _i43;
+    as _i45;
 import 'package:liya/modules/admin/presentation/pages/promotion_management_page.dart'
-    as _i50;
-import 'package:liya/modules/admin/presentation/pages/restaurant_edit_page.dart'
-    as _i51;
-import 'package:liya/modules/admin/presentation/pages/restaurant_management_page.dart'
     as _i52;
-import 'package:liya/modules/admin/presentation/pages/role_permission_management_page.dart'
+import 'package:liya/modules/admin/presentation/pages/restaurant_edit_page.dart'
+    as _i53;
+import 'package:liya/modules/admin/presentation/pages/restaurant_management_page.dart'
     as _i54;
+import 'package:liya/modules/admin/presentation/pages/role_permission_management_page.dart'
+    as _i56;
 import 'package:liya/modules/admin/presentation/pages/statistics_page.dart'
-    as _i58;
+    as _i60;
 import 'package:liya/modules/admin/presentation/pages/user_management_page.dart'
     as _i62;
 import 'package:liya/modules/auth/auth_page.dart' as _i7;
 import 'package:liya/modules/auth/info_user_page.dart' as _i33;
-import 'package:liya/modules/auth/otp_page.dart' as _i44;
+import 'package:liya/modules/auth/otp_page.dart' as _i46;
 import 'package:liya/modules/auth/presentation/pages/delete_account_page.dart'
     as _i11;
 import 'package:liya/modules/delivery/domain/entities/delivery_order.dart'
@@ -76,9 +74,9 @@ import 'package:liya/modules/delivery/presentation/pages/earnings_page.dart'
 import 'package:liya/modules/delivery/presentation/pages/home_delivery_page.dart'
     as _i29;
 import 'package:liya/modules/delivery/presentation/pages/splash_delivery_page.dart'
-    as _i57;
-import 'package:liya/modules/delivery/presentation/pages/status_page.dart'
     as _i59;
+import 'package:liya/modules/delivery/presentation/pages/status_page.dart'
+    as _i61;
 import 'package:liya/modules/home/domain/entities/home_option.dart' as _i68;
 import 'package:liya/modules/home/presentation/pages/home_page.dart' as _i30;
 import 'package:liya/modules/home/presentation/pages/user_profile_page.dart'
@@ -89,14 +87,18 @@ import 'package:liya/modules/parcel/feature/presentation/pages/add_parcel_page.d
     as _i2;
 import 'package:liya/modules/parcel/feature/presentation/pages/lieu_page.dart'
     as _i34;
+import 'package:liya/modules/parcel/feature/presentation/pages/lieu_page_controllers_fixed.dart'
+    as _i35;
+import 'package:liya/modules/parcel/feature/presentation/pages/lieu_page_fixed.dart'
+    as _i36;
 import 'package:liya/modules/parcel/feature/presentation/pages/parcel_detail_page.dart'
-    as _i45;
-import 'package:liya/modules/parcel/feature/presentation/pages/parcel_details_full_page.dart'
-    as _i46;
-import 'package:liya/modules/parcel/feature/presentation/pages/parcel_home_page.dart'
     as _i47;
-import 'package:liya/modules/parcel/feature/presentation/pages/parcel_list_page.dart'
+import 'package:liya/modules/parcel/feature/presentation/pages/parcel_details_full_page.dart'
     as _i48;
+import 'package:liya/modules/parcel/feature/presentation/pages/parcel_home_page.dart'
+    as _i49;
+import 'package:liya/modules/parcel/feature/presentation/pages/parcel_list_page.dart'
+    as _i50;
 import 'package:liya/modules/restaurant/features/card/presentation/pages/cart_page.dart'
     as _i8;
 import 'package:liya/modules/restaurant/features/checkout/presentation/pages/checkout_page.dart'
@@ -110,23 +112,23 @@ import 'package:liya/modules/restaurant/features/home/presentation/pages/dish_de
 import 'package:liya/modules/restaurant/features/home/presentation/pages/home_restaurant.dart'
     as _i31;
 import 'package:liya/modules/restaurant/features/home/presentation/pages/modern_dish_detail_page.dart'
-    as _i36;
-import 'package:liya/modules/restaurant/features/home/presentation/pages/modern_home_restaurant.dart'
-    as _i37;
-import 'package:liya/modules/restaurant/features/home/presentation/pages/modern_restaurant_detail_page.dart'
     as _i38;
-import 'package:liya/modules/restaurant/features/like/presentation/pages/liked_dishes_page.dart'
-    as _i35;
-import 'package:liya/modules/restaurant/features/notifications/presentation/pages/notifications_page.dart'
+import 'package:liya/modules/restaurant/features/home/presentation/pages/modern_home_restaurant.dart'
     as _i39;
+import 'package:liya/modules/restaurant/features/home/presentation/pages/modern_restaurant_detail_page.dart'
+    as _i40;
+import 'package:liya/modules/restaurant/features/like/presentation/pages/liked_dishes_page.dart'
+    as _i37;
+import 'package:liya/modules/restaurant/features/notifications/presentation/pages/notifications_page.dart'
+    as _i41;
 import 'package:liya/modules/restaurant/features/order/domain/entities/order.dart'
     as _i69;
 import 'package:liya/modules/restaurant/features/order/presentation/pages/order_detail_page.dart'
-    as _i40;
-import 'package:liya/modules/restaurant/features/order/presentation/pages/order_details_full_page.dart'
-    as _i41;
-import 'package:liya/modules/restaurant/features/order/presentation/pages/order_list_page.dart'
     as _i42;
+import 'package:liya/modules/restaurant/features/order/presentation/pages/order_details_full_page.dart'
+    as _i43;
+import 'package:liya/modules/restaurant/features/order/presentation/pages/order_list_page.dart'
+    as _i44;
 import 'package:liya/modules/restaurant/features/profile/presentation/pages/edit_email_page.dart'
     as _i26;
 import 'package:liya/modules/restaurant/features/profile/presentation/pages/edit_phone_page.dart'
@@ -134,10 +136,10 @@ import 'package:liya/modules/restaurant/features/profile/presentation/pages/edit
 import 'package:liya/modules/restaurant/features/profile/presentation/pages/edit_profile_page.dart'
     as _i28;
 import 'package:liya/modules/restaurant/features/profile/presentation/pages/profile_page.dart'
-    as _i49;
+    as _i51;
 import 'package:liya/modules/restaurant/features/search/presentation/pages/search_page.dart'
-    as _i55;
-import 'package:liya/modules/share_location_page.dart' as _i56;
+    as _i57;
+import 'package:liya/modules/share_location_page.dart' as _i58;
 
 abstract class $AppRouter extends _i64.RootStackRouter {
   $AppRouter({super.navigatorKey});
@@ -408,17 +410,47 @@ abstract class $AppRouter extends _i64.RootStackRouter {
         ),
       );
     },
+    LieuRouteControllersFixed.name: (routeData) {
+      final args = routeData.argsAs<LieuRouteControllersFixedArgs>();
+      return _i64.AutoRoutePage<dynamic>(
+        routeData: routeData,
+        child: _i35.LieuPageControllersFixed(
+          key: args.key,
+          phoneNumber: args.phoneNumber,
+          typeProduit: args.typeProduit,
+          isReception: args.isReception,
+          ville: args.ville,
+          colisDescription: args.colisDescription,
+          colisList: args.colisList,
+        ),
+      );
+    },
+    LieuRouteFixed.name: (routeData) {
+      final args = routeData.argsAs<LieuRouteFixedArgs>();
+      return _i64.AutoRoutePage<dynamic>(
+        routeData: routeData,
+        child: _i36.LieuPageFixed(
+          key: args.key,
+          phoneNumber: args.phoneNumber,
+          typeProduit: args.typeProduit,
+          isReception: args.isReception,
+          ville: args.ville,
+          colisDescription: args.colisDescription,
+          colisList: args.colisList,
+        ),
+      );
+    },
     LikedDishesRoute.name: (routeData) {
       return _i64.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: const _i35.LikedDishesPage(),
+        child: const _i37.LikedDishesPage(),
       );
     },
     ModernDishDetailRoute.name: (routeData) {
       final args = routeData.argsAs<ModernDishDetailRouteArgs>();
       return _i64.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: _i36.ModernDishDetailPage(
+        child: _i38.ModernDishDetailPage(
           id: args.id,
           restaurantId: args.restaurantId,
           name: args.name,
@@ -433,7 +465,7 @@ abstract class $AppRouter extends _i64.RootStackRouter {
       final args = routeData.argsAs<ModernHomeRestaurantRouteArgs>();
       return _i64.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: _i37.ModernHomeRestaurantPage(
+        child: _i39.ModernHomeRestaurantPage(
           key: args.key,
           option: args.option,
         ),
@@ -443,7 +475,7 @@ abstract class $AppRouter extends _i64.RootStackRouter {
       final args = routeData.argsAs<ModernRestaurantDetailRouteArgs>();
       return _i64.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: _i38.ModernRestaurantDetailPage(
+        child: _i40.ModernRestaurantDetailPage(
           key: args.key,
           id: args.id,
           name: args.name,
@@ -455,14 +487,14 @@ abstract class $AppRouter extends _i64.RootStackRouter {
     NotificationsRoute.name: (routeData) {
       return _i64.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: const _i39.NotificationsPage(),
+        child: const _i41.NotificationsPage(),
       );
     },
     OrderDetailRoute.name: (routeData) {
       final args = routeData.argsAs<OrderDetailRouteArgs>();
       return _i64.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: _i40.OrderDetailPage(
+        child: _i42.OrderDetailPage(
           key: args.key,
           order: args.order,
         ),
@@ -472,7 +504,7 @@ abstract class $AppRouter extends _i64.RootStackRouter {
       final args = routeData.argsAs<OrderDetailsFullRouteArgs>();
       return _i64.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: _i41.OrderDetailsFullPage(
+        child: _i43.OrderDetailsFullPage(
           key: args.key,
           orderData: args.orderData,
         ),
@@ -482,7 +514,7 @@ abstract class $AppRouter extends _i64.RootStackRouter {
       final args = routeData.argsAs<OrderListRouteArgs>();
       return _i64.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: _i42.OrderListPage(
+        child: _i44.OrderListPage(
           key: args.key,
           phoneNumber: args.phoneNumber,
         ),
@@ -491,14 +523,14 @@ abstract class $AppRouter extends _i64.RootStackRouter {
     OrderManagementRoute.name: (routeData) {
       return _i64.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: const _i43.OrderManagementPage(),
+        child: const _i45.OrderManagementPage(),
       );
     },
     OtpRoute.name: (routeData) {
       final args = routeData.argsAs<OtpRouteArgs>();
       return _i64.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: _i44.OtpPage(
+        child: _i46.OtpPage(
           args.verificationId,
           phoneNumber: args.phoneNumber,
           key: args.key,
@@ -509,7 +541,7 @@ abstract class $AppRouter extends _i64.RootStackRouter {
       final args = routeData.argsAs<ParcelDetailRouteArgs>();
       return _i64.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: _i45.ParcelDetailPage(
+        child: _i47.ParcelDetailPage(
           key: args.key,
           parcel: args.parcel,
         ),
@@ -519,7 +551,7 @@ abstract class $AppRouter extends _i64.RootStackRouter {
       final args = routeData.argsAs<ParcelDetailsFullRouteArgs>();
       return _i64.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: _i46.ParcelDetailsFullPage(
+        child: _i48.ParcelDetailsFullPage(
           key: args.key,
           parcelData: args.parcelData,
         ),
@@ -528,25 +560,25 @@ abstract class $AppRouter extends _i64.RootStackRouter {
     ParcelHomeRoute.name: (routeData) {
       return _i64.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: const _i47.ParcelHomePage(),
+        child: const _i49.ParcelHomePage(),
       );
     },
     ParcelListRoute.name: (routeData) {
       return _i64.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: const _i48.ParcelListPage(),
+        child: const _i50.ParcelListPage(),
       );
     },
     ProfileRoute.name: (routeData) {
       return _i64.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: const _i49.ProfilePage(),
+        child: const _i51.ProfilePage(),
       );
     },
     PromotionManagementRoute.name: (routeData) {
       return _i64.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: const _i50.PromotionManagementPage(),
+        child: const _i52.PromotionManagementPage(),
       );
     },
     RestaurantEditRoute.name: (routeData) {
@@ -554,7 +586,7 @@ abstract class $AppRouter extends _i64.RootStackRouter {
           orElse: () => const RestaurantEditRouteArgs());
       return _i64.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: _i51.RestaurantEditPage(
+        child: _i53.RestaurantEditPage(
           key: args.key,
           restaurantId: args.restaurantId,
         ),
@@ -563,61 +595,49 @@ abstract class $AppRouter extends _i64.RootStackRouter {
     RestaurantManagementRoute.name: (routeData) {
       return _i64.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: const _i52.RestaurantManagementPage(),
+        child: const _i54.RestaurantManagementPage(),
       );
     },
     RestaurantSelectRoute.name: (routeData) {
       return _i64.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: const _i53.RestaurantSelectPage(),
+        child: const _i55.RestaurantSelectPage(),
       );
     },
     RolePermissionManagementRoute.name: (routeData) {
       return _i64.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: const _i54.RolePermissionManagementPage(),
+        child: const _i56.RolePermissionManagementPage(),
       );
     },
     SearchRoute.name: (routeData) {
       return _i64.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: const _i55.SearchPage(),
+        child: const _i57.SearchPage(),
       );
     },
     ShareLocationRoute.name: (routeData) {
       return _i64.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: const _i56.ShareLocationPage(),
+        child: const _i58.ShareLocationPage(),
       );
     },
     SplashDeliveryRoute.name: (routeData) {
       return _i64.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: const _i57.SplashDeliveryPage(),
+        child: const _i59.SplashDeliveryPage(),
       );
     },
     StatisticsRoute.name: (routeData) {
       return _i64.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: const _i58.StatisticsPage(),
+        child: const _i60.StatisticsPage(),
       );
     },
     StatusRoute.name: (routeData) {
       return _i64.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: const _i59.StatusPage(),
-      );
-    },
-    TestBeveragesRoute.name: (routeData) {
-      return _i64.AutoRoutePage<dynamic>(
-        routeData: routeData,
-        child: const _i60.TestBeveragesPage(),
-      );
-    },
-    TestUsersManagementRoute.name: (routeData) {
-      return _i64.AutoRoutePage<dynamic>(
-        routeData: routeData,
-        child: const _i61.TestUsersManagementPage(),
+        child: const _i61.StatusPage(),
       );
     },
     UserManagementRoute.name: (routeData) {
@@ -1452,7 +1472,134 @@ class LieuRouteArgs {
 }
 
 /// generated route for
-/// [_i35.LikedDishesPage]
+/// [_i35.LieuPageControllersFixed]
+class LieuRouteControllersFixed
+    extends _i64.PageRouteInfo<LieuRouteControllersFixedArgs> {
+  LieuRouteControllersFixed({
+    _i65.Key? key,
+    required String phoneNumber,
+    required String typeProduit,
+    bool isReception = false,
+    required String ville,
+    String? colisDescription,
+    List<dynamic>? colisList,
+    List<_i64.PageRouteInfo>? children,
+  }) : super(
+          LieuRouteControllersFixed.name,
+          args: LieuRouteControllersFixedArgs(
+            key: key,
+            phoneNumber: phoneNumber,
+            typeProduit: typeProduit,
+            isReception: isReception,
+            ville: ville,
+            colisDescription: colisDescription,
+            colisList: colisList,
+          ),
+          initialChildren: children,
+        );
+
+  static const String name = 'LieuRouteControllersFixed';
+
+  static const _i64.PageInfo<LieuRouteControllersFixedArgs> page =
+      _i64.PageInfo<LieuRouteControllersFixedArgs>(name);
+}
+
+class LieuRouteControllersFixedArgs {
+  const LieuRouteControllersFixedArgs({
+    this.key,
+    required this.phoneNumber,
+    required this.typeProduit,
+    this.isReception = false,
+    required this.ville,
+    this.colisDescription,
+    this.colisList,
+  });
+
+  final _i65.Key? key;
+
+  final String phoneNumber;
+
+  final String typeProduit;
+
+  final bool isReception;
+
+  final String ville;
+
+  final String? colisDescription;
+
+  final List<dynamic>? colisList;
+
+  @override
+  String toString() {
+    return 'LieuRouteControllersFixedArgs{key: $key, phoneNumber: $phoneNumber, typeProduit: $typeProduit, isReception: $isReception, ville: $ville, colisDescription: $colisDescription, colisList: $colisList}';
+  }
+}
+
+/// generated route for
+/// [_i36.LieuPageFixed]
+class LieuRouteFixed extends _i64.PageRouteInfo<LieuRouteFixedArgs> {
+  LieuRouteFixed({
+    _i65.Key? key,
+    required String phoneNumber,
+    required String typeProduit,
+    bool isReception = false,
+    required String ville,
+    String? colisDescription,
+    List<dynamic>? colisList,
+    List<_i64.PageRouteInfo>? children,
+  }) : super(
+          LieuRouteFixed.name,
+          args: LieuRouteFixedArgs(
+            key: key,
+            phoneNumber: phoneNumber,
+            typeProduit: typeProduit,
+            isReception: isReception,
+            ville: ville,
+            colisDescription: colisDescription,
+            colisList: colisList,
+          ),
+          initialChildren: children,
+        );
+
+  static const String name = 'LieuRouteFixed';
+
+  static const _i64.PageInfo<LieuRouteFixedArgs> page =
+      _i64.PageInfo<LieuRouteFixedArgs>(name);
+}
+
+class LieuRouteFixedArgs {
+  const LieuRouteFixedArgs({
+    this.key,
+    required this.phoneNumber,
+    required this.typeProduit,
+    this.isReception = false,
+    required this.ville,
+    this.colisDescription,
+    this.colisList,
+  });
+
+  final _i65.Key? key;
+
+  final String phoneNumber;
+
+  final String typeProduit;
+
+  final bool isReception;
+
+  final String ville;
+
+  final String? colisDescription;
+
+  final List<dynamic>? colisList;
+
+  @override
+  String toString() {
+    return 'LieuRouteFixedArgs{key: $key, phoneNumber: $phoneNumber, typeProduit: $typeProduit, isReception: $isReception, ville: $ville, colisDescription: $colisDescription, colisList: $colisList}';
+  }
+}
+
+/// generated route for
+/// [_i37.LikedDishesPage]
 class LikedDishesRoute extends _i64.PageRouteInfo<void> {
   const LikedDishesRoute({List<_i64.PageRouteInfo>? children})
       : super(
@@ -1466,7 +1613,7 @@ class LikedDishesRoute extends _i64.PageRouteInfo<void> {
 }
 
 /// generated route for
-/// [_i36.ModernDishDetailPage]
+/// [_i38.ModernDishDetailPage]
 class ModernDishDetailRoute
     extends _i64.PageRouteInfo<ModernDishDetailRouteArgs> {
   ModernDishDetailRoute({
@@ -1530,7 +1677,7 @@ class ModernDishDetailRouteArgs {
 }
 
 /// generated route for
-/// [_i37.ModernHomeRestaurantPage]
+/// [_i39.ModernHomeRestaurantPage]
 class ModernHomeRestaurantRoute
     extends _i64.PageRouteInfo<ModernHomeRestaurantRouteArgs> {
   ModernHomeRestaurantRoute({
@@ -1569,7 +1716,7 @@ class ModernHomeRestaurantRouteArgs {
 }
 
 /// generated route for
-/// [_i38.ModernRestaurantDetailPage]
+/// [_i40.ModernRestaurantDetailPage]
 class ModernRestaurantDetailRoute
     extends _i64.PageRouteInfo<ModernRestaurantDetailRouteArgs> {
   ModernRestaurantDetailRoute({
@@ -1623,7 +1770,7 @@ class ModernRestaurantDetailRouteArgs {
 }
 
 /// generated route for
-/// [_i39.NotificationsPage]
+/// [_i41.NotificationsPage]
 class NotificationsRoute extends _i64.PageRouteInfo<void> {
   const NotificationsRoute({List<_i64.PageRouteInfo>? children})
       : super(
@@ -1637,7 +1784,7 @@ class NotificationsRoute extends _i64.PageRouteInfo<void> {
 }
 
 /// generated route for
-/// [_i40.OrderDetailPage]
+/// [_i42.OrderDetailPage]
 class OrderDetailRoute extends _i64.PageRouteInfo<OrderDetailRouteArgs> {
   OrderDetailRoute({
     _i65.Key? key,
@@ -1675,7 +1822,7 @@ class OrderDetailRouteArgs {
 }
 
 /// generated route for
-/// [_i41.OrderDetailsFullPage]
+/// [_i43.OrderDetailsFullPage]
 class OrderDetailsFullRoute
     extends _i64.PageRouteInfo<OrderDetailsFullRouteArgs> {
   OrderDetailsFullRoute({
@@ -1714,7 +1861,7 @@ class OrderDetailsFullRouteArgs {
 }
 
 /// generated route for
-/// [_i42.OrderListPage]
+/// [_i44.OrderListPage]
 class OrderListRoute extends _i64.PageRouteInfo<OrderListRouteArgs> {
   OrderListRoute({
     _i65.Key? key,
@@ -1752,7 +1899,7 @@ class OrderListRouteArgs {
 }
 
 /// generated route for
-/// [_i43.OrderManagementPage]
+/// [_i45.OrderManagementPage]
 class OrderManagementRoute extends _i64.PageRouteInfo<void> {
   const OrderManagementRoute({List<_i64.PageRouteInfo>? children})
       : super(
@@ -1766,7 +1913,7 @@ class OrderManagementRoute extends _i64.PageRouteInfo<void> {
 }
 
 /// generated route for
-/// [_i44.OtpPage]
+/// [_i46.OtpPage]
 class OtpRoute extends _i64.PageRouteInfo<OtpRouteArgs> {
   OtpRoute({
     required String verificationId,
@@ -1809,7 +1956,7 @@ class OtpRouteArgs {
 }
 
 /// generated route for
-/// [_i45.ParcelDetailPage]
+/// [_i47.ParcelDetailPage]
 class ParcelDetailRoute extends _i64.PageRouteInfo<ParcelDetailRouteArgs> {
   ParcelDetailRoute({
     _i65.Key? key,
@@ -1847,7 +1994,7 @@ class ParcelDetailRouteArgs {
 }
 
 /// generated route for
-/// [_i46.ParcelDetailsFullPage]
+/// [_i48.ParcelDetailsFullPage]
 class ParcelDetailsFullRoute
     extends _i64.PageRouteInfo<ParcelDetailsFullRouteArgs> {
   ParcelDetailsFullRoute({
@@ -1886,7 +2033,7 @@ class ParcelDetailsFullRouteArgs {
 }
 
 /// generated route for
-/// [_i47.ParcelHomePage]
+/// [_i49.ParcelHomePage]
 class ParcelHomeRoute extends _i64.PageRouteInfo<void> {
   const ParcelHomeRoute({List<_i64.PageRouteInfo>? children})
       : super(
@@ -1900,7 +2047,7 @@ class ParcelHomeRoute extends _i64.PageRouteInfo<void> {
 }
 
 /// generated route for
-/// [_i48.ParcelListPage]
+/// [_i50.ParcelListPage]
 class ParcelListRoute extends _i64.PageRouteInfo<void> {
   const ParcelListRoute({List<_i64.PageRouteInfo>? children})
       : super(
@@ -1914,7 +2061,7 @@ class ParcelListRoute extends _i64.PageRouteInfo<void> {
 }
 
 /// generated route for
-/// [_i49.ProfilePage]
+/// [_i51.ProfilePage]
 class ProfileRoute extends _i64.PageRouteInfo<void> {
   const ProfileRoute({List<_i64.PageRouteInfo>? children})
       : super(
@@ -1928,7 +2075,7 @@ class ProfileRoute extends _i64.PageRouteInfo<void> {
 }
 
 /// generated route for
-/// [_i50.PromotionManagementPage]
+/// [_i52.PromotionManagementPage]
 class PromotionManagementRoute extends _i64.PageRouteInfo<void> {
   const PromotionManagementRoute({List<_i64.PageRouteInfo>? children})
       : super(
@@ -1942,7 +2089,7 @@ class PromotionManagementRoute extends _i64.PageRouteInfo<void> {
 }
 
 /// generated route for
-/// [_i51.RestaurantEditPage]
+/// [_i53.RestaurantEditPage]
 class RestaurantEditRoute extends _i64.PageRouteInfo<RestaurantEditRouteArgs> {
   RestaurantEditRoute({
     _i65.Key? key,
@@ -1980,7 +2127,7 @@ class RestaurantEditRouteArgs {
 }
 
 /// generated route for
-/// [_i52.RestaurantManagementPage]
+/// [_i54.RestaurantManagementPage]
 class RestaurantManagementRoute extends _i64.PageRouteInfo<void> {
   const RestaurantManagementRoute({List<_i64.PageRouteInfo>? children})
       : super(
@@ -1994,7 +2141,7 @@ class RestaurantManagementRoute extends _i64.PageRouteInfo<void> {
 }
 
 /// generated route for
-/// [_i53.RestaurantSelectPage]
+/// [_i55.RestaurantSelectPage]
 class RestaurantSelectRoute extends _i64.PageRouteInfo<void> {
   const RestaurantSelectRoute({List<_i64.PageRouteInfo>? children})
       : super(
@@ -2008,7 +2155,7 @@ class RestaurantSelectRoute extends _i64.PageRouteInfo<void> {
 }
 
 /// generated route for
-/// [_i54.RolePermissionManagementPage]
+/// [_i56.RolePermissionManagementPage]
 class RolePermissionManagementRoute extends _i64.PageRouteInfo<void> {
   const RolePermissionManagementRoute({List<_i64.PageRouteInfo>? children})
       : super(
@@ -2022,7 +2169,7 @@ class RolePermissionManagementRoute extends _i64.PageRouteInfo<void> {
 }
 
 /// generated route for
-/// [_i55.SearchPage]
+/// [_i57.SearchPage]
 class SearchRoute extends _i64.PageRouteInfo<void> {
   const SearchRoute({List<_i64.PageRouteInfo>? children})
       : super(
@@ -2036,7 +2183,7 @@ class SearchRoute extends _i64.PageRouteInfo<void> {
 }
 
 /// generated route for
-/// [_i56.ShareLocationPage]
+/// [_i58.ShareLocationPage]
 class ShareLocationRoute extends _i64.PageRouteInfo<void> {
   const ShareLocationRoute({List<_i64.PageRouteInfo>? children})
       : super(
@@ -2050,7 +2197,7 @@ class ShareLocationRoute extends _i64.PageRouteInfo<void> {
 }
 
 /// generated route for
-/// [_i57.SplashDeliveryPage]
+/// [_i59.SplashDeliveryPage]
 class SplashDeliveryRoute extends _i64.PageRouteInfo<void> {
   const SplashDeliveryRoute({List<_i64.PageRouteInfo>? children})
       : super(
@@ -2064,7 +2211,7 @@ class SplashDeliveryRoute extends _i64.PageRouteInfo<void> {
 }
 
 /// generated route for
-/// [_i58.StatisticsPage]
+/// [_i60.StatisticsPage]
 class StatisticsRoute extends _i64.PageRouteInfo<void> {
   const StatisticsRoute({List<_i64.PageRouteInfo>? children})
       : super(
@@ -2078,7 +2225,7 @@ class StatisticsRoute extends _i64.PageRouteInfo<void> {
 }
 
 /// generated route for
-/// [_i59.StatusPage]
+/// [_i61.StatusPage]
 class StatusRoute extends _i64.PageRouteInfo<void> {
   const StatusRoute({List<_i64.PageRouteInfo>? children})
       : super(
@@ -2087,34 +2234,6 @@ class StatusRoute extends _i64.PageRouteInfo<void> {
         );
 
   static const String name = 'StatusRoute';
-
-  static const _i64.PageInfo<void> page = _i64.PageInfo<void>(name);
-}
-
-/// generated route for
-/// [_i60.TestBeveragesPage]
-class TestBeveragesRoute extends _i64.PageRouteInfo<void> {
-  const TestBeveragesRoute({List<_i64.PageRouteInfo>? children})
-      : super(
-          TestBeveragesRoute.name,
-          initialChildren: children,
-        );
-
-  static const String name = 'TestBeveragesRoute';
-
-  static const _i64.PageInfo<void> page = _i64.PageInfo<void>(name);
-}
-
-/// generated route for
-/// [_i61.TestUsersManagementPage]
-class TestUsersManagementRoute extends _i64.PageRouteInfo<void> {
-  const TestUsersManagementRoute({List<_i64.PageRouteInfo>? children})
-      : super(
-          TestUsersManagementRoute.name,
-          initialChildren: children,
-        );
-
-  static const String name = 'TestUsersManagementRoute';
 
   static const _i64.PageInfo<void> page = _i64.PageInfo<void>(name);
 }

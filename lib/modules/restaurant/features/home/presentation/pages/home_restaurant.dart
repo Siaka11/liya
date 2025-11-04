@@ -1,17 +1,16 @@
-import 'dart:convert';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart'; // Pour defaultTargetPlatform
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:liya/modules/restaurant/features/home/presentation/pages/restaurant_detail_page.dart';
 import 'package:liya/modules/restaurant/features/home/presentation/pages/dish_detail_page.dart';
 import 'package:liya/modules/restaurant/features/home/presentation/widget/filter_section.dart';
 import 'package:liya/modules/restaurant/features/home/presentation/widget/home_restaurant_header.dart';
 import 'package:liya/modules/restaurant/features/home/presentation/widget/navigation_footer.dart';
-import 'package:liya/core/local_storage_factory.dart';
-import 'package:liya/core/singletons.dart';
 // Import des nouveaux widgets modernes
 import 'package:liya/modules/restaurant/features/order/presentation/widgets/floating_order_button.dart';
 import 'package:liya/modules/restaurant/features/order/presentation/widgets/modern_dish_card.dart';
+import 'package:liya/core/providers/guest_mode_provider.dart'; // Provider mode invité
 
 import '../../../../../../routes/app_router.gr.dart';
 import '../../../../../home/domain/entities/home_option.dart';
@@ -21,8 +20,6 @@ import '../../application/restaurants_firebase_provider.dart';
 import '../../application/new_dishes_firebase_provider.dart';
 import '../../application/categories_firebase_provider.dart';
 import '../../application/most_ordered_dishes_firebase_provider.dart';
-import '../widget/popular_dish_card.dart';
-import '../widget/restaurant_card.dart';
 import '../widget/restaurant_firebase_card.dart';
 import 'package:liya/modules/restaurant/features/category/presentation/pages/dishes_by_category_page.dart';
 
@@ -34,11 +31,8 @@ class HomeRestaurantPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final userDetailsJson = singleton<LocalStorageFactory>().getUserDetails();
-    final userDetails = userDetailsJson is String
-        ? jsonDecode(userDetailsJson)
-        : userDetailsJson;
-    final phoneNumber = userDetails['phoneNumber'] ?? '';
+    // Vérifier le mode invité
+    final guestMode = ref.watch(guestModeProvider);
 
     // Remplacer les providers MySQL par les providers Firebase
     final restaurantsFirebaseController =
@@ -102,6 +96,15 @@ class HomeRestaurantPage extends ConsumerWidget {
                 children: [
                   // En-tête personnalisé
                   HomeRestaurantHeader(),
+                  
+                  // Bannière d'invitation à s'inscrire (mode invité iOS uniquement)
+                  if (guestMode.isGuestMode &&
+                      defaultTargetPlatform == TargetPlatform.iOS)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      child: _buildGuestModeBanner(context, ref),
+                    ),
+                  
                   // Barre de recherche
                   Padding(
                     padding:
@@ -1012,6 +1015,94 @@ class HomeRestaurantPage extends ConsumerWidget {
         ],
       ),
       bottomNavigationBar: NavigationFooter(),
+    );
+  }
+  
+  /// Crée une bannière pour inviter les utilisateurs invités à s'inscrire
+  Widget _buildGuestModeBanner(BuildContext context, WidgetRef ref) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.orange.shade700, Colors.deepOrange.shade600],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.orange.withOpacity(0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.person_add,
+              color: Colors.white,
+              size: 28,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Mode invité actif',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Inscrivez-vous pour commander',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              // Désactiver le mode invité et rediriger vers l'inscription
+              ref.read(guestModeProvider.notifier).disableGuestMode();
+              context.router.push(const AuthRoute());
+            },
+            style: TextButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: Colors.orange.shade700,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 8,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+            ),
+            child: const Text(
+              'S\'inscrire',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

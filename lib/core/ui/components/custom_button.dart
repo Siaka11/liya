@@ -7,6 +7,7 @@ class CustomButton extends StatelessWidget {
   final double borderRadius;
   final VoidCallback? onPressedButton;
   final Color? bgColor;
+  final Color? textColor;
   final double fontSize;
   final double paddingVertical;
   final double? width;
@@ -18,6 +19,7 @@ class CustomButton extends StatelessWidget {
     required this.borderRadius,
     this.onPressedButton,
     this.bgColor,
+    this.textColor,
     required this.fontSize,
     required this.paddingVertical,
     this.width,
@@ -44,7 +46,7 @@ class CustomButton extends StatelessWidget {
           text,
           style: TextStyle(
             fontSize: fontSize,
-            color: Colors.orange,
+            color: textColor ?? Colors.orange,
           ),
         ),
       ),

@@ -1,5 +1,6 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
+import 'package:flutter/foundation.dart'; // Pour defaultTargetPlatform
 import 'package:liya/modules/parcel/feature/presentation/pages/parcel_home_page.dart';
 import 'package:liya/modules/restaurant/features/order/presentation/pages/order_detail_page.dart';
 import 'package:liya/modules/restaurant/features/profile/presentation/pages/profile_page.dart';
@@ -22,7 +23,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../config/app_information.dart';
 import '../core/singletons.dart';
-import '../core/test_delivery_tracking.dart';
+import '../core/providers/guest_mode_provider.dart'; // Provider mode invité
 import '../modules/auth/auth_provider.dart';
 import '../modules/auth/auth_page.dart';
 import '../modules/auth/otp_page.dart';
@@ -70,18 +71,74 @@ class AppRouter extends $AppRouter implements AutoRouteGuard {
         // Vérifier l'état d'authentification et synchroniser
         final isUserAuthenticated = await authProvider.checkAuthStateAndSync();
 
+        // Pages accessibles sans authentification
+        final publicRoutes = [
+          AuthRoute.name,
+          OtpRoute.name,
+          InfoUserRoute.name,
+          HomeRoute.name, // Accessible en mode invité sur iOS
+        ];
+
+        // Pages accessibles en mode invité sur iOS
+        final guestModeRoutes = [
+          HomeRoute.name,
+          HomeRestaurantRoute.name, // Restaurant accessible en mode invité
+          ParcelHomeRoute.name, // Colis accessible en mode invité
+          SearchRoute.name, // Recherche accessible en mode invité
+          AllRestaurantsRoute.name, // Liste restaurants accessible
+          AllDishesRoute.name, // Liste plats accessible
+          DishDetailRoute.name, // Détails plat accessible
+          ModernRestaurantDetailRoute.name, // Détails restaurant accessible
+          ModernDishDetailRoute.name, // Détails plat moderne accessible
+        ];
+
+        // Vérifier si on est sur iOS et en mode invité
+        final prefs = singleton<SharedPreferences>();
+        final isGuestMode = prefs.getBool('is_guest_mode') ?? false;
+        final isIOS = defaultTargetPlatform == TargetPlatform.iOS;
+
+        // Permettre l'accès si:
+        // 1. L'utilisateur est authentifié
+        // 2. La route est publique
+        // 3. On est sur iOS en mode invité et on va vers une route autorisée pour les invités
         if (isUserAuthenticated ||
-            resolver.route.name == AuthRoute.name ||
-            resolver.route.name == OtpRoute.name ||
-            resolver.route.name == InfoUserRoute.name) {
+            publicRoutes.contains(resolver.route.name) ||
+            (isIOS && isGuestMode && guestModeRoutes.contains(resolver.route.name))) {
+          resolver.next();
+        } else {
+          // Sur Android, toujours rediriger vers l'authentification
+          if (!isIOS || !isGuestMode) {
+            resolver.redirect(const AuthRoute(), replace: true);
+          } else {
+            // Sur iOS en mode invité, rediriger vers le home
+            resolver.redirect(HomeRoute(), replace: true);
+          }
+        }
+      } catch (e) {
+        print('❌ Erreur dans onNavigation: $e');
+        // En cas d'erreur, rediriger vers l'auth sauf si iOS en mode invité
+        final prefs = singleton<SharedPreferences>();
+        final isGuestMode = prefs.getBool('is_guest_mode') ?? false;
+        final isIOS = defaultTargetPlatform == TargetPlatform.iOS;
+
+        // Pages autorisées en mode invité
+        final guestModeRoutes = [
+          HomeRoute.name,
+          HomeRestaurantRoute.name,
+          ParcelHomeRoute.name,
+          SearchRoute.name,
+          AllRestaurantsRoute.name,
+          AllDishesRoute.name,
+          DishDetailRoute.name,
+          ModernRestaurantDetailRoute.name,
+          ModernDishDetailRoute.name,
+        ];
+
+        if (isIOS && isGuestMode && guestModeRoutes.contains(resolver.route.name)) {
           resolver.next();
         } else {
           resolver.redirect(const AuthRoute(), replace: true);
         }
-      } catch (e) {
-        print('❌ Erreur dans onNavigation: $e');
-        // En cas d'erreur, rediriger vers l'auth
-        resolver.redirect(const AuthRoute(), replace: true);
       }
     });
   }
@@ -123,7 +180,6 @@ class AppRouter extends $AppRouter implements AutoRouteGuard {
         AutoRoute(page: ModernHomeRestaurantRoute.page),
         AutoRoute(page: ModernRestaurantDetailRoute.page),
         AutoRoute(page: ModernDishDetailRoute.page),
-        AutoRoute(page: TestBeveragesRoute.page),
         AutoRoute(page: SplashDeliveryRoute.page),
         AutoRoute(page: HomeDeliveryRoute.page),
         AutoRoute(page: DeliveryListRoute.page),

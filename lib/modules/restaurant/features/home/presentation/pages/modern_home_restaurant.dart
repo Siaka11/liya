@@ -137,13 +137,7 @@ class ModernHomeRestaurantPage extends ConsumerWidget {
                 icon: const Icon(Icons.favorite_border),
                 color: Colors.grey,
               ),
-              IconButton(
-                onPressed: () {
-                  context.router.push(TestBeveragesRoute());
-                },
-                icon: const Icon(Icons.local_drink),
-                color: Colors.grey,
-              ),
+
             ],
           ),
         ],

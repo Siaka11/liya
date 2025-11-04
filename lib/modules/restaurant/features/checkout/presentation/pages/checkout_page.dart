@@ -26,6 +26,7 @@ import 'package:liya/modules/restaurant/features/order/presentation/providers/mo
 import 'package:geolocator/geolocator.dart';
 import 'package:liya/modules/restaurant/features/checkout/presentation/pages/delivery_address_page.dart';
 import 'package:liya/core/services/location_permission_service.dart';
+import 'package:liya/core/helpers/auth_helper.dart'; // Helper pour vérifier l'authentification
 
 @RoutePage()
 class CheckoutPage extends ConsumerStatefulWidget {
@@ -808,7 +809,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                         ),
                       ),
                       SizedBox(width: 16),
-*//*                      Expanded(
+*/ /*                      Expanded(
                         child: Container(
                           padding: EdgeInsets.all(16),
                           decoration: BoxDecoration(
@@ -817,7 +818,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                           ),
                           child: Column(
                             children: [
-                             *//* *//* Text(
+                             */ /* */ /* Text(
                                 'Programmer',
                                 style: TextStyle(
                                   color: Colors.grey[600],
@@ -827,11 +828,11 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                               Text(
                                 'Choisir une heure',
                                 style: TextStyle(color: Colors.grey),
-                              ),*//* *//*
+                              ),*/ /* */ /*
                             ],
                           ),
                         ),
-                      ),*//*
+                      ),*/ /*
                     ],
                   ),*/
                 ],
@@ -1060,6 +1061,19 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                     // Protection contre les clics multiples
                     if (_isProcessingOrder) return;
 
+                    // 🔐 VÉRIFICATION AUTHENTIFICATION (iOS Guideline 5.1.1)
+                    // Demander l'authentification avant de passer commande
+                    final isAuthenticated = await AuthHelper.requireAuth(
+                      context,
+                      ref,
+                      actionName: 'passer commande',
+                    );
+
+                    if (!isAuthenticated) {
+                      // L'utilisateur a refusé de s'inscrire ou a annulé
+                      return;
+                    }
+
                     // Vérifier qu'une adresse est sélectionnée
                     if (selectedLat == null ||
                         selectedLng == null ||
@@ -1285,6 +1299,7 @@ Future<void> _callNumber(BuildContext context, String number) async {
     );
   }
 }
+
 void _showCopySnackBar(BuildContext context, String number) {
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(

@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../application/delivery_tracking_provider.dart';
-import 'package:liya/core/test_maps_simple.dart';
 import '../../application/delivery_location_provider.dart';
 
 class DeliveryTrackingPage extends ConsumerStatefulWidget {
@@ -816,16 +815,6 @@ class _DeliveryTrackingPageState extends ConsumerState<DeliveryTrackingPage>
   }
 
   void _switchToSimpleView() {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => SimpleTrackingPage(
-          orderId: widget.orderId,
-          clientAddress: widget.clientAddress,
-          clientLatitude: widget.clientLatitude,
-          clientLongitude: widget.clientLongitude,
-        ),
-      ),
-    );
+
   }
 }

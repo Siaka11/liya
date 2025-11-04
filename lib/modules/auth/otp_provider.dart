@@ -4,6 +4,7 @@ import 'package:liya/modules/auth/firebase_auth_service.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:liya/routes/app_router.gr.dart';
 import 'package:liya/core/constants/error_messages.dart';
+import 'package:liya/core/providers/guest_mode_provider.dart';
 
 // État OTP
 class OtpState {
@@ -42,8 +43,9 @@ class OtpState {
 class OtpNotifier extends StateNotifier<OtpState> {
   final String verificationId;
   final FirebaseAuthService _authService;
+  final Ref ref;
 
-  OtpNotifier(this.verificationId)
+  OtpNotifier(this.verificationId, this.ref)
       : _authService = FirebaseAuthService(),
         super(OtpState());
 
@@ -77,6 +79,10 @@ class OtpNotifier extends StateNotifier<OtpState> {
 
       if (userCredential.user != null) {
         state = state.copyWith(isVerified: true, isLoading: false);
+        
+        // Désactiver le mode invité lors d'une connexion réussie
+        await ref.read(guestModeProvider.notifier).disableGuestMode();
+        print('✅ Mode invité désactivé après vérification OTP');
 
         // Navigation vers la page d'informations utilisateur
         if (context.mounted) {
@@ -143,5 +149,5 @@ class OtpNotifier extends StateNotifier<OtpState> {
 
 // Provider OTP
 final otpProvider = StateNotifierProvider.family<OtpNotifier, OtpState, String>(
-  (ref, verificationId) => OtpNotifier(verificationId),
+  (ref, verificationId) => OtpNotifier(verificationId, ref),
 );

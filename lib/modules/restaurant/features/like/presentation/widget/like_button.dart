@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../application/like_provider.dart';
 import '../../domain/entities/liked_dish.dart';
+import 'package:liya/core/helpers/auth_helper.dart'; // Helper pour vérifier l'authentification
 
 class LikeButton extends ConsumerStatefulWidget {
   final LikedDish dish;
@@ -46,6 +47,19 @@ class _LikeButtonState extends ConsumerState<LikeButton>
   }
 
   Future<void> _toggleLike() async {
+    // 🔐 VÉRIFICATION AUTHENTIFICATION (iOS Guideline 5.1.1)
+    // Demander l'authentification avant d'ajouter aux favoris
+    final isAuthenticated = await AuthHelper.requireAuth(
+      context,
+      ref,
+      actionName: 'ajouter aux favoris',
+    );
+
+    if (!isAuthenticated) {
+      // L'utilisateur a refusé de s'inscrire ou a annulé
+      return;
+    }
+
     final isLiked = await ref
         .read(likeProvider(widget.userId).notifier)
         .isDishLiked(widget.dish.id);

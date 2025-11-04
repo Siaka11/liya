@@ -1,20 +1,19 @@
 import 'package:auto_route/annotations.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart'; // Pour defaultTargetPlatform
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../core/services/phone_call_service.dart';
-import '../../../../home/presentation/pages/home_page.dart';
 import '../providers/parcel_provider.dart';
 import '../../domain/entities/parcel.dart';
-import '../../domain/entities/parcel_status.dart';
 import 'type_produit_page.dart';
 import 'parcel_status_list_page.dart';
-import 'package:liya/modules/restaurant/features/profile/presentation/pages/profile_page.dart';
 import 'package:liya/core/local_storage_factory.dart';
 import 'dart:convert';
 import 'parcel_search_page.dart';
 import 'package:liya/routes/app_router.gr.dart';
+import 'package:liya/core/providers/guest_mode_provider.dart'; // Provider mode invité
 
 @RoutePage()
 class ParcelHomePage extends ConsumerWidget {
@@ -23,6 +22,8 @@ class ParcelHomePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final parcelsAsync = ref.watch(parcelProvider);
+    final guestMode = ref.watch(guestModeProvider);
+    
     return Scaffold(
       backgroundColor: const Color(0xFFFFF3ED),
       body: SafeArea(
@@ -34,6 +35,15 @@ class ParcelHomePage extends ConsumerWidget {
               child: Column(
                 children: [
                   const SizedBox(height: 40),
+                  
+                  // Bannière d'invitation à s'inscrire (mode invité iOS uniquement)
+                  if (guestMode.isGuestMode &&
+                      defaultTargetPlatform == TargetPlatform.iOS)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
+                      child: _buildGuestModeBanner(context, ref),
+                    ),
+                  
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16.0),
                     child: GestureDetector(
@@ -403,6 +413,92 @@ class _ParcelBottomNavBar extends StatelessWidget {
           AutoRouter.of(context).replace(const HomeRoute());
         }
       },
+    );
+  }
+}
+
+extension ParcelHomePageExtension on ParcelHomePage {
+  /// Crée une bannière pour inviter les utilisateurs invités à s'inscrire
+  Widget _buildGuestModeBanner(BuildContext context, WidgetRef ref) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.orange.shade700,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.person_add,
+              color: Colors.white,
+              size: 28,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Mode invité actif',
+                  style: TextStyle(
+                    color: Colors.grey[900],
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Inscrivez-vous pour envoyer un colis',
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              // Désactiver le mode invité et rediriger vers l'inscription
+              ref.read(guestModeProvider.notifier).disableGuestMode();
+              context.router.push(const AuthRoute());
+            },
+            style: TextButton.styleFrom(
+              backgroundColor: Colors.orange.shade700,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 8,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+            ),
+            child: const Text(
+              'S\'inscrire',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
