@@ -1,18 +1,19 @@
 import 'package:auto_route/annotations.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart'; // Pour defaultTargetPlatform
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../home/presentation/pages/home_page.dart';
+import '../../../../../core/services/phone_call_service.dart';
 import '../providers/parcel_provider.dart';
 import '../../domain/entities/parcel.dart';
-import '../../domain/entities/parcel_status.dart';
 import 'type_produit_page.dart';
 import 'parcel_status_list_page.dart';
-import 'package:liya/modules/restaurant/features/profile/presentation/pages/profile_page.dart';
 import 'package:liya/core/local_storage_factory.dart';
 import 'dart:convert';
 import 'parcel_search_page.dart';
 import 'package:liya/routes/app_router.gr.dart';
+import 'package:liya/core/providers/guest_mode_provider.dart'; // Provider mode invité
 
 @RoutePage()
 class ParcelHomePage extends ConsumerWidget {
@@ -21,6 +22,8 @@ class ParcelHomePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final parcelsAsync = ref.watch(parcelProvider);
+    final guestMode = ref.watch(guestModeProvider);
+    
     return Scaffold(
       backgroundColor: const Color(0xFFFFF3ED),
       body: SafeArea(
@@ -32,6 +35,15 @@ class ParcelHomePage extends ConsumerWidget {
               child: Column(
                 children: [
                   const SizedBox(height: 40),
+                  
+                  // Bannière d'invitation à s'inscrire (mode invité iOS uniquement)
+                  if (guestMode.isGuestMode &&
+                      defaultTargetPlatform == TargetPlatform.iOS)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
+                      child: _buildGuestModeBanner(context, ref),
+                    ),
+                  
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16.0),
                     child: GestureDetector(
@@ -82,6 +94,20 @@ class ParcelHomePage extends ConsumerWidget {
                               MaterialPageRoute(
                                 builder: (_) =>
                                     ParcelStatusListPage(status: 'reception'),
+                              ));
+                        },
+                      ),
+                      _StatusRow(
+                        icon: Icons.assignment_ind,
+                        label: 'ASSIGNÉ',
+                        count: statusCounts['assigned'] ?? 0,
+                        color: Colors.purple,
+                        onTap: () {
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    ParcelStatusListPage(status: 'assigned'),
                               ));
                         },
                       ),
@@ -154,6 +180,46 @@ class ParcelHomePage extends ConsumerWidget {
                 error: (e, _) => Center(child: Text('Erreur: $e')),
               ),
             ),
+            const SizedBox(height: 50),
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.green.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: Colors.blue.withOpacity(0.3),
+                ),
+              ),
+              child: const Row(
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    color: Colors.green,
+                    size: 20,
+                  ),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      "Frais de livraison : 1 000 F CFA par colis.",
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.green,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: TextButton(
+                onPressed: () => _callNumber(context, '+2250700846546'),
+                child: const Text(
+                  'Appeler le Call center',
+                  style: TextStyle(color: Colors.deepOrange),
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -179,6 +245,7 @@ class ParcelHomePage extends ConsumerWidget {
 
     final Map<String, int> counts = {
       'reception': 0,
+      'assigned': 0,
       'enRoute': 0,
       'nonLivre': 0,
       'livre': 0,
@@ -202,6 +269,7 @@ class ParcelHomePage extends ConsumerWidget {
         ? jsonDecode(userDetailsJson)
         : userDetailsJson;
     final phoneNumber = userDetails['phoneNumber'] ?? '';
+
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -210,6 +278,45 @@ class ParcelHomePage extends ConsumerWidget {
       ),
     );
   }
+}
+
+Future<void> _callNumber(BuildContext context, String number) async {
+  try {
+    debugPrint('Tentative d\'appel vers: $number');
+
+    final success = await PhoneCallService.makeCall(number);
+
+    if (!success) {
+      _showCopySnackBar(context, number);
+    }
+  } catch (e) {
+    debugPrint('Erreur lors de l\'appel: $e');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Erreur lors de l\'appel : $e'),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+}
+
+void _showCopySnackBar(BuildContext context, String number) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(
+          'Impossible d\'ouvrir l\'application Téléphone.\nNuméro : $number'),
+      action: SnackBarAction(
+        label: 'Copier',
+        onPressed: () {
+          Clipboard.setData(ClipboardData(text: number));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text('Numéro copié dans le presse-papiers')),
+          );
+        },
+      ),
+    ),
+  );
 }
 
 class _StatusRow extends StatelessWidget {
@@ -289,9 +396,12 @@ class _ParcelBottomNavBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return BottomNavigationBar(
       items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
-        BottomNavigationBarItem(icon: Icon(Icons.local_shipping), label: ''),
-        BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: ''),
+        BottomNavigationBarItem(
+            icon: Icon(Icons.home, color: Colors.deepOrange), label: 'Accueil'),
+        BottomNavigationBarItem(
+            icon: Icon(Icons.local_shipping), label: 'Mes livraisons'),
+        BottomNavigationBarItem(
+            icon: Icon(Icons.dashboard), label: 'Menu principal'),
       ],
       currentIndex: 0,
       onTap: (index) {
@@ -303,6 +413,92 @@ class _ParcelBottomNavBar extends StatelessWidget {
           AutoRouter.of(context).replace(const HomeRoute());
         }
       },
+    );
+  }
+}
+
+extension ParcelHomePageExtension on ParcelHomePage {
+  /// Crée une bannière pour inviter les utilisateurs invités à s'inscrire
+  Widget _buildGuestModeBanner(BuildContext context, WidgetRef ref) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.orange.shade700,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.person_add,
+              color: Colors.white,
+              size: 28,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Mode invité actif',
+                  style: TextStyle(
+                    color: Colors.grey[900],
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Inscrivez-vous pour envoyer un colis',
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              // Désactiver le mode invité et rediriger vers l'inscription
+              ref.read(guestModeProvider.notifier).disableGuestMode();
+              context.router.push(const AuthRoute());
+            },
+            style: TextButton.styleFrom(
+              backgroundColor: Colors.orange.shade700,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 8,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+            ),
+            child: const Text(
+              'S\'inscrire',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

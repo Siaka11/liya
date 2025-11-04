@@ -10,6 +10,7 @@ import 'package:liya/modules/restaurant/features/order/domain/entities/beverage.
 import 'package:liya/core/local_storage_factory.dart';
 import 'package:liya/core/singletons.dart';
 import 'dart:convert';
+import '../../../../../../core/services/dish_popularity_service.dart';
 
 @RoutePage(name: 'ModernDishDetailRoute')
 class ModernDishDetailPage extends ConsumerStatefulWidget {
@@ -38,6 +39,23 @@ class ModernDishDetailPage extends ConsumerStatefulWidget {
 
 class _ModernDishDetailPageState extends ConsumerState<ModernDishDetailPage> {
   List<BeverageSelection> selectedBeverages = [];
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Tracker la vue du plat pour la popularité
+    _trackDishView();
+  }
+
+  /// Tracker la vue du plat pour la popularité
+  void _trackDishView() {
+    // Appeler le service de popularité en mode fire-and-forget
+    DishPopularityService.incrementViewCount(widget.id).catchError((error) {
+      // Ignorer silencieusement les erreurs de tracking
+      print('Erreur tracking vue plat (ModernDishDetailPage): $error');
+    });
+  }
 
   @override
   Widget build(BuildContext context) {

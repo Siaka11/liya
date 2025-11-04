@@ -14,6 +14,8 @@ import 'dart:async';
 import '../../application/home_delivery_provider.dart';
 import '../../domain/entities/delivery_order.dart';
 import 'order_details_page.dart';
+import '../../../restaurant/features/order/presentation/pages/order_details_full_page.dart';
+import '../../../parcel/feature/presentation/pages/parcel_details_full_page.dart';
 
 @RoutePage()
 class HomeDeliveryPage extends ConsumerStatefulWidget {
@@ -123,10 +125,10 @@ class _HomeDeliveryPageState extends ConsumerState<HomeDeliveryPage> {
                 ],
               ),
             ),
-            NotificationAppBarButton(
+/*            NotificationAppBarButton(
               backgroundColor: Colors.transparent,
               iconColor: Colors.white,
-            ),
+            ),*/
           ],
         ),
         actions: [
@@ -152,10 +154,10 @@ class _HomeDeliveryPageState extends ConsumerState<HomeDeliveryPage> {
             _buildStatusSection(isAvailable),
 
             // Section carte (seulement si en course)
-            if (isAvailable) _buildMapSection(),
+            // if (isAvailable) _buildMapSection(),
 
             // Section des gains et statistiques
-            _buildEarningsSection(),
+            //_buildEarningsSection(),
 
             // Section des commandes assignées
             _buildAssignedOrdersSection(assignedOrders),
@@ -171,7 +173,7 @@ class _HomeDeliveryPageState extends ConsumerState<HomeDeliveryPage> {
                 .toList()),
 
             // Section des actions
-            _buildActionsSection(),
+            /*_buildActionsSection(),*/
           ],
         ),
       ),
@@ -320,7 +322,7 @@ class _HomeDeliveryPageState extends ConsumerState<HomeDeliveryPage> {
             ],
           ),
           const SizedBox(height: 16),
-          Row(
+          /*Row(
             children: [
               Expanded(
                 child: ElevatedButton.icon(
@@ -347,7 +349,7 @@ class _HomeDeliveryPageState extends ConsumerState<HomeDeliveryPage> {
                 ),
               ),
             ],
-          ),
+          ),*/
         ],
       ),
     );
@@ -580,10 +582,25 @@ class _HomeDeliveryPageState extends ConsumerState<HomeDeliveryPage> {
         statusText = 'Nouvelle livraison';
         statusIcon = Icons.assignment;
         break;
-      case DeliveryStatus.enRoute:
+      case DeliveryStatus.assigned:
         statusColor = Colors.blue;
+        statusText = 'Assigné';
+        statusIcon = Icons.assignment_ind;
+        break;
+      case DeliveryStatus.enRoute:
+        statusColor = Colors.purple;
         statusText = 'En cours de livraison';
         statusIcon = Icons.local_shipping;
+        break;
+      case DeliveryStatus.livre:
+        statusColor = Colors.green;
+        statusText = 'Livré';
+        statusIcon = Icons.check_circle;
+        break;
+      case DeliveryStatus.nonLivre:
+        statusColor = Colors.red;
+        statusText = 'Non livré';
+        statusIcon = Icons.cancel;
         break;
       default:
         statusColor = Colors.grey;
@@ -660,12 +677,8 @@ class _HomeDeliveryPageState extends ConsumerState<HomeDeliveryPage> {
             const SizedBox(height: 12),
             _buildDetailRow(
                 'Client', order.customerFullName ?? order.customerName),
-            _buildDetailRow('📞 Téléphone', order.customerPhoneNumber),
-            _buildDetailRow('📍 Adresse', order.customerAddress),
-            if (order.customerEmail != null)
-              _buildDetailRow('📧 Email', order.customerEmail!),
-            _buildDetailRow(
-                '💰 Gain', '${order.deliveryFee.toStringAsFixed(0)} FCFA'),
+            _buildDetailRow(' Téléphone', order.customerPhoneNumber),
+            _buildDetailRow(' Adresse', order.customerAddress),
           ],
         ),
       ),
@@ -673,9 +686,41 @@ class _HomeDeliveryPageState extends ConsumerState<HomeDeliveryPage> {
   }
 
   void _showOrderDetails(DeliveryOrder order) {
+    // Convertir DeliveryOrder en Map pour la page de détails complète
+    final orderData = {
+      'id': order.id,
+      'phoneNumber': order.customerPhoneNumber,
+      'phone': order.customerPhoneNumber,
+      'customer_name': order.customerName,
+      'address': order.customerAddress,
+      'assignedTo': order.deliveryPhoneNumber,
+      'assignedToName': order.deliveryName,
+      'assignedAt': order.assignedAt?.toIso8601String(),
+      'lastUpdated': order.assignedAt?.toIso8601String(),
+      'createdAt': order.createdAt.toIso8601String(),
+      'status': order.status.toString().split('.').last,
+      'subtotal': order.amount,
+      'deliveryFee': order.deliveryFee,
+      'total': order.amount + order.deliveryFee,
+      'deliveryTime': 10, // Valeur par défaut
+      'distance': 0.0, // Valeur par défaut
+      'items': [
+        {
+          'name': order.description,
+          'price': order.amount,
+          'quantity': 1,
+        }
+      ],
+      'deliveryInstructions': null,
+      'latitude': order.destinationLatitude,
+      'longitude': order.destinationLongitude,
+    };
+
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => OrderDetailsPage(order: order),
+        builder: (context) => order.type == DeliveryType.restaurant
+            ? OrderDetailsFullPage(orderData: orderData)
+            : ParcelDetailsFullPage(parcelData: orderData),
       ),
     );
   }
@@ -689,7 +734,7 @@ class _HomeDeliveryPageState extends ConsumerState<HomeDeliveryPage> {
           SizedBox(
             width: 80,
             child: Text(
-              '$label:',
+              '$label',
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
@@ -701,7 +746,7 @@ class _HomeDeliveryPageState extends ConsumerState<HomeDeliveryPage> {
     );
   }
 
-  Widget _buildActionsSection() {
+  /*Widget _buildActionsSection() {
     return Container(
       margin: const EdgeInsets.only(top: 16),
       child: Column(
@@ -753,7 +798,7 @@ class _HomeDeliveryPageState extends ConsumerState<HomeDeliveryPage> {
         ],
       ),
     );
-  }
+  }*/
 
   Widget _buildMapSection() {
     return Container(
@@ -843,6 +888,8 @@ class _HomeDeliveryPageState extends ConsumerState<HomeDeliveryPage> {
 
   Color _getStatusColor(String? status) {
     switch (status) {
+      case 'assigned':
+        return Colors.orange;
       case 'enRoute':
         return Colors.blue;
       case 'livre':

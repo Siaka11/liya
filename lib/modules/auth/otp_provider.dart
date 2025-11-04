@@ -3,7 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:liya/modules/auth/firebase_auth_service.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:liya/routes/app_router.gr.dart';
-import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import 'package:liya/core/constants/error_messages.dart';
+import 'package:liya/core/providers/guest_mode_provider.dart';
 
 // État OTP
 class OtpState {
@@ -42,8 +43,9 @@ class OtpState {
 class OtpNotifier extends StateNotifier<OtpState> {
   final String verificationId;
   final FirebaseAuthService _authService;
+  final Ref ref;
 
-  OtpNotifier(this.verificationId)
+  OtpNotifier(this.verificationId, this.ref)
       : _authService = FirebaseAuthService(),
         super(OtpState());
 
@@ -63,21 +65,53 @@ class OtpNotifier extends StateNotifier<OtpState> {
     state = state.copyWith(isLoading: true, hasError: false, errorMessage: '');
 
     try {
+      print('🔍 Début vérification OTP avec pin: ${state.pin}');
+
+      // Vérifier que le verificationId existe avant d'essayer
+      final verificationId = await _authService.getVerificationId();
+      if (verificationId == null) {
+        throw Exception(ErrorMessages.missingVerificationId);
+      }
+      print('✅ VerificationId trouvé: ${verificationId.substring(0, 10)}...');
+
       final userCredential = await _authService.verifyOTP(state.pin);
+      print('✅ OTP vérifié avec succès');
 
       if (userCredential.user != null) {
         state = state.copyWith(isVerified: true, isLoading: false);
+        
+        // Désactiver le mode invité lors d'une connexion réussie
+        await ref.read(guestModeProvider.notifier).disableGuestMode();
+        print('✅ Mode invité désactivé après vérification OTP');
 
         // Navigation vers la page d'informations utilisateur
         if (context.mounted) {
-          context.router.push(const InfoUserRoute());
+          print('🔄 Redirection vers InfoUserRoute');
+          // Forcer la redirection vers InfoUserRoute en remplaçant la stack
+          context.router.replace(const InfoUserRoute());
         }
       }
     } catch (e) {
+      print('❌ Erreur vérification OTP: $e');
+
+      // Utiliser des messages d'erreur professionnels
+      String errorMessage = ErrorMessages.otpVerificationFailed;
+
+      // Si c'est une exception avec un message personnalisé, l'utiliser
+      if (e is Exception && e.toString().startsWith('Exception: ')) {
+        final message = e.toString().substring(11); // Enlever "Exception: "
+        if (message.startsWith('🔢') ||
+            message.startsWith('⏰') ||
+            message.startsWith('🔍') ||
+            message.startsWith('🛡️')) {
+          errorMessage = message;
+        }
+      }
+
       state = state.copyWith(
         isLoading: false,
         hasError: true,
-        errorMessage: 'Code incorrect: ${e.toString()}',
+        errorMessage: errorMessage,
       );
     }
   }
@@ -89,20 +123,19 @@ class OtpNotifier extends StateNotifier<OtpState> {
       await _authService.sendOTP(phoneNumber);
       state = state.copyWith(isLoading: false);
     } catch (e) {
-      String errorMessage = 'Erreur lors du renvoi';
+      String errorMessage = ErrorMessages.otpResendFailed;
 
-      // Messages d'erreur plus spécifiques
+      // Messages d'erreur plus spécifiques et professionnels
       if (e.toString().contains('too-many-requests')) {
-        errorMessage =
-            'Trop de demandes. Attendez quelques minutes avant de réessayer.';
+        errorMessage = ErrorMessages.otpTooManyAttempts;
       } else if (e.toString().contains('invalid-phone-number')) {
-        errorMessage = 'Numéro de téléphone invalide.';
+        errorMessage = ErrorMessages.invalidPhoneNumber;
       } else if (e.toString().contains('quota-exceeded')) {
-        errorMessage = 'Limite de SMS dépassée. Réessayez plus tard.';
+        errorMessage = ErrorMessages.quotaExceeded;
       } else if (e.toString().contains('network-request-failed')) {
-        errorMessage = 'Erreur réseau. Vérifiez votre connexion internet.';
-      } else {
-        errorMessage = 'Erreur lors du renvoi: ${e.toString()}';
+        errorMessage = ErrorMessages.networkRequestFailed;
+      } else if (e.toString().contains('app-not-authorized')) {
+        errorMessage = ErrorMessages.appNotAuthorized;
       }
 
       state = state.copyWith(
@@ -116,5 +149,5 @@ class OtpNotifier extends StateNotifier<OtpState> {
 
 // Provider OTP
 final otpProvider = StateNotifierProvider.family<OtpNotifier, OtpState, String>(
-  (ref, verificationId) => OtpNotifier(verificationId),
+  (ref, verificationId) => OtpNotifier(verificationId, ref),
 );

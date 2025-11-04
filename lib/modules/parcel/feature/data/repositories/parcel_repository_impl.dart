@@ -35,6 +35,8 @@ class ParcelRepositoryImpl implements ParcelRepository {
         typeProduit: parcel.typeProduit,
         colisDescription: parcel.colisDescription,
         colisList: parcel.colisList,
+        expediteurPhone: parcel.expediteurPhone,
+        destinatairePhone: parcel.destinatairePhone,
       );
 
       await _firestore

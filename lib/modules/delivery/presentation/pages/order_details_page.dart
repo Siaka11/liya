@@ -105,7 +105,7 @@ class _OrderDetailsPageState extends ConsumerState<OrderDetailsPage> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  Text(
+                  /*Text(
                     '${widget.order.deliveryFee.toStringAsFixed(0)} FCFA',
                     style: const TextStyle(
                       color: Colors.white,
@@ -119,7 +119,7 @@ class _OrderDetailsPageState extends ConsumerState<OrderDetailsPage> {
                       color: Colors.white70,
                       fontSize: 16,
                     ),
-                  ),
+                  ),*/
                 ],
               ),
             ),
@@ -129,15 +129,62 @@ class _OrderDetailsPageState extends ConsumerState<OrderDetailsPage> {
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
+                  // Informations générales
+                  _buildInfoCard(
+                    title: 'Informations générales',
+                    icon: Icons.receipt_long,
+                    children: [
+                      _buildInfoRow('ID Commande', widget.order.id),
+                      _buildInfoRow(
+                          'Type',
+                          widget.order.type == DeliveryType.restaurant
+                              ? 'Restaurant'
+                              : 'Colis'),
+                      _buildInfoRow(
+                          'Statut', _getStatusText(widget.order.status)),
+                      if (widget.order.createdAt != null)
+                        _buildInfoRow(
+                            'Date de création',
+                            DateFormat('dd/MM/yyyy HH:mm')
+                                .format(widget.order.createdAt!)),
+                    ],
+                  ),
+
+                  const SizedBox(height: 16),
+
                   // Informations client
                   _buildInfoCard(
-                    title: 'Informations Client',
+                    title: 'Informations du client',
                     icon: Icons.person,
                     children: [
-                      _buildInfoRow('Nom', widget.order.customerName),
+                      _buildInfoRow('Nom du client', widget.order.customerName),
+                      _buildInfoRow('Téléphone du client',
+                          widget.order.customerPhoneNumber),
                       _buildInfoRow(
-                          'Téléphone', widget.order.customerPhoneNumber),
-                      _buildInfoRow('Adresse', widget.order.customerAddress),
+                          'Adresse de livraison', widget.order.customerAddress),
+                      if (widget.order.notes != null &&
+                          widget.order.notes!.isNotEmpty)
+                        _buildInfoRow(
+                            'Instructions de livraison', widget.order.notes!),
+                    ],
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Informations livreur
+                  _buildInfoCard(
+                    title: 'Informations du livreur',
+                    icon: Icons.delivery_dining,
+                    children: [
+                      _buildInfoRow('Nom du livreur',
+                          widget.order.deliveryName ?? 'Non assigné'),
+                      _buildInfoRow('Téléphone du livreur',
+                          widget.order.deliveryPhoneNumber ?? 'Non assigné'),
+                      if (widget.order.assignedAt != null)
+                        _buildInfoRow(
+                            'Date d\'assignation',
+                            DateFormat('dd/MM/yyyy HH:mm')
+                                .format(widget.order.assignedAt!)),
                     ],
                   ),
 
@@ -145,28 +192,67 @@ class _OrderDetailsPageState extends ConsumerState<OrderDetailsPage> {
 
                   // Détails de la commande
                   _buildInfoCard(
-                    title: 'Détails de la Commande',
+                    title: 'Détails de la commande',
                     icon: Icons.receipt,
                     children: [
-                      _buildInfoRow('ID', widget.order.id),
                       _buildInfoRow('Description', widget.order.description),
-                      _buildInfoRow('Montant',
-                          '${widget.order.amount.toStringAsFixed(0)} FCFA'),
-                      _buildInfoRow('Frais de livraison',
-                          '${widget.order.deliveryFee.toStringAsFixed(0)} FCFA'),
-                      _buildInfoRow('Total',
-                          '${(widget.order.amount + widget.order.deliveryFee).toStringAsFixed(0)} FCFA'),
-                      _buildInfoRow(
-                          'Statut', _getStatusText(widget.order.status)),
-                      if (widget.order.createdAt != null)
-                        _buildInfoRow(
-                            'Créée le',
-                            DateFormat('dd/MM/yyyy HH:mm')
-                                .format(widget.order.createdAt!)),
+                      if (widget.order.amount != null)
+                        _buildInfoRow('Montant',
+                            '${widget.order.amount!.toStringAsFixed(0)} FCFA'),
+                      if (widget.order.deliveryFee != null)
+                        _buildInfoRow('Frais de livraison',
+                            '${widget.order.deliveryFee!.toStringAsFixed(0)} FCFA'),
+                      if (widget.order.totalAmount != null)
+                        _buildInfoRow('Total',
+                            '${widget.order.totalAmount!.toStringAsFixed(0)} FCFA'),
                     ],
                   ),
 
                   const SizedBox(height: 16),
+
+                  // Informations de livraison
+                  _buildInfoCard(
+                    title: 'Informations de livraison',
+                    icon: Icons.local_shipping,
+                    children: [
+                      if (widget.order.deliveryFee != null)
+                        _buildInfoRow('Frais de livraison',
+                            '${widget.order.deliveryFee!.toStringAsFixed(0)} FCFA'),
+                      if (widget.order.deliveryTime != null)
+                        _buildInfoRow('Temps de livraison estimé',
+                            '${widget.order.deliveryTime} minutes'),
+                      if (widget.order.distance != null)
+                        _buildInfoRow(
+                            'Distance', '${widget.order.distance} km'),
+                      if (widget.order.destinationLatitude != null &&
+                          widget.order.destinationLongitude != null)
+                        _buildInfoRow('Coordonnées de livraison',
+                            '${widget.order.destinationLatitude}, ${widget.order.destinationLongitude}'),
+                    ],
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Articles commandés (si c'est une commande de restaurant)
+                  if (widget.order.type == DeliveryType.restaurant &&
+                      widget.order.items != null &&
+                      widget.order.items!.isNotEmpty)
+                    _buildInfoCard(
+                      title: 'Articles commandés',
+                      icon: Icons.restaurant_menu,
+                      children: [
+                        ...widget.order.items!.asMap().entries.map((entry) {
+                          final index = entry.key;
+                          final item = entry.value;
+                          return _buildOrderItem(item, index + 1);
+                        }).toList(),
+                      ],
+                    ),
+
+                  if (widget.order.type == DeliveryType.restaurant &&
+                      widget.order.items != null &&
+                      widget.order.items!.isNotEmpty)
+                    const SizedBox(height: 16),
 
                   // Carte (placeholder pour l'instant)
                   if (_showMap) ...[
@@ -428,21 +514,101 @@ class _OrderDetailsPageState extends ConsumerState<OrderDetailsPage> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 100,
+          Expanded(
+            flex: 2,
             child: Text(
-              '$label:',
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.grey,
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[600],
+                fontWeight: FontWeight.normal,
               ),
             ),
           ),
           Expanded(
+            flex: 3,
             child: Text(
               value,
-              style: const TextStyle(fontSize: 16),
+              style: const TextStyle(
+                fontSize: 14,
+                color: Colors.black87,
+                fontWeight: FontWeight.w500,
+              ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOrderItem(dynamic item, int index) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: Colors.grey[200]!,
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF24E1E),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Center(
+                  child: Text(
+                    '$index',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  item['name'] ?? 'Article inconnu',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF2D2D2D),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Quantité: ${item['quantity'] ?? 1}',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                ),
+              ),
+              Text(
+                '${item['price'] ?? 0} FCFA',
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFFF24E1E),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -453,6 +619,8 @@ class _OrderDetailsPageState extends ConsumerState<OrderDetailsPage> {
     switch (status) {
       case DeliveryStatus.reception:
         return 'En attente';
+      case DeliveryStatus.assigned:
+        return 'Assigné à un livreur';
       case DeliveryStatus.enRoute:
         return 'En cours de livraison';
       case DeliveryStatus.livre:

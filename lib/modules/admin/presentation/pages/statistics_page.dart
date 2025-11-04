@@ -185,7 +185,7 @@ class _StatisticsPageState extends ConsumerState<StatisticsPage> {
   Widget _buildStatCard(
       String title, String value, IconData icon, Color color) {
     return Card(
-      elevation: 4,
+      elevation: 0.4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -222,7 +222,7 @@ class _StatisticsPageState extends ConsumerState<StatisticsPage> {
         statistics['orderStatuses'] as Map<String, int>? ?? {};
 
     return Card(
-      elevation: 4,
+      elevation: 0.4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -259,7 +259,7 @@ class _StatisticsPageState extends ConsumerState<StatisticsPage> {
         statistics['parcelStatuses'] as Map<String, int>? ?? {};
 
     return Card(
-      elevation: 4,
+      elevation: 0.4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -295,7 +295,7 @@ class _StatisticsPageState extends ConsumerState<StatisticsPage> {
     final userRoles = statistics['userRoles'] as Map<String, int>? ?? {};
 
     return Card(
-      elevation: 4,
+      elevation: 0.4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -364,6 +364,8 @@ class _StatisticsPageState extends ConsumerState<StatisticsPage> {
     switch (status) {
       case 'reception':
         return 'En réception';
+      case 'assigned':
+        return 'Assigné';
       case 'enRoute':
         return 'En route';
       case 'livre':
@@ -385,6 +387,8 @@ class _StatisticsPageState extends ConsumerState<StatisticsPage> {
     switch (status) {
       case 'reception':
         return Colors.orange;
+      case 'assigned':
+        return Colors.purple;
       case 'enRoute':
         return Colors.blue;
       case 'livre':

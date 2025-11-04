@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "353439898034",
+    "project_id": "liya-a4a9f",
+    "storage_bucket": "liya-a4a9f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:353439898034:android:1bdafd9b522dedfbed6cab",
+        "android_client_info": {
+          "package_name": "com.liya.ci"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "353439898034-hbofomtqqco4p5gh8jlmv9vir833qjdi.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAxPHuGGcj4WP9HWzkXoowH0zL4UC7tvIs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "353439898034-hbofomtqqco4p5gh8jlmv9vir833qjdi.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "353439898034-7a0c7q6d596sfb07fgekhsofe66gq61f.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.liya.ci"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

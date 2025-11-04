@@ -3,6 +3,7 @@ import '../../../card/data/models/cart_item_model.dart';
 import '../../domain/entities/delivery_info.dart';
 import '../models/delivery_info_model.dart';
 import 'package:liya/core/services/notification_service.dart';
+import 'package:liya/core/services/dish_popularity_service.dart';
 
 abstract class CheckoutRemoteDataSource {
   Future<DeliveryInfo> getDeliveryInfo(String userId);
@@ -81,6 +82,22 @@ class CheckoutRemoteDataSourceImpl implements CheckoutRemoteDataSource {
 
     print('✅ Commande créée avec succès: $orderId');
 
+    // 📊 Mettre à jour la popularité des plats commandés
+    print('📊 Mise à jour de la popularité des plats...');
+    for (final item in cartItems) {
+      try {
+        // Pour chaque quantité commandée, incrémenter le compteur
+        for (int i = 0; i < item.quantity; i++) {
+          // Chercher l'ID du plat à partir du nom
+          await _incrementDishPopularityByName(item.name);
+        }
+        print(
+            '📊 Popularité mise à jour pour: ${item.name} (quantité: ${item.quantity})');
+      } catch (e) {
+        print('❌ Erreur mise à jour popularité pour ${item.name}: $e');
+      }
+    }
+
     // Envoyer notification aux admins
     print('📤 === DÉBUT ENVOI NOTIFICATION ADMIN ===');
     print('📤 OrderId: $orderId');
@@ -107,5 +124,27 @@ class CheckoutRemoteDataSourceImpl implements CheckoutRemoteDataSource {
       print('❌ Stack trace: ${StackTrace.current}');
     }
     print('📤 === FIN ENVOI NOTIFICATION ADMIN ===');
+  }
+
+  /// Méthode helper pour incrémenter la popularité d'un plat par son nom
+  Future<void> _incrementDishPopularityByName(String dishName) async {
+    try {
+      // Chercher le plat par son nom
+      final dishQuery = await _firestore
+          .collection('dishes')
+          .where('name', isEqualTo: dishName)
+          .limit(1)
+          .get();
+
+      if (dishQuery.docs.isNotEmpty) {
+        final dishId = dishQuery.docs.first.id;
+        await DishPopularityService.incrementOrderCount(dishId);
+        print('✅ Order count incrémenté pour le plat: $dishName (ID: $dishId)');
+      } else {
+        print('⚠️ Plat non trouvé dans la base: $dishName');
+      }
+    } catch (e) {
+      print('❌ Erreur incrémentation popularité pour $dishName: $e');
+    }
   }
 }

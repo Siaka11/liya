@@ -6,12 +6,13 @@ import '../../../../../routes/app_router.gr.dart';
 import '../providers/parcel_action_provider.dart';
 import '../../domain/entities/parcel.dart';
 import 'package:liya/core/local_storage_factory.dart';
+import 'package:liya/core/services/connection_manager.dart';
+import 'package:liya/core/ui/widgets/connection_status_widget.dart';
 import 'dart:convert';
 import 'parcel_home_page.dart';
-import 'package:liya/core/services/navigation_service.dart';
-
-import 'package:liya/modules/home/presentation/pages/home_page.dart';
-import 'package:liya/modules/restaurant/features/profile/presentation/pages/profile_page.dart';
+// Imports pour Google Places AutoComplete (RESTAURÉS)
+import 'package:google_places_flutter/model/prediction.dart';
+import 'package:google_places_flutter/google_places_flutter.dart';
 
 @RoutePage()
 class LieuPage extends ConsumerStatefulWidget {
@@ -21,15 +22,15 @@ class LieuPage extends ConsumerStatefulWidget {
   final String ville;
   final String? colisDescription;
   final List<dynamic>? colisList;
-  const LieuPage(
-      {Key? key,
-      required this.phoneNumber,
-      required this.typeProduit,
-      this.isReception = false,
-      required this.ville,
-      this.colisDescription,
-      this.colisList})
-      : super(key: key);
+  const LieuPage({
+    Key? key,
+    required this.phoneNumber,
+    required this.typeProduit,
+    this.isReception = false,
+    required this.ville,
+    this.colisDescription,
+    this.colisList,
+  }) : super(key: key);
 
   @override
   ConsumerState<LieuPage> createState() => _LieuPageState();
@@ -37,66 +38,89 @@ class LieuPage extends ConsumerStatefulWidget {
 
 class _LieuPageState extends ConsumerState<LieuPage> {
   final _formKey = GlobalKey<FormState>();
-  String phone = '';
-  String commune = '';
-  String quartier = '';
-  String secteur = '';
-  String description = '';
-  final _communeController = TextEditingController();
-  final _quartierController = TextEditingController();
-  final _secteurController = TextEditingController();
-  final _phoneController = TextEditingController();
+
+  // Clé API Google Maps (RESTAURÉE)
+  final String googleMapsApiKey = 'AIzaSyAxPHuGGcj4WP9HWzkXoowH0zL4UC7tvIs';
+
+  // ====== Controllers COHÉRENTS ======
+  // Expéditeur
+  final _expediteurNomController = TextEditingController();
+  final _expediteurLieuController = TextEditingController();
+  final _expediteurPhoneController = TextEditingController();
+
+  // Destinataire
+  final _destinataireNomController = TextEditingController();
+  final _destinataireLieuController = TextEditingController();
+  final _destinatairePhoneController = TextEditingController();
+
+  // Description
   final _descriptionController = TextEditingController();
+
+  // Ville sélectionnée
+  String _selectedVille = '';
+
+  // Gestionnaire de connexion
+  final ConnectionManager _connectionManager = ConnectionManager();
 
   @override
   void initState() {
     super.initState();
+    _selectedVille =
+        widget.ville; // Initialiser avec la ville passée en paramètre
+
+    // Définir le contexte pour le gestionnaire de connexion
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _connectionManager.setCurrentContext(context);
+    });
     _loadExistingData();
   }
 
   @override
   void dispose() {
-    _communeController.dispose();
-    _quartierController.dispose();
-    _secteurController.dispose();
-    _phoneController.dispose();
+    _expediteurNomController.dispose();
+    _expediteurLieuController.dispose();
+    _expediteurPhoneController.dispose();
+
+    _destinataireNomController.dispose();
+    _destinataireLieuController.dispose();
+    _destinatairePhoneController.dispose();
+
     _descriptionController.dispose();
+    _connectionManager.clearCurrentContext();
     super.dispose();
   }
 
-  // Charger les données existantes si disponibles
+  // Pré-remplissage: si l'utilisateur est le demandeur, on suppose qu'il est l'expéditeur (cas par défaut)
+  // Si widget.isReception == true, on pré-remplit plutôt le destinataire.
   void _loadExistingData() {
     try {
-      // Récupérer les données utilisateur depuis LocalStorage
       final userDetailsJson = LocalStorageFactory().getUserDetails();
       if (userDetailsJson != null) {
         final userDetails = userDetailsJson is String
             ? jsonDecode(userDetailsJson)
             : userDetailsJson;
 
-        // Pré-remplir avec les données utilisateur si disponibles
-        final userName = userDetails['name'] ?? '';
-        final userLastName = userDetails['lastName'] ?? '';
+        final userName = (userDetails['name'] ?? '').toString();
+        final userLastName = (userDetails['lastName'] ?? '').toString();
         final userFullName = '$userName $userLastName'.trim();
+        final userPhone = (userDetails['phoneNumber'] ?? '').toString();
+        final userAddress = (userDetails['address'] ?? '').toString();
 
-        if (userFullName.isNotEmpty) {
-          // Si c'est un envoi, pré-remplir l'expéditeur
-          if (!widget.isReception) {
-            _communeController.text = userFullName;
-          } else {
-            // Si c'est une réception, pré-remplir le destinataire
-            _secteurController.text = userFullName;
-          }
-        }
-
-        // Pré-remplir l'adresse si disponible
-        final userAddress = userDetails['address'] ?? '';
-        if (userAddress.isNotEmpty) {
-          if (!widget.isReception) {
-            _quartierController.text = userAddress;
-          } else {
-            _phoneController.text = userAddress;
-          }
+        if (!widget.isReception) {
+          // Cas "J'envoie un colis" : l'utilisateur est l'expéditeur
+          if (userFullName.isNotEmpty)
+            _expediteurNomController.text = userFullName;
+          if (userPhone.isNotEmpty) _expediteurPhoneController.text = userPhone;
+          if (userAddress.isNotEmpty)
+            _expediteurLieuController.text = userAddress;
+        } else {
+          // Cas "Je reçois un colis" : l'utilisateur est le destinataire
+          if (userFullName.isNotEmpty)
+            _destinataireNomController.text = userFullName;
+          if (userPhone.isNotEmpty)
+            _destinatairePhoneController.text = userPhone;
+          if (userAddress.isNotEmpty)
+            _destinataireLieuController.text = userAddress;
         }
       }
     } catch (e) {
@@ -104,201 +128,132 @@ class _LieuPageState extends ConsumerState<LieuPage> {
     }
   }
 
-  void _showConfirmDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => Center(
-        child: Material(
-          color: Colors.transparent,
-          child: Container(
-            width: MediaQuery.of(context).size.width * 0.8,
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(32),
-              boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 16)],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const SizedBox(height: 16),
-                const Text('Je confirme ma commande',
-                    style: TextStyle(fontSize: 18)),
-                const SizedBox(height: 24),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    OutlinedButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: OutlinedButton.styleFrom(
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(24)),
-                        side: const BorderSide(color: Color(0xFFF24E1E)),
-                        foregroundColor: Color(0xFFF24E1E),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 24, vertical: 12),
-                      ),
-                      child: const Text('Annuler'),
-                    ),
-                    ElevatedButton(
-                      onPressed: () async {
-                        // Sauvegarder le colis
-                        _saveParcel();
-
-                        // Fermer le dialog
-                        Navigator.of(context).pop();
-
-                        // Attendre que le dialog soit complètement fermé
-                        await Future.delayed(const Duration(milliseconds: 100));
-
-                        // Navigation simple et sûre
-                        if (mounted) {
-                          print('🚀 Navigation simple vers ParcelHomePage...');
-
-                          // Utiliser une navigation simple sans conflit
-                          Navigator.of(context).pushReplacement(
-                            MaterialPageRoute(
-                              builder: (context) => const ParcelHomePage(),
-                            ),
-                          );
-
-                          // Afficher le SnackBar après la navigation
-                          Future.delayed(const Duration(milliseconds: 200), () {
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Row(
-                                    children: [
-                                      const Icon(Icons.check_circle,
-                                          color: Colors.white),
-                                      const SizedBox(width: 12),
-                                      const Expanded(
-                                        child: Text(
-                                          'Votre demande de colis a été prise en compte avec succès !',
-                                          style: TextStyle(fontSize: 16),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  backgroundColor: const Color(0xFF4BB543),
-                                  duration: const Duration(seconds: 4),
-                                  behavior: SnackBarBehavior.floating,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  margin: const EdgeInsets.all(16),
-                                ),
-                              );
-                            }
-                          });
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFF24E1E),
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(24)),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 24, vertical: 12),
-                      ),
-                      child: const Text('Confirmer'),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
+  // Callbacks Google Places (RESTAURÉS avec corrections)
+  void _onExpediteurLieuSelected(Prediction prediction) async {
+    try {
+      print('📍 Lieu expéditeur sélectionné: ${prediction.description}');
+      _expediteurLieuController.text = prediction.description ?? '';
+    } catch (e) {
+      print('❌ Erreur lors de la sélection du lieu expéditeur: $e');
+    }
   }
 
-  void _saveParcel() async {
+  void _onDestinataireLieuSelected(Prediction prediction) async {
+    try {
+      print('📍 Lieu destinataire sélectionné: ${prediction.description}');
+      _destinataireLieuController.text = prediction.description ?? '';
+    } catch (e) {
+      print('❌ Erreur lors de la sélection du lieu destinataire: $e');
+    }
+  }
+
+  Future<void> _saveParcel() async {
     try {
       final userDetailsJson = LocalStorageFactory().getUserDetails();
       final userDetails = userDetailsJson is String
           ? jsonDecode(userDetailsJson)
           : userDetailsJson;
-      final phoneNumber = (userDetails['phoneNumber'] ?? '').toString();
-      final ville = (userDetails['ville'] ?? widget.ville).toString();
+
+      final currentUserPhone = (userDetails['phoneNumber'] ?? '').toString();
+      final ville =
+          _selectedVille; // Utiliser la ville sélectionnée par l'utilisateur
       final action = ref.read(parcelActionProvider);
 
-      // Récupérer les valeurs des contrôleurs avec les nouveaux noms
-      final expediteurNom = _communeController.text.trim();
-      final expediteurLieu = _quartierController.text.trim();
-      final destinataireNom = _secteurController.text.trim();
-      final destinataireLieu = _phoneController.text.trim();
+      // Préparer les données de colis
+      final parcelData = {
+        'phoneNumber': widget.phoneNumber,
+        'typeProduit': widget.typeProduit,
+        'isReception': widget.isReception,
+        'ville': ville,
+        'colisDescription': widget.colisDescription,
+        'colisList': widget.colisList,
+        'expediteurNom': _expediteurNomController.text.trim(),
+        'expediteurLieu': _expediteurLieuController.text.trim(),
+        'expediteurPhone': _expediteurPhoneController.text.trim(),
+        'destinataireNom': _destinataireNomController.text.trim(),
+        'destinataireLieu': _destinataireLieuController.text.trim(),
+        'destinatairePhone': _destinatairePhoneController.text.trim(),
+        'descriptionColis': _descriptionController.text.trim(),
+        'timestamp': DateTime.now().toIso8601String(),
+      };
+
+      // Récupération valeurs
+      final expediteurNom = _expediteurNomController.text.trim();
+      final expediteurLieu = _expediteurLieuController.text.trim();
+      final expediteurPhone = _expediteurPhoneController.text.trim();
+
+      final destinataireNom = _destinataireNomController.text.trim();
+      final destinataireLieu = _destinataireLieuController.text.trim();
+      final destinatairePhone = _destinatairePhoneController.text.trim();
+
       final descriptionColis = _descriptionController.text.trim();
 
-      // Validation des champs requis
-      if (expediteurNom.isEmpty ||
-          expediteurLieu.isEmpty ||
-          destinataireNom.isEmpty ||
-          destinataireLieu.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Veuillez remplir tous les champs obligatoires'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        return;
-      }
+      // Validation déjà effectuée avant d'afficher le modal
+      // Pas besoin de valider à nouveau ici
 
-      // Créer l'adresse complète avec les nouveaux champs
-      final expediteurAddress = expediteurLieu;
-      final destinataireAddress = destinataireLieu;
-
-      // Créer les instructions avec description si disponible
+      // Instructions
       String instructions = widget.typeProduit;
-      if (widget.colisDescription != null &&
-          widget.colisDescription!.isNotEmpty) {
+      if ((widget.colisDescription ?? '').isNotEmpty) {
         instructions += ' - ${widget.colisDescription}';
       }
       if (descriptionColis.isNotEmpty) {
         instructions += ' - $descriptionColis';
       }
 
+      // Construction du Parcel
       final parcel = Parcel(
         id: _generateColisId(),
-        senderName: expediteurNom, // Nom de l'expéditeur
-        receiverName: destinataireNom, // Nom du destinataire
-        status: 'reception', // Correction du statut
+        // Champs "legacy"
+        senderName: expediteurNom,
+        receiverName: destinataireNom,
+        status: 'reception',
         createdAt: DateTime.now(),
-        address: expediteurAddress, // Lieu de réception
+        address: expediteurLieu, // adresse expéditeur
         phone:
-            destinataireAddress, // Lieu de livraison (utilise le champ phone temporairement)
-        phoneNumber: phoneNumber,
+            destinatairePhone, // téléphone destinataire (mieux que l'utiliser pour une adresse)
+        phoneNumber: currentUserPhone, // téléphone du user connecté
         instructions: instructions,
-        ville: widget.ville,
+        ville: ville,
         colisDescription: widget.colisDescription,
         colisList: widget.colisList != null
             ? List<Map<String, dynamic>>.from(widget.colisList!)
             : null,
-        // Nouveaux champs pour les informations complètes
+
+        // Champs détaillés et cohérents
         expediteurNom: expediteurNom,
         expediteurLieu: expediteurLieu,
+        expediteurPhone: expediteurPhone, // <-- AJOUT
         destinataireNom: destinataireNom,
         destinataireLieu: destinataireLieu,
+        destinatairePhone: destinatairePhone, // <-- AJOUT
         descriptionColis: descriptionColis,
         typeProduit: widget.typeProduit,
       );
 
       print('📦 === DÉBUT SAUVEGARDE COLIS ===');
       print('📦 ID: ${parcel.id}');
-      print('📦 Expéditeur: $expediteurNom');
-      print('📦 Lieu réception: $expediteurAddress');
-      print('📦 Destinataire: $destinataireNom');
-      print('📦 Lieu livraison: $destinataireAddress');
+      print(
+          '📦 Expéditeur: $expediteurNom | $expediteurPhone | $expediteurLieu');
+      print(
+          '📦 Destinataire: $destinataireNom | $destinatairePhone | $destinataireLieu');
       print('📦 Instructions: $instructions');
       print('📦 Ville: ${parcel.ville}');
       print('📦 Type produit: ${widget.typeProduit}');
 
-      // Sauvegarder dans Firebase
-      await action.addParcel.call(parcel);
+      // Sauvegarder les données localement
+      await _connectionManager.saveParcelData(parcelData);
+
+      // Exécuter la sauvegarde avec gestion de connexion
+      await _connectionManager.executeWithConnectionHandling(
+        () => action.addParcel.call(parcel),
+        operationType: 'parcel_save',
+        fallbackData: parcelData,
+      );
 
       if (mounted) {
-        // Sauvegarde réussie - la navigation se fait depuis le bouton
         print('✅ Colis sauvegardé avec succès dans Firebase');
+        // Nettoyer les données locales après succès
+        await _connectionManager.clearOfflineData();
       }
     } catch (e) {
       print('❌ Erreur lors de la sauvegarde du colis: $e');
@@ -333,9 +288,22 @@ class _LieuPageState extends ConsumerState<LieuPage> {
         elevation: 0,
         leading: const BackButton(color: Colors.white),
         title: Text(
-            widget.isReception ? 'Je reçois un colis' : 'J\'envoie un colis',
-            style: const TextStyle(color: Colors.white)),
+          widget.isReception ? 'Je reçois un colis' : 'J\'envoie un colis',
+          style: const TextStyle(color: Colors.white),
+        ),
         centerTitle: true,
+        actions: [
+          // Widget de statut de connexion
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: Center(
+              child: ConnectionStatusWidget(
+                showWhenConnected: false,
+                showWhenDisconnected: true,
+              ),
+            ),
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -368,114 +336,67 @@ class _LieuPageState extends ConsumerState<LieuPage> {
                       // Titre principal
                       Center(
                         child: Text(
-                          'J\'envoie un Colis',
-                          style: TextStyle(
+                          widget.isReception
+                              ? 'Je reçois un Colis'
+                              : 'J\'envoie un Colis',
+                          style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
-                            color: const Color(0xFFF24E1E),
+                            color: Color(0xFFF24E1E),
                           ),
                         ),
                       ),
-                      const SizedBox(height: 24),
 
-                      // Section Expéditeur
+                      const SizedBox(height: 20),
+
+                      // ====== Section Expéditeur
                       _buildSection(
                         title: 'Info Expéditeur:',
                         fields: [
                           _buildField(
                             label: 'Nom et Prénom',
-                            controller: _communeController,
-                            hint: '',
-                            onSaved: (v) => commune = v ?? '',
+                            controller: _expediteurNomController,
+                          ),
+                          _buildPlaceFieldFixed(
+                            label: 'Lieu de réception du colis',
+                            controller: _expediteurLieuController,
+                            onSelected: _onExpediteurLieuSelected,
                           ),
                           _buildField(
-                            label: 'Lieu de réception du colis',
-                            controller: _quartierController,
-                            hint: '',
-                            onSaved: (v) => quartier = v ?? '',
+                            label: 'Numéro de téléphone de l\'expéditeur',
+                            controller: _expediteurPhoneController,
+                            keyboardType: TextInputType.phone,
                           ),
                         ],
                       ),
 
                       const SizedBox(height: 20),
 
-                      // Section Destinataire
+                      // ====== Section Destinataire
                       _buildSection(
                         title: 'Info Destinataire:',
                         fields: [
                           _buildField(
                             label: 'Nom et Prénom',
-                            controller: _secteurController,
-                            hint: '',
-                            onSaved: (v) => secteur = v ?? '',
+                            controller: _destinataireNomController,
+                          ),
+                          _buildPlaceFieldFixed(
+                            label: 'Lieu de livraison du colis',
+                            controller: _destinataireLieuController,
+                            onSelected: _onDestinataireLieuSelected,
                           ),
                           _buildField(
-                            label: 'Lieu de livraison du colis',
-                            controller: _phoneController,
-                            hint: '',
-                            onSaved: (v) => phone = v ?? '',
+                            label: 'Numéro de téléphone du destinataire',
+                            controller: _destinatairePhoneController,
+                            keyboardType: TextInputType.phone,
                           ),
                         ],
                       ),
 
                       const SizedBox(height: 16),
-
-                      // Champ description optionnel
-                      if (widget.colisDescription != null)
-                        _buildField(
-                          label: 'Description du colis',
-                          controller: _descriptionController,
-                          hint: 'Instructions spéciales...',
-                          onSaved: (v) => description = v ?? '',
-                          isRequired: false,
-                        ),
                     ],
                   ),
                 ),
-
-                const SizedBox(height: 24),
-
-                // Section "Je reçois un colis" (référence)
-                if (widget.isReception) ...[
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.shade50,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.blue.shade200),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(Icons.info_outline,
-                                color: Colors.blue.shade700, size: 20),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Je reçois un colis',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.blue.shade700,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        /* Text(
-                          'Pareil - Les informations sont identiques à celles de l\'expédition',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.blue.shade600,
-                          ),
-                        ),*/
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                ],
 
                 const SizedBox(height: 32),
 
@@ -491,18 +412,90 @@ class _LieuPageState extends ConsumerState<LieuPage> {
                       ),
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
-                    onPressed: () {
-                      if (_formKey.currentState!.validate()) {
-                        _formKey.currentState!.save();
-                        _showConfirmDialog();
+                    onPressed: () async {
+                      // Validation manuelle avant d'afficher le modal
+                      if (_expediteurNomController.text.trim().isEmpty ||
+                          _expediteurLieuController.text.trim().isEmpty ||
+                          _expediteurPhoneController.text.trim().isEmpty ||
+                          _destinataireNomController.text.trim().isEmpty ||
+                          _destinataireLieuController.text.trim().isEmpty ||
+                          _destinatairePhoneController.text.trim().isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                                'Veuillez remplir tous les champs obligatoires'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        return;
+                      }
+
+                      // Sauvegarder directement sans popup
+                      print('🔄 Début de la sauvegarde...');
+                      await _saveParcel();
+                      print('✅ Sauvegarde terminée');
+
+                      // Afficher le message de succès AVANT la navigation
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Row(
+                              children: [
+                                Icon(Icons.check_circle, color: Colors.white),
+                                SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    'Votre demande de colis a été prise en compte avec succès !',
+                                    style: TextStyle(fontSize: 16),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            backgroundColor: Color(0xFF4BB543),
+                            duration: Duration(seconds: 2),
+                            behavior: SnackBarBehavior.floating,
+                            shape: RoundedRectangleBorder(
+                              borderRadius:
+                                  BorderRadius.all(Radius.circular(12)),
+                            ),
+                            margin: EdgeInsets.all(16),
+                          ),
+                        );
+
+                        // Attendre un peu pour que l'utilisateur voie le message
+                        await Future.delayed(
+                            const Duration(milliseconds: 1500));
+
+                        // Puis naviguer
+                        print('🚀 Navigation vers ParcelHomePage...');
+                        try {
+                          Navigator.of(context).pushReplacement(
+                            MaterialPageRoute(
+                              builder: (context) => const ParcelHomePage(),
+                            ),
+                          );
+                          print(
+                              '✅ Navigation avec Navigator.pushReplacement réussie');
+                        } catch (e) {
+                          print('❌ Erreur Navigator.pushReplacement: $e');
+                          // Fallback avec push simple
+                          try {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) => const ParcelHomePage(),
+                              ),
+                            );
+                            print('✅ Navigation avec Navigator.push réussie');
+                          } catch (e2) {
+                            print('❌ Erreur Navigator.push: $e2');
+                          }
+                        }
                       }
                     },
                     child: const Text(
                       'Confirmer',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                   ),
                 ),
@@ -538,12 +531,12 @@ class _LieuPageState extends ConsumerState<LieuPage> {
     );
   }
 
+  // Champ générique, sans incohérence de nommage ni onSaved inutile
   Widget _buildField({
     required String label,
     required TextEditingController controller,
-    required String hint,
-    required Function(String?) onSaved,
     bool isRequired = true,
+    TextInputType keyboardType = TextInputType.text,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -559,8 +552,9 @@ class _LieuPageState extends ConsumerState<LieuPage> {
         const SizedBox(height: 8),
         TextFormField(
           controller: controller,
+          keyboardType: keyboardType,
           decoration: InputDecoration(
-            hintText: hint,
+            hintText: '',
             filled: true,
             fillColor: const Color(0xFFF8F9FA),
             border: OutlineInputBorder(
@@ -579,9 +573,189 @@ class _LieuPageState extends ConsumerState<LieuPage> {
                 const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
           ),
           validator: isRequired
-              ? (v) => v == null || v.isEmpty ? 'Champ requis' : null
+              ? (v) => v == null || v.trim().isEmpty ? 'Champ requis' : null
               : null,
-          onSaved: onSaved,
+        ),
+        const SizedBox(height: 16),
+      ],
+    );
+  }
+
+  // Widget pour Google Places AutoComplete (VERSION AVEC WIDGET ISOLÉ)
+  Widget _buildPlaceFieldFixed({
+    required String label,
+    required TextEditingController controller,
+    required Function(Prediction) onSelected,
+  }) {
+    // Utiliser le nouveau widget isolé
+    return GooglePlacesField(
+      key: ValueKey(
+          '${label}_${controller.hashCode}'), // Clé unique pour chaque champ
+      label: label,
+      controller: controller,
+      onSelected: onSelected,
+      googleMapsApiKey: googleMapsApiKey,
+    );
+  }
+
+  // Ancienne méthode conservée pour référence (à supprimer plus tard)
+  Widget _buildPlaceFieldFixedOld({
+    required String label,
+    required TextEditingController controller,
+    required Function(Prediction) onSelected,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: Colors.black87,
+          ),
+        ),
+        const SizedBox(height: 8),
+        GooglePlaceAutoCompleteTextField(
+          // Créer un nouveau contrôleur temporaire pour éviter les conflits
+          textEditingController: TextEditingController(text: controller.text),
+          googleAPIKey: googleMapsApiKey,
+          inputDecoration: InputDecoration(
+            hintText: 'Tapez une adresse...',
+            filled: true,
+            fillColor: const Color(0xFFF8F9FA),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Color(0xFFF24E1E), width: 2),
+            ),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          ),
+          debounceTime: 400,
+          countries: const ["ci"], // Côte d'Ivoire
+          isLatLngRequired: true,
+          getPlaceDetailWithLatLng: (prediction) {
+            print("Place Details: ${prediction.description}");
+          },
+          itemClick: (prediction) {
+            print("Place clicked: ${prediction.description}");
+            // Synchroniser avec le contrôleur original
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              controller.text = prediction.description ?? '';
+            });
+            onSelected(prediction);
+          },
+          itemBuilder: (context, index, prediction) {
+            return Container(
+              padding: const EdgeInsets.all(10),
+              child: Row(
+                children: [
+                  const Icon(Icons.location_on, color: Colors.grey),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      prediction.description ?? '',
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+          seperatedBuilder: const Divider(),
+          containerHorizontalPadding: 10,
+        ),
+        const SizedBox(height: 16),
+      ],
+    );
+  }
+
+  // Widget pour Google Places AutoComplete (VERSION ORIGINALE - GARDE POUR RÉFÉRENCE)
+  Widget _buildPlaceField({
+    required String label,
+    required TextEditingController controller,
+    required Function(Prediction) onSelected,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: Colors.black87,
+          ),
+        ),
+        const SizedBox(height: 8),
+        GooglePlaceAutoCompleteTextField(
+          // Utiliser un contrôleur temporaire pour éviter les conflits
+          textEditingController: TextEditingController.fromValue(
+            TextEditingValue(
+              text: controller.text,
+              selection:
+                  TextSelection.collapsed(offset: controller.text.length),
+            ),
+          ),
+          googleAPIKey: googleMapsApiKey,
+          inputDecoration: InputDecoration(
+            hintText: 'Tapez une adresse...',
+            filled: true,
+            fillColor: const Color(0xFFF8F9FA),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Color(0xFFF24E1E), width: 2),
+            ),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          ),
+          debounceTime: 400,
+          countries: const ["ci"], // Côte d'Ivoire
+          isLatLngRequired: true,
+          getPlaceDetailWithLatLng: (prediction) {
+            print("Place Details: ${prediction.description}");
+          },
+          itemClick: (prediction) {
+            print("Place clicked: ${prediction.description}");
+            // Mettre à jour le contrôleur original
+            controller.text = prediction.description ?? '';
+            onSelected(prediction);
+          },
+          itemBuilder: (context, index, prediction) {
+            return Container(
+              padding: const EdgeInsets.all(10),
+              child: Row(
+                children: [
+                  const Icon(Icons.location_on, color: Colors.grey),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      prediction.description ?? '',
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+          seperatedBuilder: const Divider(),
+          containerHorizontalPadding: 10,
         ),
         const SizedBox(height: 16),
       ],
@@ -594,9 +768,12 @@ class _ParcelBottomNavBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return BottomNavigationBar(
       items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
-        BottomNavigationBarItem(icon: Icon(Icons.local_shipping), label: ''),
-        BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: ''),
+        BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Accueil'),
+        BottomNavigationBarItem(
+            icon: Icon(Icons.local_shipping, color: Colors.deepOrange),
+            label: 'Mes livraisons'),
+        BottomNavigationBarItem(
+            icon: Icon(Icons.dashboard), label: 'Menu principal'),
       ],
       currentIndex: 1,
       onTap: (index) {
@@ -605,9 +782,147 @@ class _ParcelBottomNavBar extends StatelessWidget {
         } else if (index == 1) {
           AutoRouter.of(context).replace(const ParcelHomeRoute());
         } else if (index == 2) {
-          AutoRouter.of(context).replace(const ProfileRoute());
+          AutoRouter.of(context).replace(const HomeRoute());
         }
       },
+    );
+  }
+}
+
+// Widget isolé pour Google Places AutoComplete
+class GooglePlacesField extends StatefulWidget {
+  final String label;
+  final TextEditingController controller;
+  final Function(Prediction) onSelected;
+  final String googleMapsApiKey;
+
+  const GooglePlacesField({
+    required super.key,
+    required this.label,
+    required this.controller,
+    required this.onSelected,
+    required this.googleMapsApiKey,
+  });
+
+  @override
+  State<GooglePlacesField> createState() => _GooglePlacesFieldState();
+}
+
+class _GooglePlacesFieldState extends State<GooglePlacesField> {
+  // FocusNode isolé pour ce widget
+  final FocusNode _focusNode = FocusNode();
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          widget.label,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: Colors.black87,
+          ),
+        ),
+        const SizedBox(height: 8),
+        GooglePlaceAutoCompleteTextField(
+          focusNode: _focusNode, // Assigner le FocusNode isolé
+          textEditingController: widget.controller,
+          googleAPIKey: widget.googleMapsApiKey,
+          inputDecoration: InputDecoration(
+            hintText: 'Tapez une adresse...',
+            filled: true,
+            fillColor: const Color(0xFFF8F9FA),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Color(0xFFF24E1E), width: 2),
+            ),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            prefixIcon: const Icon(Icons.location_on, color: Color(0xFFF24E1E)),
+          ),
+          debounceTime: 600,
+          countries: const ["ci"], // Côte d'Ivoire
+          isLatLngRequired: true,
+          getPlaceDetailWithLatLng: (Prediction prediction) {
+            widget.onSelected(prediction);
+          },
+          itemClick: (Prediction prediction) {
+            widget.controller.text = prediction.description ?? '';
+            widget.onSelected(prediction);
+            _focusNode.unfocus(); // Retirer le focus après la sélection
+          },
+          itemBuilder: (context, index, Prediction prediction) {
+            return Container(
+              padding: const EdgeInsets.all(10),
+              child: Row(
+                children: [
+                  const Icon(Icons.location_on, color: Color(0xFFF24E1E)),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          prediction.structuredFormatting?.mainText ?? '',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        if (prediction.structuredFormatting?.secondaryText !=
+                            null)
+                          Text(
+                            prediction.structuredFormatting!.secondaryText!,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+          seperatedBuilder: const Divider(),
+          containerHorizontalPadding: 10,
+        ),
+        // Champ caché pour la validation du formulaire
+        TextFormField(
+          controller: widget.controller,
+          readOnly: true,
+          decoration: const InputDecoration(
+            border: InputBorder.none,
+            contentPadding: EdgeInsets.zero,
+            isDense: true,
+          ),
+          validator: (value) {
+            if (widget.label.contains('*') &&
+                (value == null || value.trim().isEmpty)) {
+              return 'Ce champ est obligatoire';
+            }
+            return null;
+          },
+        ),
+        const SizedBox(height: 16),
+      ],
     );
   }
 }

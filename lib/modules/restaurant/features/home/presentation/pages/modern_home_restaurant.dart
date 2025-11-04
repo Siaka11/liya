@@ -14,9 +14,11 @@ import 'package:liya/modules/restaurant/features/home/presentation/pages/modern_
 
 import '../../../../../../routes/app_router.gr.dart';
 import '../../../../../home/domain/entities/home_option.dart';
-import '../../application/pupular_dish_controller_provider.dart';
-import '../../application/restaurant_controller_provider.dart';
+// Remplacer les providers MySQL par les providers Firebase
+import '../../application/popular_dishes_firebase_provider.dart';
+import '../../application/restaurants_firebase_provider.dart';
 import '../widget/restaurant_card.dart';
+import '../widget/restaurant_firebase_card.dart';
 
 @RoutePage(name: 'ModernHomeRestaurantRoute')
 class ModernHomeRestaurantPage extends ConsumerWidget {
@@ -31,20 +33,25 @@ class ModernHomeRestaurantPage extends ConsumerWidget {
         ? jsonDecode(userDetailsJson)
         : userDetailsJson;
     final phoneNumber = userDetails['phoneNumber'] ?? '';
-    final controller = ref.read(restaurantControllerProvider.notifier);
-    final restaurantState = ref.watch(restaurantControllerProvider);
-    final popularDishController =
-        ref.read(popularDishControllerProvider.notifier);
-    final popularDishState = ref.watch(popularDishControllerProvider);
+
+    // Remplacer les providers MySQL par les providers Firebase
+    final restaurantsFirebaseController =
+        ref.read(restaurantsFirebaseProvider.notifier);
+    final restaurantsFirebaseState = ref.watch(restaurantsFirebaseProvider);
+
+    final popularDishesFirebaseController =
+        ref.read(popularDishesFirebaseProvider.notifier);
+    final popularDishesFirebaseState = ref.watch(popularDishesFirebaseProvider);
 
     // Charger les données uniquement au premier rendu si non chargé
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (restaurantState.restaurants == null && !restaurantState.isLoading) {
-        controller.loadRestaurants();
+      if (restaurantsFirebaseState.restaurants == null &&
+          !restaurantsFirebaseState.isLoading) {
+        restaurantsFirebaseController.loadRestaurants();
       }
-      if (popularDishState.popularDishes == null &&
-          !popularDishState.isLoading) {
-        popularDishController.loadPopularDishes();
+      if (popularDishesFirebaseState.dishes == null &&
+          !popularDishesFirebaseState.isLoading) {
+        popularDishesFirebaseController.loadPopularDishes();
       }
     });
 
@@ -65,10 +72,11 @@ class ModernHomeRestaurantPage extends ConsumerWidget {
 
                   // Section plats populaires
                   _buildPopularDishesSection(
-                      context, popularDishState, phoneNumber),
+                      context, popularDishesFirebaseState, phoneNumber),
 
                   // Section restaurants
-                  _buildRestaurantsSection(context, restaurantState),
+                  _buildRestaurantsSection(
+                      context, restaurantsFirebaseState, ref),
 
                   const SizedBox(height: 100), // Espace pour le bouton flottant
                 ],
@@ -129,13 +137,7 @@ class ModernHomeRestaurantPage extends ConsumerWidget {
                 icon: const Icon(Icons.favorite_border),
                 color: Colors.grey,
               ),
-              IconButton(
-                onPressed: () {
-                  context.router.push(TestBeveragesRoute());
-                },
-                icon: const Icon(Icons.local_drink),
-                color: Colors.grey,
-              ),
+
             ],
           ),
         ],
@@ -178,8 +180,8 @@ class ModernHomeRestaurantPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildPopularDishesSection(
-      BuildContext context, popularDishState, String phoneNumber) {
+  Widget _buildPopularDishesSection(BuildContext context,
+      PopularDishesFirebaseState popularDishesState, String phoneNumber) {
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -199,7 +201,7 @@ class ModernHomeRestaurantPage extends ConsumerWidget {
                 onPressed: () {
                   context.router.push(AllDishesRoute());
                 },
-                child: const Text("Voir tout"),
+                child: const Icon(Icons.arrow_forward_ios, size: 16),
                 style: TextButton.styleFrom(
                   foregroundColor: UIColors.orange,
                 ),
@@ -207,43 +209,43 @@ class ModernHomeRestaurantPage extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 16),
-          if (popularDishState.isLoading)
+          if (popularDishesState.isLoading)
             const Center(child: CircularProgressIndicator())
-          else if (popularDishState.error != null)
-            Center(child: Text(popularDishState.error!))
-          else if (popularDishState.popularDishes == null ||
-              popularDishState.popularDishes!.isEmpty)
+          else if (popularDishesState.error != null)
+            Center(child: Text(popularDishesState.error!))
+          else if (popularDishesState.dishes == null ||
+              popularDishesState.dishes!.isEmpty)
             const Center(child: Text("Aucun plat populaire disponible"))
           else
             SizedBox(
               height: 280,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
-                itemCount: popularDishState.popularDishes!.length,
+                itemCount: popularDishesState.dishes!.length,
                 itemBuilder: (context, index) {
-                  final dish = popularDishState.popularDishes![index];
+                  final dish = popularDishesState.dishes![index];
                   return Container(
                     width: 180,
                     margin: const EdgeInsets.only(right: 16),
                     child: ModernDishCard(
-                      id: dish.id,
-                      name: dish.name,
-                      price: dish.price,
-                      imageUrl: dish.imageUrl,
-                      restaurantId: dish.restaurantId,
-                      description: dish.description,
+                      id: dish['id'],
+                      name: dish['name'],
+                      price: dish['price'],
+                      imageUrl: dish['image_url'],
+                      restaurantId: dish['restaurant_id'],
+                      description: dish['description'],
                       onTap: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (context) => ModernDishDetailPage(
-                              id: dish.id,
-                              restaurantId: dish.restaurantId,
-                              name: dish.name,
-                              price: dish.price,
-                              imageUrl: dish.imageUrl,
-                              rating: '0.0',
-                              description: dish.description,
+                              id: dish['id'],
+                              restaurantId: dish['restaurant_id'],
+                              name: dish['name'],
+                              price: dish['price'].toString(),
+                              imageUrl: dish['image_url'],
+                              rating: dish['rating'].toString(),
+                              description: dish['description'],
                             ),
                           ),
                         );
@@ -258,18 +260,55 @@ class ModernHomeRestaurantPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildRestaurantsSection(BuildContext context, restaurantState) {
+  Widget _buildRestaurantsSection(BuildContext context,
+      RestaurantsFirebaseState restaurantState, WidgetRef ref) {
+    final restaurantsController =
+        ref.read(restaurantsFirebaseProvider.notifier);
+
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            "Restaurants",
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                "Restaurants",
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              // Dropdown pour le tri des restaurants
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey[300]!),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: DropdownButton<RestaurantSortOption>(
+                  value: restaurantState.sortOption,
+                  underline: Container(),
+                  icon: const Icon(Icons.sort, size: 16),
+                  style: const TextStyle(fontSize: 12, color: Colors.black87),
+                  items: RestaurantSortOption.values.map((option) {
+                    return DropdownMenuItem<RestaurantSortOption>(
+                      value: option,
+                      child: Text(
+                        option.label,
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (RestaurantSortOption? newOption) {
+                    if (newOption != null) {
+                      restaurantsController.changeSortOption(newOption);
+                    }
+                  },
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
           if (restaurantState.isLoading)
@@ -288,7 +327,7 @@ class ModernHomeRestaurantPage extends ConsumerWidget {
                 final restaurant = restaurantState.restaurants![index];
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 16),
-                  child: RestaurantCard(
+                  child: RestaurantFirebaseCard(
                     width: double.infinity,
                     restaurant: restaurant,
                     onTap: () {
@@ -296,10 +335,10 @@ class ModernHomeRestaurantPage extends ConsumerWidget {
                         context,
                         MaterialPageRoute(
                           builder: (context) => ModernRestaurantDetailPage(
-                            coverImage: restaurant.coverImage,
-                            id: restaurant.id,
-                            name: restaurant.name,
-                            description: restaurant.description ?? '',
+                            coverImage: restaurant['cover_image'],
+                            id: restaurant['id'],
+                            name: restaurant['name'],
+                            description: restaurant['description'] ?? '',
                           ),
                         ),
                       );

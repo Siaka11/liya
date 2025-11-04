@@ -24,7 +24,7 @@ class DishCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      elevation: 1,
+      elevation: 0.3,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
@@ -80,15 +80,22 @@ class DishCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${price}€',
+                  '${price} CFA',
                   style: TextStyle(
                     fontSize: 14,
+                    color: Colors.black,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  description,
+                  style: TextStyle(
+                    fontSize: 11,
                     color: Colors.grey[600],
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                const SizedBox(height: 4),
-                Row(
+                /*Row(
                   children: [
                     Icon(
                       Icons.star,
@@ -104,7 +111,7 @@ class DishCard extends StatelessWidget {
                       ),
                     ),
                   ],
-                ),
+                ),*/
               ],
             ),
           ),

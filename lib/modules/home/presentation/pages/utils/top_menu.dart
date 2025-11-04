@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:auto_route/auto_route.dart';
 
 import '../../../../../core/singletons.dart';
 import '../../../../../routes/app_router.dart';
@@ -8,6 +9,8 @@ import 'package:liya/routes/app_router.gr.dart';
 import '../../../../auth/auth_provider.dart';
 import '../../../../auth/info_user_provider.dart';
 import '../../../application/home_provider.dart';
+import '../home_page.dart'; // Import pour accéder au showProfileProvider
+import '../../../../../core/services/account_management_service.dart';
 
 void showTopMenu(BuildContext context, WidgetRef ref) {
   showGeneralDialog(
@@ -55,7 +58,9 @@ void showTopMenu(BuildContext context, WidgetRef ref) {
                           child: GestureDetector(
                             onTap: () {
                               Navigator.of(context).pop(); // Ferme le menu
-                              //singleton<AppRouter>().push(const ProfileRoute());
+                              // Naviguer vers la page de profil
+                              AutoRouter.of(context)
+                                  .push(const UserProfileRoute());
                             },
                             child: const Column(
                               mainAxisSize: MainAxisSize.min,
@@ -86,14 +91,9 @@ void showTopMenu(BuildContext context, WidgetRef ref) {
                           child: GestureDetector(
                             onTap: () async {
                               Navigator.of(context).pop();
-                              await ref.read(homeProvider.notifier).logout();
-                              ref.invalidate(infoUserProvider);
-                              await ref
-                                  .read(authProvider.notifier)
-                                  .logout(); // Synchronise avec AuthProvider
-                              ref.invalidate(
-                                  homeProvider); // Force une nouvelle instance
-                              singleton<AppRouter>().replace(const AuthRoute());
+                              // Utiliser le nouveau service de gestion des comptes
+                              await AccountManagementService.showLogoutDialog(
+                                  context);
                             },
                             child: const Column(
                               mainAxisSize: MainAxisSize.min,

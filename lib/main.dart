@@ -6,11 +6,13 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:liya/core/services/notification_service.dart';
+import 'package:liya/core/services/connection_manager.dart';
 import 'core/singletons.dart';
 import 'firebase_options.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:liya/modules/auth/firebase_auth_service.dart';
 import 'package:liya/core/services/fcm_service.dart';
+import 'package:liya/core/services/recaptcha_service.dart';
 
 import 'app.dart';
 import 'modules/home/presentation/pages/home_page.dart'; // Pour PromoPopupManager
@@ -18,7 +20,8 @@ import 'modules/home/presentation/pages/home_page.dart'; // Pour PromoPopupManag
 // Handler pour les notifications en arrière-plan
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  // ⚠️ NE PAS INITIALISER FIREBASE ICI - Déjà fait dans main()
+  // Firebase est automatiquement disponible pour les handlers background
   print(
       '📱 Notification reçue en arrière-plan: ${message.notification?.title}');
 }
@@ -43,14 +46,49 @@ void main() async {
   await EasyLocalization.ensureInitialized();
   await initializeDateFormatting('fr_FR', null);
 
-  // Initialiser Firebase
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  // Initialiser Firebase avec protection contre double initialisation
+  try {
+    await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform);
+    print('✅ Firebase initialisé avec succès');
+  } catch (e) {
+    if (e.toString().contains('duplicate-app')) {
+      print('⚠️ Firebase déjà initialisé, on continue...');
+    } else {
+      print('❌ Erreur initialisation Firebase: $e');
+      rethrow;
+    }
+  }
+
+  // ⚡️ Activer App Check avec App Attest
+  try {
+    await FirebaseAppCheck.instance.activate(
+      appleProvider:
+          AppleProvider.appAttest, // ou deviceCheck si App Attest pas dispo
+      webProvider:
+          ReCaptchaV3Provider('6LeyyaArAAAAANN4NE9DyZ6PUjqxehmHRebNsWzN'),
+    );
+    print('✅ App Check activé avec succès');
+  } catch (e) {
+    print('⚠️ Erreur activation App Check: $e');
+  }
+
+  // 🔐 Initialiser reCAPTCHA Enterprise
+  try {
+    await RecaptchaService().initialize();
+    print('✅ reCAPTCHA Enterprise initialisé au démarrage');
+  } catch (e) {
+    print('⚠️ Erreur initialisation reCAPTCHA Enterprise: $e');
+  }
 
   // Configurer Firebase Messaging
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
   // Initialiser les singletons
   await initSingletons();
+
+  // Initialiser le gestionnaire de connexion
+  await ConnectionManager().initialize();
 
   // Forcer le nettoyage des verification_id au démarrage
   FirebaseAuthService().forceClearVerificationId();

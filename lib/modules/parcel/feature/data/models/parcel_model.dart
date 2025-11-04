@@ -22,6 +22,8 @@ class ParcelModel extends Parcel {
     String? destinataireLieu,
     String? descriptionColis,
     String? typeProduit,
+    String? expediteurPhone,
+    String? destinatairePhone,
   }) : super(
           id: id,
           senderName: senderName,
@@ -42,6 +44,8 @@ class ParcelModel extends Parcel {
           destinataireLieu: destinataireLieu,
           descriptionColis: descriptionColis,
           typeProduit: typeProduit,
+          expediteurPhone: expediteurPhone,
+          destinatairePhone: destinatairePhone,
         );
 
   factory ParcelModel.fromMap(Map<String, dynamic> map, String id) {
@@ -67,6 +71,8 @@ class ParcelModel extends Parcel {
       destinataireLieu: map['destinataireLieu'],
       descriptionColis: map['descriptionColis'],
       typeProduit: map['typeProduit'],
+      expediteurPhone: map['expediteurPhone'],
+      destinatairePhone: map['destinatairePhone'],
     );
   }
 
@@ -91,6 +97,8 @@ class ParcelModel extends Parcel {
       'destinataireLieu': destinataireLieu,
       'descriptionColis': descriptionColis,
       'typeProduit': typeProduit,
+      'expediteurPhone': expediteurPhone,
+      'destinatairePhone': destinatairePhone,
     };
 
     // S'assurer que tous les champs sont présents dans Firestore
@@ -107,6 +115,8 @@ class ParcelModel extends Parcel {
     if (destinataireLieu == null) map['destinataireLieu'] = null;
     if (descriptionColis == null) map['descriptionColis'] = null;
     if (typeProduit == null) map['typeProduit'] = null;
+    if (expediteurPhone == null) map['expediteurPhone'] = null;
+    if (destinatairePhone == null) map['destinatairePhone'] = null;
 
     return map;
   }

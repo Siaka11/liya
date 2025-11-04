@@ -110,7 +110,9 @@ class HomeDeliveryNotifier extends StateNotifier<HomeDeliveryState> {
       final assignedOrders = allAssignedOrders
           .where((order) =>
               order.status == DeliveryStatus.reception ||
-              order.status == DeliveryStatus.enRoute)
+              order.status == DeliveryStatus.enRoute ||
+              order.status == DeliveryStatus.assigned
+      )
           .toList();
       print('🚚 Commandes en cours: ${assignedOrders.length}');
 

@@ -1,8 +1,10 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:liya/core/ui/theme/theme.dart';
 import 'package:liya/routes/app_router.gr.dart';
+import '../../../../../../core/services/phone_call_service.dart';
 import '../../domain/entities/delivery_info.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:cloud_firestore/cloud_firestore.dart' as cf;
@@ -23,6 +25,8 @@ import 'package:geocoding/geocoding.dart';
 import 'package:liya/modules/restaurant/features/order/presentation/providers/modern_order_provider.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:liya/modules/restaurant/features/checkout/presentation/pages/delivery_address_page.dart';
+import 'package:liya/core/services/location_permission_service.dart';
+import 'package:liya/core/helpers/auth_helper.dart'; // Helper pour vérifier l'authentification
 
 @RoutePage()
 class CheckoutPage extends ConsumerStatefulWidget {
@@ -53,6 +57,9 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
   final additionalPhoneController = TextEditingController();
   final instructionsController = TextEditingController();
   GoogleMapController? mapController;
+
+  // Protection contre les clics multiples
+  bool _isProcessingOrder = false;
 
   @override
   void initState() {
@@ -89,6 +96,12 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
     } else {
       _setYamoussoukroAsDefault(localStorage);
     }
+  }
+
+  // Méthode pour afficher le popup de confirmation (désactivée)
+  Future<bool> _showOrderConfirmationDialog() async {
+    // Popup désactivé - retourne toujours true pour continuer directement
+    return true;
   }
 
   void _setYamoussoukroAsDefault(LocalStorageFactory localStorage) {
@@ -319,16 +332,16 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
   // Obtenir la position actuelle
   Future<void> _getCurrentLocation() async {
     try {
-      // Demander les permissions de localisation
-      final permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        final requested = await Geolocator.requestPermission();
-        if (requested == LocationPermission.denied) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Permission de localisation refusée')),
-          );
-          return;
+      // Utiliser le nouveau service de permissions
+      final hasPermission =
+          await LocationPermissionService.requestLocationPermission();
+      if (!hasPermission) {
+        // Afficher un dialogue pour demander à l'utilisateur d'ouvrir les paramètres
+        final shouldOpenSettings = await _showLocationPermissionDialog();
+        if (shouldOpenSettings) {
+          await LocationPermissionService.openAppSettings();
         }
+        return;
       }
 
       // Afficher un indicateur de chargement
@@ -342,10 +355,19 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
         ),
       );
 
-      // Obtenir la position actuelle
-      final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-      );
+      // Obtenir la position actuelle avec le nouveau service
+      final position = await LocationPermissionService.getCurrentPosition();
+
+      if (position == null) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Impossible d\'obtenir la position actuelle'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
 
       // Fermer le dialogue de chargement
       Navigator.pop(context);
@@ -356,7 +378,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Position actuelle utilisée'),
-          backgroundColor: Colors.green,
+          backgroundColor: Colors.red,
         ),
       );
     } catch (e) {
@@ -372,6 +394,33 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
         ),
       );
     }
+  }
+
+  // Dialogue pour demander à l'utilisateur d'ouvrir les paramètres
+  Future<bool> _showLocationPermissionDialog() async {
+    return await showDialog<bool>(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text('Permission de localisation requise'),
+              content: const Text(
+                'Pour utiliser votre position actuelle, nous avons besoin de votre permission de localisation. '
+                'Voulez-vous ouvrir les paramètres de l\'application ?',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Annuler'),
+                ),
+                ElevatedButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Ouvrir les paramètres'),
+                ),
+              ],
+            );
+          },
+        ) ??
+        false;
   }
 
   // Mettre à jour l'adresse à partir du texte
@@ -425,7 +474,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Adresse mise à jour'),
-          backgroundColor: Colors.green,
+          backgroundColor: Colors.red,
         ),
       );
     } catch (e) {
@@ -503,11 +552,12 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
         ),
         centerTitle: true,
         actions: [
-          // Bouton de debug temporaire
-          IconButton(
-            icon: Icon(Icons.refresh, color: Colors.orange),
-            onPressed: () => _resetToYamoussoukro(),
-            tooltip: 'Réinitialiser à Yamoussoukro',
+          TextButton(
+            onPressed: () => _callNumber(context, '+2250700846546'),
+            child: const Text(
+              'Call center',
+              style: TextStyle(color: Colors.blue),
+            ),
           ),
         ],
       ),
@@ -579,7 +629,6 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                     right: 16,
                     child: Container(
                       decoration: BoxDecoration(
-                        color: Colors.white,
                         borderRadius: BorderRadius.circular(8),
                         boxShadow: [
                           BoxShadow(
@@ -619,7 +668,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                         icon: Icon(Icons.edit_location),
                         tooltip: 'Modifier l\'adresse',
                         style: IconButton.styleFrom(
-                          backgroundColor: Colors.transparent,
+                          backgroundColor: Colors.white,
                         ),
                       ),
                     ),
@@ -666,7 +715,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
+                  /*Row(
                     children: [
                       Icon(Icons.access_time, size: 20),
                       SizedBox(width: 8),
@@ -688,7 +737,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                         ),
                       ),
                     ],
-                  ),
+                  ),*/
                   SizedBox(height: 16),
 
                   // Frais de livraison
@@ -718,7 +767,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                     SizedBox(height: 16),
                   ],
 
-                  Row(
+                  /*Row(
                     children: [
                       Expanded(
                         child: Container(
@@ -760,7 +809,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                         ),
                       ),
                       SizedBox(width: 16),
-/*                      Expanded(
+*/ /*                      Expanded(
                         child: Container(
                           padding: EdgeInsets.all(16),
                           decoration: BoxDecoration(
@@ -769,7 +818,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                           ),
                           child: Column(
                             children: [
-                             */ /* Text(
+                             */ /* */ /* Text(
                                 'Programmer',
                                 style: TextStyle(
                                   color: Colors.grey[600],
@@ -779,13 +828,13 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                               Text(
                                 'Choisir une heure',
                                 style: TextStyle(color: Colors.grey),
-                              ),*/ /*
+                              ),*/ /* */ /*
                             ],
                           ),
                         ),
-                      ),*/
+                      ),*/ /*
                     ],
-                  ),
+                  ),*/
                 ],
               ),
             ),
@@ -803,10 +852,8 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (selectedAddress != null)
-                    Icon(Icons.check_circle, color: UIColors.orange, size: 20),
                   SizedBox(width: 8),
-                  Icon(Icons.edit_location, color: UIColors.orange),
+                  Icon(Icons.arrow_forward_ios, color: UIColors.orange),
                 ],
               ),
               onTap: () async {
@@ -883,7 +930,10 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
               leading: Icon(Icons.shopping_cart_outlined),
               title: Text('Résumé de la commande'),
               subtitle: Text(
+/*
                   '${widget.restaurantName} • ${widget.cartItems.length} articles'),
+*/
+                  '${widget.cartItems.length} articles'),
               children: [
                 ...widget.cartItems.map((item) => ListTile(
                       leading: ClipRRect(
@@ -1005,134 +1055,160 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: ElevatedButton(
-            onPressed: () async {
-              // Vérifier qu'une adresse est sélectionnée
-              if (selectedLat == null ||
-                  selectedLng == null ||
-                  selectedAddress == null) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                        'Veuillez sélectionner une adresse de livraison sur la carte'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-                return;
-              }
+            onPressed: _isProcessingOrder
+                ? null
+                : () async {
+                    // Protection contre les clics multiples
+                    if (_isProcessingOrder) return;
 
-              // Vérifier que la distance est calculée
-              if (calculatedDistance == null || deliveryFee == null) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                        'Erreur lors du calcul de la distance. Veuillez réessayer.'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-                return;
-              }
-
-              // Crée la liste des OrderItem
-              final items = widget.cartItems
-                  .map((item) => OrderItemModel(
-                        name: item['name'],
-                        quantity: item['quantity'],
-                        price: double.tryParse(item['price'].toString()) ?? 0.0,
-                      ))
-                  .toList();
-
-              // Calcule les totaux
-              final subtotal = _calculateSubtotal();
-              final total = _calculateTotal();
-
-              // Crée l'objet Order avec les informations de livraison
-              final order = OrderModel(
-                id: '', // Laisse vide, le repo s'en charge
-                phoneNumber: phoneNumber, // Numéro principal (invariable)
-                phone: phone ??
-                    phoneNumber, // Contact supplémentaire ou phoneNumber par défaut
-                items: items,
-                total: total, // Total incluant les frais de livraison
-                subtotal: subtotal,
-                deliveryFee: deliveryFee!,
-                status: OrderStatus.reception,
-                createdAt: DateTime.now(),
-                latitude: selectedLat,
-                longitude: selectedLng,
-                deliveryInstructions: deliveryInstructions,
-                distance: calculatedDistance,
-                deliveryTime: deliveryTime,
-                address: selectedAddress,
-              );
-
-              // Debug: Afficher les données de la commande
-              print('DEBUG - Order data:');
-              print('phoneNumber: ${order.phoneNumber}');
-              print('phone: ${order.phone}');
-              print('phone variable: $phone');
-              print('toJson: ${order.toJson()}');
-              print('phone in toJson: ${order.toJson()['phone']}');
-
-              // Enregistre la commande sur Firestore avec les détails de livraison
-              final dataSource = OrderRemoteDataSourceImpl(
-                  firestore: cf.FirebaseFirestore.instance);
-              final repository = OrderRepositoryImpl(dataSource);
-
-              try {
-                await repository.createOrder(order);
-
-                // Vide le panier Firestore
-                final cartRepo = CartRepositoryImpl(
-                    remoteDataSource: CartRemoteDataSourceImpl());
-                await cartRepo.clearCart(phoneNumber);
-
-                // Vider la commande moderne (modernOrderProvider)
-                ref.read(modernOrderProvider.notifier).clearOrder();
-
-                if (!context.mounted) return;
-
-                // Afficher le message de confirmation
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                        'Commande enregistrée ! Total: ${total.toStringAsFixed(0)} FCFA'),
-                    duration: const Duration(seconds: 2),
-                  ),
-                );
-
-                // Attendre que le SnackBar soit visible
-                await Future.delayed(const Duration(milliseconds: 500));
-                if (!context.mounted) return;
-
-                // Rediriger vers la page d'accueil du restaurant
-                try {
-                  context.router
-                      .replace(OrderListRoute(phoneNumber: phoneNumber));
-                } catch (e) {
-                  // En cas d'erreur, essayer une navigation plus simple
-                  if (context.mounted) {
-                    Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(
-                        builder: (_) => HomeRestaurantPage(
-                          option: const HomeOption(
-                            title: 'Restaurants',
-                            icon: 'restaurant',
-                          ),
-                        ),
-                      ),
+                    // 🔐 VÉRIFICATION AUTHENTIFICATION (iOS Guideline 5.1.1)
+                    // Demander l'authentification avant de passer commande
+                    final isAuthenticated = await AuthHelper.requireAuth(
+                      context,
+                      ref,
+                      actionName: 'passer commande',
                     );
-                  }
-                }
-              } catch (e) {
-                if (!context.mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Erreur lors de l\'enregistrement: $e'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-              }
-            },
+
+                    if (!isAuthenticated) {
+                      // L'utilisateur a refusé de s'inscrire ou a annulé
+                      return;
+                    }
+
+                    // Vérifier qu'une adresse est sélectionnée
+                    if (selectedLat == null ||
+                        selectedLng == null ||
+                        selectedAddress == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                              'Veuillez sélectionner une adresse de livraison sur la carte'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                      return;
+                    }
+
+                    // Vérifier que la distance est calculée
+                    if (calculatedDistance == null || deliveryFee == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                              'Erreur lors du calcul de la distance. Veuillez réessayer.'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                      return;
+                    }
+
+                    // Crée la liste des OrderItem
+                    final items = widget.cartItems
+                        .map((item) => OrderItemModel(
+                              name: item['name'],
+                              quantity: item['quantity'],
+                              price:
+                                  double.tryParse(item['price'].toString()) ??
+                                      0.0,
+                            ))
+                        .toList();
+
+                    // Calcule les totaux
+                    final subtotal = _calculateSubtotal();
+                    final total = _calculateTotal();
+
+                    // Crée l'objet Order avec les informations de livraison
+                    final order = OrderModel(
+                      id: '', // Laisse vide, le repo s'en charge
+                      phoneNumber: phoneNumber, // Numéro principal (invariable)
+                      phone: phone ??
+                          phoneNumber, // Contact supplémentaire ou phoneNumber par défaut
+                      items: items,
+                      total: total, // Total incluant les frais de livraison
+                      subtotal: subtotal,
+                      deliveryFee: deliveryFee!,
+                      status: OrderStatus.reception,
+                      createdAt: DateTime.now(),
+                      latitude: selectedLat,
+                      longitude: selectedLng,
+                      deliveryInstructions: deliveryInstructions,
+                      distance: calculatedDistance,
+                      deliveryTime: deliveryTime,
+                      address: selectedAddress,
+                    );
+
+                    // Debug: Afficher les données de la commande
+                    print('DEBUG - Order data:');
+                    print('phoneNumber: ${order.phoneNumber}');
+                    print('phone: ${order.phone}');
+                    print('phone variable: $phone');
+                    print('toJson: ${order.toJson()}');
+                    print('phone in toJson: ${order.toJson()['phone']}');
+
+                    // Enregistre la commande sur Firestore avec les détails de livraison
+                    final dataSource = OrderRemoteDataSourceImpl(
+                        firestore: cf.FirebaseFirestore.instance);
+                    final repository = OrderRepositoryImpl(dataSource);
+
+                    try {
+                      // Activer la protection contre les clics multiples
+                      setState(() {
+                        _isProcessingOrder = true;
+                      });
+
+                      await repository.createOrder(order);
+
+                      // Vide le panier Firestore
+                      final cartRepo = CartRepositoryImpl(
+                          remoteDataSource: CartRemoteDataSourceImpl());
+                      await cartRepo.clearCart(phoneNumber);
+
+                      // Vider la commande moderne (modernOrderProvider)
+                      ref.read(modernOrderProvider.notifier).clearOrder();
+
+                      if (!context.mounted) return;
+
+                      // Afficher le message de confirmation
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                              'Commande enregistrée ! Total: ${total.toStringAsFixed(0)} FCFA'),
+                          duration: const Duration(seconds: 2),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+
+                      // Attendre que le SnackBar soit visible
+                      await Future.delayed(const Duration(milliseconds: 500));
+                      if (!context.mounted) return;
+
+                      // Rediriger vers la page d'accueil du restaurant
+                      try {
+                        context.router
+                            .replace(OrderListRoute(phoneNumber: phoneNumber));
+                      } catch (e) {
+                        // En cas d'erreur, essayer une navigation plus simple
+                        if (context.mounted) {
+                          Navigator.of(context).pushReplacement(
+                            MaterialPageRoute(
+                              builder: (_) => HomeRestaurantPage(
+                                option: const HomeOption(
+                                  title: 'Restaurants',
+                                  icon: 'restaurant',
+                                ),
+                              ),
+                            ),
+                          );
+                        }
+                      }
+                    } catch (e) {
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Erreur lors de l\'enregistrement: $e'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,
               minimumSize: Size(double.infinity, 50),
@@ -1140,14 +1216,38 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                 borderRadius: BorderRadius.circular(25),
               ),
             ),
-            child: Text(
-              'Confirmer la commande • ${_calculateTotal().toStringAsFixed(0)} FCFA',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
+            child: _isProcessingOrder
+                ? Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Text(
+                        'Traitement en cours...',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  )
+                : Text(
+                    'Confirmer la commande • ${_calculateTotal().toStringAsFixed(0)} FCFA',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
           ),
         ),
       ),
@@ -1178,4 +1278,43 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
     final deliveryFeeAmount = deliveryFee?.toDouble() ?? 0.0;
     return subtotal + deliveryFeeAmount;
   }
+}
+
+Future<void> _callNumber(BuildContext context, String number) async {
+  try {
+    debugPrint('Tentative d\'appel vers: $number');
+
+    final success = await PhoneCallService.makeCall(number);
+
+    if (!success) {
+      _showCopySnackBar(context, number);
+    }
+  } catch (e) {
+    debugPrint('Erreur lors de l\'appel: $e');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Erreur lors de l\'appel : $e'),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+}
+
+void _showCopySnackBar(BuildContext context, String number) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(
+          'Impossible d\'ouvrir l\'application Téléphone.\nNuméro : $number'),
+      action: SnackBarAction(
+        label: 'Copier',
+        onPressed: () {
+          Clipboard.setData(ClipboardData(text: number));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text('Numéro copié dans le presse-papiers')),
+          );
+        },
+      ),
+    ),
+  );
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:liya/core/ui/theme/theme.dart';
 import '../providers/modern_order_provider.dart';
+import '../../../home/presentation/widget/popularity_badge.dart';
 
 class ModernDishCard extends ConsumerWidget {
   final String id;
@@ -15,6 +16,10 @@ class ModernDishCard extends ConsumerWidget {
   final bool isOnSale;
   final double? originalPrice;
   final double? discountPercentage;
+  // Nouveaux paramètres pour la popularité
+  final int orderCount;
+  final double rating;
+  final int ratingCount;
 
   const ModernDishCard({
     Key? key,
@@ -28,6 +33,9 @@ class ModernDishCard extends ConsumerWidget {
     this.isOnSale = false,
     this.originalPrice,
     this.discountPercentage,
+    this.orderCount = 0,
+    this.rating = 0.0,
+    this.ratingCount = 0,
   }) : super(key: key);
 
   @override
@@ -35,8 +43,11 @@ class ModernDishCard extends ConsumerWidget {
     final quantity = ref.watch(itemQuantityProvider(id));
 
     return Container(
-      width: 100,
-      height: 200,
+      // Contraintes flexibles qui s'adaptent au contexte parent
+      constraints: BoxConstraints(
+        minHeight: 180, // Hauteur minimale pour la cohérence
+        maxHeight: 220, // Hauteur maximale pour éviter les cartes trop grandes
+      ),
       child: Card(
         elevation: 0.5,
         shape: RoundedRectangleBorder(
@@ -50,12 +61,12 @@ class ModernDishCard extends ConsumerWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Image du plat - hauteur fixe
+                  // Image du plat - hauteur proportionnelle
                   ClipRRect(
                     borderRadius:
                         const BorderRadius.vertical(top: Radius.circular(12)),
                     child: Container(
-                      height: 100,
+                      height: 120, // Hauteur proportionnelle
                       width: double.infinity,
                       child: Image.network(
                         imageUrl,
@@ -72,8 +83,8 @@ class ModernDishCard extends ConsumerWidget {
                     ),
                   ),
 
-                  // Contenu de la carte - hauteur fixe
-                  Expanded(
+                  // Contenu de la carte - hauteur flexible
+                  Flexible(
                     child: Padding(
                       padding: const EdgeInsets.all(8),
                       child: Column(
@@ -176,6 +187,17 @@ class ModernDishCard extends ConsumerWidget {
                     ),
                   ),
                 ),
+
+              // Badge de popularité (en haut à gauche)
+              Positioned(
+                top: 8,
+                left: 8,
+                child: PopularityBadge(
+                  orderCount: orderCount,
+                  rating: rating,
+                  ratingCount: ratingCount,
+                ),
+              ),
             ],
           ),
         ),

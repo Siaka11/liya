@@ -2,6 +2,9 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'dart:io';
 import '../../../../routes/app_router.gr.dart';
 import 'add_dish_page.dart';
 
@@ -555,7 +558,8 @@ class _DishManagementPageState extends ConsumerState<DishManagementPage> {
                       const SizedBox(width: 16),
                       const Icon(Icons.star, size: 14, color: Colors.amber),
                       const SizedBox(width: 16),
-                      const Icon(Icons.price_change, size: 14, color: Colors.grey),
+                      const Icon(Icons.price_change,
+                          size: 14, color: Colors.grey),
                       const SizedBox(width: 4),
                       Text('${dish['price']} CFA',
                           style: const TextStyle(
@@ -590,6 +594,8 @@ class _DishManagementPageState extends ConsumerState<DishManagementPage> {
                     if (result == true) {
                       await _loadData();
                     }
+                  } else if (value == 'edit_image') {
+                    _editDishImage(dish);
                   } else if (value == 'delete') {
                     _deleteDish(dish['id'], dish['name']);
                   }
@@ -612,6 +618,17 @@ class _DishManagementPageState extends ConsumerState<DishManagementPage> {
                         Icon(Icons.edit, size: 20),
                         SizedBox(width: 8),
                         Text('Modifier')
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'edit_image',
+                    child: Row(
+                      children: [
+                        Icon(Icons.image, size: 20, color: Colors.blue),
+                        SizedBox(width: 8),
+                        Text('Modifier l\'image',
+                            style: TextStyle(color: Colors.blue))
                       ],
                     ),
                   ),
@@ -680,5 +697,94 @@ class _DishManagementPageState extends ConsumerState<DishManagementPage> {
         ],
       ),
     );
+  }
+
+  Future<void> _editDishImage(Map<String, dynamic> dish) async {
+    final ImagePicker picker = ImagePicker();
+
+    // Afficher un dialog pour choisir la source de l'image
+    final source = await showDialog<ImageSource>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Modifier l\'image'),
+        content: const Text('Choisissez la source de l\'image'),
+        actions: [
+          TextButton.icon(
+            onPressed: () => Navigator.of(context).pop(ImageSource.gallery),
+            icon: const Icon(Icons.photo_library),
+            label: const Text('Galerie'),
+          ),
+          TextButton.icon(
+            onPressed: () => Navigator.of(context).pop(ImageSource.camera),
+            icon: const Icon(Icons.camera_alt),
+            label: const Text('Appareil photo'),
+          ),
+        ],
+      ),
+    );
+
+    if (source == null) return;
+
+    try {
+      final XFile? image = await picker.pickImage(
+        source: source,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 85,
+      );
+
+      if (image == null) return;
+
+      // Afficher un indicateur de progression
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+
+      // Upload vers Firebase Storage
+      final fileName =
+          'dish_${dish['id']}_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final ref = FirebaseStorage.instance.ref().child('dishes/$fileName');
+      final uploadTask = ref.putFile(File(image.path));
+      final snapshot = await uploadTask;
+      final downloadUrl = await snapshot.ref.getDownloadURL();
+
+      // Mettre à jour dans Firestore
+      await FirebaseFirestore.instance
+          .collection('dishes')
+          .doc(dish['id'])
+          .update({
+        'image_url': downloadUrl,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      // Mettre à jour localement
+      setState(() {
+        final dishIndex = dishes.indexWhere((d) => d['id'] == dish['id']);
+        if (dishIndex != -1) {
+          dishes[dishIndex]['image_url'] = downloadUrl;
+        }
+      });
+
+      Navigator.of(context).pop(); // Fermer le dialog de progression
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Image mise à jour avec succès'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      Navigator.of(context).pop(); // Fermer le dialog de progression
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erreur lors de la mise à jour de l\'image: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 }

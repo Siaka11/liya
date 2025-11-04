@@ -2,6 +2,8 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../restaurant/features/order/presentation/pages/order_details_full_page.dart';
+import '../../../parcel/feature/presentation/pages/parcel_details_full_page.dart';
 
 @RoutePage()
 class OrderManagementPage extends ConsumerStatefulWidget {
@@ -27,59 +29,102 @@ class _OrderManagementPageState extends ConsumerState<OrderManagementPage> {
 
   Future<void> _loadOrders() async {
     try {
-      // Charger les commandes de restaurant
-      final restaurantOrdersSnapshot =
-          await FirebaseFirestore.instance.collection('orders').get();
+      // Charger TOUTES les commandes de restaurant (même assignées)
+      final restaurantOrdersSnapshot = await FirebaseFirestore.instance
+          .collection('orders')
+          .orderBy('createdAt', descending: true)
+          .get();
 
       List<Map<String, dynamic>> restaurantOrders =
           restaurantOrdersSnapshot.docs.map((doc) {
         final data = doc.data();
+
         return {
           'id': doc.id,
           'type': 'restaurant',
-          'clientName': data['clientName'] ?? 'Client inconnu',
-          'clientPhone': data['clientPhone'] ?? 'Téléphone inconnu',
+          'orderNumber': doc.id,
+          'clientName':
+              data['customerName'] ?? data['delivery_name'] ?? 'Client inconnu',
+          'clientPhone':
+              data['phoneNumber'] ?? data['phone'] ?? 'Téléphone inconnu',
           'restaurantName': data['restaurantName'] ?? 'Restaurant inconnu',
-          'totalAmount': data['totalAmount']?.toDouble() ?? 0.0,
+          'totalAmount': (data['total'] ?? 0.0).toDouble(),
           'status': data['status'] ?? 'reception',
-          'deliveryAddress': data['deliveryAddress'] ?? 'Adresse inconnue',
-          'deliveryUserId': data['deliveryUserId'],
-          'deliveryUserName': data['deliveryUserName'],
+          'deliveryAddress': data['address'] ?? 'Adresse inconnue',
+          'assignedTo': data['assignedTo'], // Téléphone du livreur assigné
+          'assignedToName': data['assignedToName'], // Nom du livreur assigné
+          'assignedAt': data['assignedAt'], // Date d'assignation
+          'deliveryFee': data['deliveryFee'] ?? 0.0,
+          'subtotal': data['subtotal'] ?? 0.0,
+          'deliveryTime': data['deliveryTime'] ?? 0,
+          'distance': data['distance'] ?? 0,
+          'latitude': data['latitude'],
+          'longitude': data['longitude'],
+          'deliveryInstructions': data['deliveryInstructions'],
+          'lastUpdated': data['lastUpdated'],
+          'phone': data['phone'],
+          'phoneNumber': data['phoneNumber'],
           'createdAt': data['createdAt'] != null
-              ? (data['createdAt'] as Timestamp).toDate()
+              ? (data['createdAt'] is Timestamp
+                  ? (data['createdAt'] as Timestamp).toDate()
+                  : DateTime.tryParse(data['createdAt'].toString()) ??
+                      DateTime.now())
               : DateTime.now(),
           'items': data['items'] ?? [],
         };
       }).toList();
 
-      // Charger les colis
-      final parcelsSnapshot =
-          await FirebaseFirestore.instance.collection('parcels').get();
+      // Charger TOUS les colis (même assignés)
+      final parcelsSnapshot = await FirebaseFirestore.instance
+          .collection('parcels')
+          .orderBy('createdAt', descending: true)
+          .get();
 
       List<Map<String, dynamic>> parcels = parcelsSnapshot.docs.map((doc) {
         final data = doc.data();
+
         return {
           'id': doc.id,
           'type': 'parcel',
-          'clientName': data['clientName'] ?? 'Client inconnu',
-          'clientPhone': data['clientPhone'] ?? 'Téléphone inconnu',
-          'description': data['description'] ?? 'Description inconnue',
-          'totalAmount': data['price']?.toDouble() ?? 0.0,
+          'orderNumber': doc.id,
+          'clientName':
+              '${data['expediteurNom'] ?? 'Expéditeur'} → ${data['destinataireNom'] ?? 'Destinataire'}',
+          'clientPhone': data['phoneNumber'] ?? 'Téléphone inconnu',
+          'description': data['descriptionColis'] ?? 'Description inconnue',
+          'totalAmount': (data['prix'] ?? 0.0).toDouble(),
           'status': data['status'] ?? 'reception',
           'pickupAddress':
-              data['pickupAddress'] ?? 'Adresse de collecte inconnue',
+              data['expediteurLieu'] ?? 'Adresse de collecte inconnue',
           'deliveryAddress':
-              data['deliveryAddress'] ?? 'Adresse de livraison inconnue',
-          'deliveryUserId': data['deliveryUserId'],
-          'deliveryUserName': data['deliveryUserName'],
+              data['destinataireLieu'] ?? 'Adresse de livraison inconnue',
+          'assignedTo': data['assignedTo'], // Téléphone du livreur assigné
+          'assignedToName': data['assignedToName'], // Nom du livreur assigné
+          'assignedAt': data['assignedAt'], // Date d'assignation
+          'expediteurNom': data['expediteurNom'],
+          'expediteurLieu': data['expediteurLieu'],
+          'expediteurPhone': data['expediteurPhone'],
+          'destinatairePhone': data['destinatairePhone'],
+          'destinataireNom': data['destinataireNom'],
+          'destinataireLieu': data['destinataireLieu'],
           'createdAt': data['createdAt'] != null
-              ? (data['createdAt'] as Timestamp).toDate()
+              ? (data['createdAt'] is Timestamp
+                  ? (data['createdAt'] as Timestamp).toDate()
+                  : DateTime.tryParse(data['createdAt'].toString()) ??
+                      DateTime.now())
               : DateTime.now(),
+          'typeProduit': data['typeProduit'] ?? 'Type de produit inconnu',
         };
       }).toList();
 
       setState(() {
-        orders = [...restaurantOrders, ...parcels];
+        // Séparer clairement les commandes et colis
+        final allOrders = [
+          ...restaurantOrders.map(
+              (order) => {...order, 'displayType': '🍽️ Commande Restaurant'}),
+          ...parcels.map((parcel) => {...parcel, 'displayType': '📦 Colis'}),
+        ];
+
+        orders = allOrders;
         orders.sort((a, b) => b['createdAt'].compareTo(a['createdAt']));
         isLoading = false;
       });
@@ -95,6 +140,7 @@ class _OrderManagementPageState extends ConsumerState<OrderManagementPage> {
 
   List<Map<String, dynamic>> get filteredOrders {
     return orders.where((order) {
+      // Recherche par nom client, téléphone, restaurant ou description
       final matchesSearch = searchQuery.isEmpty ||
           order['clientName']
               .toString()
@@ -105,10 +151,18 @@ class _OrderManagementPageState extends ConsumerState<OrderManagementPage> {
               order['restaurantName']
                   .toString()
                   .toLowerCase()
+                  .contains(searchQuery.toLowerCase())) ||
+          (order['type'] == 'parcel' &&
+              order['description']
+                  .toString()
+                  .toLowerCase()
                   .contains(searchQuery.toLowerCase()));
 
+      // Filtrage par statut
       final matchesStatus =
           selectedStatus == 'all' || order['status'] == selectedStatus;
+
+      // Filtrage par type (restaurant ou colis)
       final matchesType =
           selectedType == 'all' || order['type'] == selectedType;
 
@@ -120,6 +174,8 @@ class _OrderManagementPageState extends ConsumerState<OrderManagementPage> {
     switch (status) {
       case 'reception':
         return 'En réception';
+      case 'assigned':
+        return 'Assigné';
       case 'enRoute':
         return 'En route';
       case 'livre':
@@ -135,6 +191,8 @@ class _OrderManagementPageState extends ConsumerState<OrderManagementPage> {
     switch (status) {
       case 'reception':
         return Colors.orange;
+      case 'assigned':
+        return Colors.brown;
       case 'enRoute':
         return Colors.blue;
       case 'livre':
@@ -147,48 +205,25 @@ class _OrderManagementPageState extends ConsumerState<OrderManagementPage> {
   }
 
   void _showOrderDetails(Map<String, dynamic> order) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Détails de la commande'),
-        content: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildDetailRow(
-                  'Type',
-                  order['type'] == 'restaurant'
-                      ? 'Commande restaurant'
-                      : 'Colis'),
-              _buildDetailRow('Client', order['clientName']),
-              _buildDetailRow('Téléphone', order['clientPhone']),
-              if (order['type'] == 'restaurant') ...[
-                _buildDetailRow('Restaurant', order['restaurantName']),
-                _buildDetailRow(
-                    'Articles', '${order['items'].length} articles'),
-              ] else ...[
-                _buildDetailRow('Description', order['description']),
-                _buildDetailRow('Adresse de collecte', order['pickupAddress']),
-              ],
-              _buildDetailRow('Adresse de livraison', order['deliveryAddress']),
-              _buildDetailRow('Montant', '${order['totalAmount']} €'),
-              _buildDetailRow('Statut', getStatusText(order['status'])),
-              _buildDetailRow(
-                  'Livreur', order['deliveryUserName'] ?? 'Non assigné'),
-              _buildDetailRow('Date',
-                  '${order['createdAt'].day}/${order['createdAt'].month}/${order['createdAt'].year} à ${order['createdAt'].hour}:${order['createdAt'].minute.toString().padLeft(2, '0')}'),
-            ],
-          ),
+    // Naviguer vers la page de détails appropriée
+    if (order['type'] == 'restaurant' ||
+        order['id']?.toString().startsWith('RESTO') == true) {
+      // Commande restaurant
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => OrderDetailsFullPage(orderData: order),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Fermer'),
-          ),
-        ],
-      ),
-    );
+      );
+    } else {
+      // Colis
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ParcelDetailsFullPage(parcelData: order),
+        ),
+      );
+    }
   }
 
   Widget _buildDetailRow(String label, String value) {
@@ -272,6 +307,8 @@ class _OrderManagementPageState extends ConsumerState<OrderManagementPage> {
                               value: 'all', child: Text('Tous les statuts')),
                           const DropdownMenuItem(
                               value: 'reception', child: Text('En réception')),
+                          const DropdownMenuItem(
+                              value: 'assigned', child: Text('Assigné')),
                           const DropdownMenuItem(
                               value: 'enRoute', child: Text('En route')),
                           const DropdownMenuItem(
@@ -441,9 +478,22 @@ class _OrderManagementPageState extends ConsumerState<OrderManagementPage> {
         title: Row(
           children: [
             Expanded(
-              child: Text(
-                order['clientName'],
-                style: const TextStyle(fontWeight: FontWeight.bold),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    order['orderNumber'] ?? 'N/A',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  Text(
+                    order['clientName'],
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ],
               ),
             ),
             Container(
@@ -516,10 +566,9 @@ class _OrderManagementPageState extends ConsumerState<OrderManagementPage> {
             const SizedBox(height: 4),
             Row(
               children: [
-                const Icon(Icons.euro, size: 16, color: Colors.grey),
                 const SizedBox(width: 4),
                 Text(
-                  '${order['totalAmount']} €',
+                  '${order['totalAmount']} CFA',
                   style: const TextStyle(
                       fontSize: 12, fontWeight: FontWeight.bold),
                 ),
@@ -570,7 +619,7 @@ class _OrderManagementPageState extends ConsumerState<OrderManagementPage> {
                 ],
               ),
             ),
-            const PopupMenuItem(
+            /*const PopupMenuItem(
               value: 'assign',
               child: Row(
                 children: [
@@ -579,7 +628,7 @@ class _OrderManagementPageState extends ConsumerState<OrderManagementPage> {
                   Text('Assigner'),
                 ],
               ),
-            ),
+            ),*/
           ],
         ),
       ),

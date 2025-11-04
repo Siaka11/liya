@@ -30,6 +30,8 @@ class ParcelStatusListPage extends ConsumerWidget {
       switch (status) {
         case 'reception':
           return 'Colis en réception';
+        case 'assigned':
+          return 'Colis assignés';
         case 'enRoute':
           return 'Colis en route';
         case 'livre':
@@ -116,6 +118,8 @@ class ParcelStatusListPage extends ConsumerWidget {
     switch (status) {
       case 'reception':
         return 'en réception';
+      case 'assigned':
+        return 'assigné';
       case 'enRoute':
         return 'en route';
       case 'livre':
@@ -262,6 +266,8 @@ class _ParcelCardList extends StatelessWidget {
     switch (status) {
       case 'reception':
         return Colors.orange;
+      case 'assigned':
+        return Colors.purple;
       case 'enRoute':
         return Colors.blue;
       case 'livre':
@@ -277,6 +283,8 @@ class _ParcelCardList extends StatelessWidget {
     switch (status) {
       case 'reception':
         return 'EN RÉCEPTION';
+      case 'assigned':
+        return 'ASSIGNÉ';
       case 'enRoute':
         return 'EN ROUTE';
       case 'livre':
@@ -294,9 +302,12 @@ class _ParcelBottomNavBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return BottomNavigationBar(
       items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
-        BottomNavigationBarItem(icon: Icon(Icons.local_shipping), label: ''),
-        BottomNavigationBarItem(icon: Icon(Icons.person), label: ''),
+        BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Accueil'),
+        BottomNavigationBarItem(
+            icon: Icon(Icons.local_shipping, color: Colors.deepOrange),
+            label: 'Mes livraisons'),
+        BottomNavigationBarItem(
+            icon: Icon(Icons.dashboard), label: 'Menu principal'),
       ],
       currentIndex: 1,
       onTap: (index) {
@@ -305,7 +316,7 @@ class _ParcelBottomNavBar extends StatelessWidget {
         } else if (index == 1) {
           AutoRouter.of(context).replace(const ParcelHomeRoute());
         } else if (index == 2) {
-          AutoRouter.of(context).replace(const ProfileRoute());
+          AutoRouter.of(context).replace(const HomeRoute());
         }
       },
     );

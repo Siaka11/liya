@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:liya/core/ui/components/custom_button.dart';
 import 'package:liya/core/ui/components/custom_field.dart';
 import 'package:liya/modules/auth/info_user_provider.dart';
+import 'package:liya/core/services/connection_manager.dart';
+import 'package:liya/core/ui/widgets/connection_status_widget.dart';
 import '../../core/loading_provider.dart';
 import '../../core/ui/theme/theme.dart';
 
@@ -19,6 +21,9 @@ class _InfoUserPageState extends ConsumerState<InfoUserPage> {
   late final TextEditingController nameController;
   late final TextEditingController lastNameController;
 
+  // Gestionnaire de connexion
+  final ConnectionManager _connectionManager = ConnectionManager();
+
   @override
   void initState() {
     super.initState();
@@ -27,10 +32,19 @@ class _InfoUserPageState extends ConsumerState<InfoUserPage> {
     lastNameController = TextEditingController(text: state.lastName);
 
     nameController.addListener(() {
-      ref.read(infoUserProvider.notifier).updateName(nameController.text.trim());
+      ref
+          .read(infoUserProvider.notifier)
+          .updateName(nameController.text.trim());
     });
     lastNameController.addListener(() {
-      ref.read(infoUserProvider.notifier).updateLastName(lastNameController.text.trim());
+      ref
+          .read(infoUserProvider.notifier)
+          .updateLastName(lastNameController.text.trim());
+    });
+
+    // Définir le contexte pour le gestionnaire de connexion
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _connectionManager.setCurrentContext(context);
     });
   }
 
@@ -38,6 +52,7 @@ class _InfoUserPageState extends ConsumerState<InfoUserPage> {
   void dispose() {
     nameController.dispose();
     lastNameController.dispose();
+    _connectionManager.clearCurrentContext();
     super.dispose();
   }
 
@@ -91,9 +106,10 @@ class _InfoUserPageState extends ConsumerState<InfoUserPage> {
                   placeholder: "Nom",
                   fontSize: 16,
                   decoration: InputDecoration(
-                    errorText: infoUserState.hasError && infoUserState.name.isEmpty
-                        ? 'Veuillez entrer votre nom'
-                        : null,
+                    errorText:
+                        infoUserState.hasError && infoUserState.name.isEmpty
+                            ? 'Veuillez entrer votre nom'
+                            : null,
                     border: const OutlineInputBorder(),
                     enabledBorder: const OutlineInputBorder(
                       borderSide: BorderSide(color: UIColors.black),
@@ -113,9 +129,10 @@ class _InfoUserPageState extends ConsumerState<InfoUserPage> {
                   placeholder: "Prénom",
                   fontSize: 16,
                   decoration: InputDecoration(
-                    errorText: infoUserState.hasError && infoUserState.lastName.isEmpty
-                        ? 'Veuillez entrer votre prénom'
-                        : null,
+                    errorText:
+                        infoUserState.hasError && infoUserState.lastName.isEmpty
+                            ? 'Veuillez entrer votre prénom'
+                            : null,
                     border: const OutlineInputBorder(),
                     enabledBorder: const OutlineInputBorder(
                       borderSide: BorderSide(color: UIColors.black),
@@ -126,7 +143,8 @@ class _InfoUserPageState extends ConsumerState<InfoUserPage> {
                   ),
                 ),
               ),
-              if (infoUserState.hasError && infoUserState.errorText.isNotEmpty) ...[
+              if (infoUserState.hasError &&
+                  infoUserState.errorText.isNotEmpty) ...[
                 const SizedBox(height: 10),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20.0),
@@ -146,11 +164,13 @@ class _InfoUserPageState extends ConsumerState<InfoUserPage> {
                     child: CustomButton(
                       text: "Soumettre",
                       borderRadius: 50,
-                      onPressedButton: isLoading ? null : () => infoUserNotifier.submit(context),
+                      onPressedButton: isLoading
+                          ? null
+                          : () => infoUserNotifier.submit(context),
                       bgColor: UIColors.white,
-                      fontSize: 18,
+                      fontSize: 16,
                       paddingVertical: 16,
-                      width: 120,
+                      width: 180,
                     ),
                   ),
                 ),

@@ -8,6 +8,7 @@ import 'package:liya/core/ui/components/notification_button.dart';
 
 import '../../../../../../core/local_storage_factory.dart';
 import '../../../../../../core/singletons.dart';
+import '../../../../../../core/services/dish_popularity_service.dart';
 import '../../../card/data/datasources/cart_remote_data_source.dart';
 import '../../../card/data/models/cart_item_model.dart';
 import '../../../card/domain/repositories/cart_repository.dart';
@@ -63,6 +64,10 @@ class _DishDetailPageState extends ConsumerState<DishDetailPage>
   @override
   void initState() {
     super.initState();
+
+    // Tracker la vue du plat
+    _trackDishView();
+
     _fetchBeverages();
 
     // Initialisation des contrôleurs d'animation simplifiés
@@ -118,8 +123,19 @@ class _DishDetailPageState extends ConsumerState<DishDetailPage>
   }
 
   void _onScroll() {
-    setState(() {
-      _scrollOffset = _scrollController.offset;
+    if (_scrollController.hasClients) {
+      setState(() {
+        _scrollOffset = _scrollController.offset;
+      });
+    }
+  }
+
+  /// Tracker la vue du plat pour la popularité
+  void _trackDishView() {
+    // Appeler le service de popularité en mode fire-and-forget
+    DishPopularityService.incrementViewCount(widget.id).catchError((error) {
+      // Ignorer silencieusement les erreurs de tracking
+      print('Erreur tracking vue plat: $error');
     });
   }
 
@@ -231,6 +247,11 @@ class _DishDetailPageState extends ConsumerState<DishDetailPage>
   @override
   Widget build(BuildContext context) {
     final modernQuantity = _getCurrentQuantity(ref);
+    final userDetailsJson = singleton<LocalStorageFactory>().getUserDetails();
+    final userDetails = userDetailsJson is String
+        ? jsonDecode(userDetailsJson)
+        : userDetailsJson;
+    final phoneNumber = userDetails['phoneNumber'] ?? '';
     return Scaffold(
       backgroundColor: Colors.white,
       body: Stack(
@@ -256,7 +277,8 @@ class _DishDetailPageState extends ConsumerState<DishDetailPage>
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.only(
-                      bottom: 120), // espace pour le bouton quantité
+                      bottom:
+                          20), // espace réduit car le contrôle de quantité est maintenant dans le contenu
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -266,9 +288,78 @@ class _DishDetailPageState extends ConsumerState<DishDetailPage>
                       if (!widget.description.isEmpty) ...[
                         _buildDescription(),
                       ],
+                      SizedBox(height: 30),
+                      // Contrôle de quantité directement dans le contenu principal
+                      Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 10),
+                        height: 60,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(30),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Padding(
+                              padding: EdgeInsets.only(left: 20),
+                              child: Text(
+                                'Quantité',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ),
+                            Container(
+                              margin: const EdgeInsets.only(right: 8),
+                              decoration: BoxDecoration(
+                                color: Colors.orange,
+                                borderRadius: BorderRadius.circular(25),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.remove,
+                                        color: Colors.white, size: 20),
+                                    onPressed: modernQuantity > 0
+                                        ? () => _removeCurrent(ref)
+                                        : null,
+                                  ),
+                                  Container(
+                                    width: 40,
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      '$modernQuantity',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 18,
+                                      ),
+                                    ),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.add,
+                                        color: Colors.white, size: 20),
+                                    onPressed: () => _addCurrent(ref),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                       const SizedBox(height: 24),
                       _buildAccompanimentsSection(ref),
-                      SizedBox(height: 30),
+                      SizedBox(height: 140),
                     ],
                   ),
                 ),
@@ -293,17 +384,13 @@ class _DishDetailPageState extends ConsumerState<DishDetailPage>
                       onPressed: () => Navigator.pop(context),
                     ),
                   ),
-                  // Bouton notifications
-                  NotificationAppBarButton(
-                    backgroundColor: Colors.white70,
-                    iconColor: Colors.black,
-                  ),
+
                   // Bouton cœur (like)
                   CircleAvatar(
                     backgroundColor: Colors.white70,
                     child: LikeButton(
                       dishId: widget.id,
-                      userId: 'user_id', // À adapter selon votre logique
+                      userId: phoneNumber,
                       name: widget.name,
                       price: widget.price,
                       imageUrl: widget.imageUrl,
@@ -314,88 +401,8 @@ class _DishDetailPageState extends ConsumerState<DishDetailPage>
               ),
             ),
           ),
-
-          // Contrôle de quantité + Voir votre commande TOUJOURS visibles en bas
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 10, left: 10, right: 10),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    height: 60,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(30),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Padding(
-                          padding: EdgeInsets.only(left: 20),
-                          child: Text(
-                            'Quantité',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87,
-                            ),
-                          ),
-                        ),
-                        Container(
-                          margin: const EdgeInsets.only(right: 8),
-                          decoration: BoxDecoration(
-                            color: Colors.orange,
-                            borderRadius: BorderRadius.circular(25),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                icon: const Icon(Icons.remove,
-                                    color: Colors.white, size: 20),
-                                onPressed: modernQuantity > 0
-                                    ? () => _removeCurrent(ref)
-                                    : null,
-                              ),
-                              Container(
-                                width: 40,
-                                alignment: Alignment.center,
-                                child: Text(
-                                  '$modernQuantity',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 18,
-                                  ),
-                                ),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.add,
-                                    color: Colors.white, size: 20),
-                                onPressed: () => _addCurrent(ref),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  // Voir votre commande (bouton flottant)
-                  FloatingOrderButton(),
-                ],
-              ),
-            ),
-          ),
+          // FloatingOrderButton directement dans le Stack (pas dans le Column)
+          FloatingOrderButton(),
         ],
       ),
     );

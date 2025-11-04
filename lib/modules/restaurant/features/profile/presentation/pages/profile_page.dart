@@ -1,111 +1,119 @@
 import 'dart:convert';
 import 'dart:math';
+
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../../../../../../core/local_storage_factory.dart';
+import '../../../../../../core/services/phone_call_service.dart';
 import '../../../../../../core/singletons.dart';
-import '../../../../../../routes/app_router.gr.dart';
-import '../../../../../auth/auth_provider.dart';
-import '../../../../../auth/info_user_provider.dart';
-import '../../../../../home/application/home_provider.dart';
 import '../../../home/presentation/widget/navigation_footer.dart';
 import '../providers/profile_provider.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:flutter/rendering.dart';
+import '../../../../../../core/services/account_management_service.dart';
+import 'edit_profile_page.dart';
+import 'edit_email_page.dart';
+import 'edit_phone_page.dart';
+import '../../../../../../core/ui/widgets/connectivity_debug_widget.dart';
 
 @RoutePage(name: 'ProfileRoute')
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({Key? key}) : super(key: key);
 
+  // Demander la permission CALL_PHONE au runtime
+  Future<bool> _requestCallPermission() async {
+    final status = await Permission.phone.status;
+    if (status.isGranted) {
+      return true;
+    } else {
+      final result = await Permission.phone.request();
+      return result.isGranted;
+    }
+  }
+
+  Future<void> _callNumber(BuildContext context, String number) async {
+    try {
+      debugPrint('Tentative d\'appel vers: $number');
+
+      final success = await PhoneCallService.makeCall(number);
+
+      if (!success) {
+        _showCopySnackBar(context, number);
+      }
+    } catch (e) {
+      debugPrint('Erreur lors de l\'appel: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erreur lors de l\'appel : $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  void _showCopySnackBar(BuildContext context, String number) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+            'Impossible d\'ouvrir l\'application Téléphone.\nNuméro : $number'),
+        action: SnackBarAction(
+          label: 'Copier',
+          onPressed: () {
+            Clipboard.setData(ClipboardData(text: number));
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                  content: Text('Numéro copié dans le presse-papiers')),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // TODO: Replace with actual user ID
     final userDetailsJson = singleton<LocalStorageFactory>().getUserDetails();
     final userDetails = userDetailsJson is String
         ? jsonDecode(userDetailsJson)
         : userDetailsJson;
     final phoneNumber = userDetails['phoneNumber'] ?? '';
-    var userId = phoneNumber;
-    final profileAsync = ref.watch(profileProvider(userId));
+    final profileAsync = ref.watch(profileProvider(phoneNumber));
 
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
         backgroundColor: Colors.white,
-        leading: SizedBox(),
-        title: Text(
+        leading: const SizedBox(),
+        title: const Text(
           'Profil',
           style: TextStyle(color: Colors.deepOrange),
         ),
         actions: [
           TextButton(
-            onPressed: () async {
-              try {
-                final Uri phoneUri = Uri.parse('tel:0709976498');
-                if (await canLaunchUrl(phoneUri)) {
-                  final result = await launchUrl(phoneUri);
-                  if (!result) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                          content: Text(
-                              'Impossible d\'ouvrir l\'application téléphone.')),
-                    );
-                  }
-                } else {
-                  // Fallback: essayer d'ouvrir avec un lien direct
-                  final fallbackUri = Uri.parse('https://wa.me/0709976498');
-                  if (await canLaunchUrl(fallbackUri)) {
-                    await launchUrl(fallbackUri);
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Numéro de téléphone: 0709976498'),
-                        action: SnackBarAction(
-                          label: 'Copier',
-                          onPressed: () {
-                            Clipboard.setData(
-                                ClipboardData(text: '0709976498'));
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                  content: Text(
-                                      'Numéro copié dans le presse-papiers')),
-                            );
-                          },
-                        ),
-                      ),
-                    );
-                  }
-                }
-              } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Erreur: $e')),
-                );
-              }
-            },
-            child: Text(
-              ' Call center',
+            onPressed: () => _callNumber(context, '+2250700846546'),
+            child: const Text(
+              'Call center',
               style: TextStyle(color: Colors.blue),
             ),
           ),
         ],
       ),
       body: profileAsync.when(
-        loading: () => Center(child: CircularProgressIndicator()),
+        loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) =>
-            Center(child: Text('Erreur: [38;5;9m${error.toString()}[0m')),
+            Center(child: Text('Erreur: ${error.toString()}')),
         data: (profile) => Stack(
           children: [
             SingleChildScrollView(
-              padding: EdgeInsets.only(bottom: 140),
+              padding: const EdgeInsets.only(bottom: 140),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Profile Section
+                  // Section profil
                   Container(
-                    margin: EdgeInsets.all(16),
-                    padding: EdgeInsets.all(16),
+                    margin: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
@@ -121,184 +129,164 @@ class ProfilePage extends ConsumerWidget {
                                     .substring(0, min(2, profile.name.length))
                                 : '??',
                             style: TextStyle(
-                              fontSize: 24,
-                              color: Colors.grey[600],
-                            ),
+                                fontSize: 24, color: Colors.grey[600]),
                           ),
                         ),
-                        SizedBox(width: 16),
+                        const SizedBox(width: 16),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
                                 profile.name,
-                                style: TextStyle(
+                                style: const TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
                               Text(
                                 profile.email,
-                                style: TextStyle(
-                                  color: Colors.grey[600],
-                                ),
+                                style: TextStyle(color: Colors.grey[600]),
                               ),
                             ],
                           ),
                         ),
-                        /*IconButton(
-                          icon: Icon(Icons.add_circle_outline),
+                        // Bouton d'édition
+                        IconButton(
                           onPressed: () {
-                            // TODO: Implement profile edit
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => EditProfilePage(
+                                  initialData: {
+                                    'id': phoneNumber,
+                                    'name': profile.name,
+                                    'lastName':
+                                        profile.name.split(' ').length > 1
+                                            ? profile.name
+                                                .split(' ')
+                                                .sublist(1)
+                                                .join(' ')
+                                            : '',
+                                    'email': profile.email,
+                                    'phoneNumber': phoneNumber,
+                                    'address': profile.address.isNotEmpty
+                                        ? profile.address.first
+                                        : '',
+                                  },
+                                ),
+                              ),
+                            );
                           },
-                        ),*/
+                          icon: const Icon(Icons.edit, color: Colors.blue),
+                        ),
                       ],
                     ),
                   ),
 
-                  // Orders Section
-                  Padding(
+                  // Commandes
+                  const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     child: Text(
                       'Commandes',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                   ),
                   ListTile(
-                    leading: Icon(Icons.receipt_outlined),
-                    title: Text('Mes commandes'),
+                    leading: const Icon(Icons.receipt_outlined),
+                    title: const Text('Mes commandes'),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text('${profile.orders.length}'),
-                        Icon(Icons.chevron_right),
+                        const Icon(Icons.chevron_right),
                       ],
                     ),
                     onTap: () {
-                      // TODO: Navigate to orders
+                      // TODO: Naviguer vers les commandes
                     },
                   ),
 
-                  //Favoris
-                  Padding(
+                  // Favoris
+                  const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     child: Text(
                       'Favoris',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                   ),
                   ListTile(
-                    leading: Icon(Icons.receipt_outlined),
-                    title: Text('Mes favoris'),
+                    leading: const Icon(Icons.favorite_border),
+                    title: const Text('Mes favoris'),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text('${profile.orders.length}'),
                         Icon(Icons.chevron_right),
                       ],
                     ),
                     onTap: () {
-                      // TODO: Navigate to orders
+                      // TODO: Naviguer vers les favoris
                     },
                   ),
-                  // Sell Section
-/*              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Text(
-                  'Vendre',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),*/
-/*              ListTile(
-                leading: Icon(Icons.store_outlined),
-                title: Text('Mes annonces'),
-                trailing: Icon(Icons.chevron_right),
-                onTap: () {
-                  // TODO: Navigate to listings
-                },
-              ),
-              ListTile(
-                leading: Icon(Icons.bar_chart_outlined),
-                title: Text('Mes ventes'),
-                trailing: Icon(Icons.chevron_right),
-                onTap: () {
-                  // TODO: Navigate to sales
-                },
-              ),
-              ListTile(
-                leading: Icon(Icons.payments_outlined),
-                title: Text('Paiements'),
-                trailing: Icon(Icons.chevron_right),
-                onTap: () {
-                  // TODO: Navigate to payments
-                },
-              ),*/
 
-                  // Account Section
-                  Padding(
+                  // Compte et sécurité
+                  const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     child: Text(
                       'Compte et sécurité',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                   ),
+                  // Modifier l'email
                   ListTile(
-                    leading: Icon(Icons.contact_support_outlined),
-                    title: Text('Contact'),
-                    subtitle: Text(profile.phone ?? 'Ajouter un numéro'),
-                    trailing: Icon(Icons.chevron_right),
+                    leading: const Icon(Icons.email_outlined),
+                    title: const Text('Modifier l\'email'),
+                    subtitle: Text(profile.email),
+                    trailing: const Icon(Icons.chevron_right),
                     onTap: () {
-                      // TODO: Navigate to contact
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => EditEmailPage(
+                            currentEmail: profile.email,
+                            userId: phoneNumber,
+                          ),
+                        ),
+                      );
                     },
                   ),
+
+                  // Modifier le numéro de téléphone
                   ListTile(
-                    leading: Icon(Icons.location_on_outlined),
-                    title: Text('Adresses'),
-                    subtitle: Text('${profile.address.length} adress'),
-                    trailing: Icon(Icons.chevron_right),
+                    leading: const Icon(Icons.phone_outlined),
+                    title: const Text('Modifier le numéro'),
+                    subtitle: Text(phoneNumber),
+                    trailing: const Icon(Icons.chevron_right),
                     onTap: () {
-                      // TODO: Navigate to addresses
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => EditPhonePage(
+                            currentPhone: phoneNumber,
+                            userId: phoneNumber,
+                          ),
+                        ),
+                      );
                     },
                   ),
-/*                  ListTile(
-                    leading: Icon(Icons.mail),
-                    title: Text('Adresses'),
-                    subtitle: Text('${profile.email.length} adress'),
-                    trailing: Icon(Icons.chevron_right),
+
+                  ListTile(
+                    leading: const Icon(Icons.location_on_outlined),
+                    title: const Text('Adresses'),
+                    subtitle: Text(
+                        '${profile.address.length} adress${profile.address.length > 1 ? "es" : ""}'),
+                    trailing: const Icon(Icons.chevron_right),
                     onTap: () {
-                      // TODO: Navigate to addresses
+                      // TODO: Naviguer vers la gestion des adresses
                     },
-                  ),*/
-/*              ListTile(
-                leading: Icon(Icons.credit_card_outlined),
-                title: Text('Moyens de paiement'),
-                subtitle: Text('${profile.paymentMethods.length} méthodes'),
-                trailing: Icon(Icons.chevron_right),
-                onTap: () {
-                  // TODO: Navigate to payment methods
-                },
-              ),*/
-                  /*ListTile(
-                    leading: Icon(Icons.card_giftcard_outlined),
-                    title: Text('Codes promo'),
-                    trailing: Icon(Icons.chevron_right),
-                    onTap: () {
-                      // TODO: Navigate to promo codes
-                    },
-                  ),*/
+                  ),
                 ],
               ),
             ),
@@ -311,54 +299,26 @@ class ProfilePage extends ConsumerWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    /*SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        icon: Icon(Icons.home),
-                        label: Text('Menu principal'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.deepOrange,
-                          foregroundColor: Colors.white,
-                          padding: EdgeInsets.symmetric(vertical: 16),
-                          textStyle: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        onPressed: () async {
-                          if (context.mounted) {
-                            context.router.replaceAll([const HomeRoute()]);
-                          }
-                        },
-                      ),
-                    ),*/
-                    SizedBox(height: 12),
+                    const SizedBox(height: 12),
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
-                        icon: Icon(Icons.logout),
-                        label: Text('Déconnexion'),
+                        icon: const Icon(Icons.logout),
+                        label: const Text('Déconnexion'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.red,
                           foregroundColor: Colors.white,
-                          padding: EdgeInsets.symmetric(vertical: 16),
-                          textStyle: TextStyle(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          textStyle: const TextStyle(
                               fontSize: 16, fontWeight: FontWeight.bold),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
                         onPressed: () async {
-                          // Efface le local storage et redirige vers la page de connexion
-                          await ref.read(homeProvider.notifier).logout();
-                          ref.invalidate(infoUserProvider);
-                          await ref.read(authProvider.notifier).logout();
-                          ref.invalidate(homeProvider);
-
-                          if (context.mounted) {
-                            context.router.replaceAll([const AuthRoute()]);
-                          }
+                          // Utiliser le nouveau service de gestion des comptes
+                          await AccountManagementService.showLogoutDialog(
+                              context);
                         },
                       ),
                     ),
@@ -369,7 +329,7 @@ class ProfilePage extends ConsumerWidget {
           ],
         ),
       ),
-      bottomNavigationBar: NavigationFooter(),
+      bottomNavigationBar: const NavigationFooter(),
     );
   }
 }

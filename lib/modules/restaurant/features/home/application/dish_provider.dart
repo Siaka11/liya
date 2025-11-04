@@ -2,10 +2,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 
 import '../data/datasources/dish_remote_data_source.dart';
+import '../data/datasources/dish_firestore_data_source.dart';
 import '../data/repositories/dish_repository_impl.dart';
 import '../domain/entities/dish.dart';
 import '../domain/usecases/get_dishes_by_restaurant.dart';
-
 
 class DishState {
   final List<Dish>? dishes;
@@ -41,21 +41,27 @@ class DishController extends StateNotifier<DishState> {
 
     final result = await getDishesByRestaurant(restaurantId);
     result.fold(
-          (failure) {
-        state = state.copyWith(isLoading: false, error: 'Erreur lors du chargement des plats');
+      (failure) {
+        state = state.copyWith(
+            isLoading: false, error: 'Erreur lors du chargement des plats');
       },
-          (dishes) {
+      (dishes) {
         state = state.copyWith(isLoading: false, dishes: dishes);
       },
     );
   }
 }
 
-final dishControllerProvider = StateNotifierProvider.family<DishController, DishState, String>(
-      (ref, restaurantId) {
+final dishControllerProvider =
+    StateNotifierProvider.family<DishController, DishState, String>(
+  (ref, restaurantId) {
     final client = http.Client();
-    final remoteDataSource = DishRemoteDataSourceImpl(client: client); // Devrait être valide
-    final repository = DishRepositoryImpl(remoteDataSource: remoteDataSource);
+    final remoteDataSource = DishRemoteDataSourceImpl(client: client);
+    final firestoreDataSource = DishFirestoreDataSource();
+    final repository = DishRepositoryImpl(
+      remoteDataSource: remoteDataSource,
+      firestoreDataSource: firestoreDataSource,
+    );
     final getDishesByRestaurant = GetDishesByRestaurant(repository);
     return DishController(getDishesByRestaurant);
   },

@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../data/datasources/restaurant_remote_data_source.dart';
+import '../../data/datasources/restaurant_firestore_data_source.dart';
 import '../../data/models/restaurant_model.dart';
 
 final restaurantDataSourceProvider =
@@ -118,7 +119,10 @@ class RestaurantNotifier extends StateNotifier<RestaurantState> {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      final restaurants = await _dataSource.searchRestaurants(query);
+      // Utiliser le nouveau service de recherche Firestore
+      final firestoreDataSource = RestaurantFirestoreDataSource();
+      final restaurants = await firestoreDataSource.searchRestaurants(query);
+
       state = state.copyWith(
         restaurants: restaurants,
         isLoading: false,

@@ -62,22 +62,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
       appBar: AppBar(
         title:
             const Text('Recherche', style: TextStyle(color: Colors.deepOrange)),
-        leading: BackButton(
-          color: Colors.deepOrange,
-        ),
-        actions: [
-          NotificationAppBarButton(
-            backgroundColor: Colors.transparent,
-            iconColor: Colors.deepOrange,
-          ),
-          IconButton(
-            icon: Icon(Icons.close, color: Colors.deepOrange),
-            onPressed: () {
-              _controller.clear();
-              ref.read(searchProvider.notifier).search('');
-            },
-          ),
-        ],
+        leading: SizedBox(),
       ),
       body: Column(
         children: [

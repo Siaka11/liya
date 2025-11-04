@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -33,6 +34,12 @@ class FCMService {
   Future<void> initializeAfterAuth() async {
     print('🚀 Début initialisation FCM...');
     try {
+      // Initialiser les notifications spécifiques iOS
+      if (Platform.isIOS) {
+        print('📱 iOS détecté - Firebase Messaging gérera les notifications');
+        // iOS notifications will be handled by Firebase Messaging directly
+      }
+
       // Initialiser les notifications locales
       print('📱 Initialisation notifications locales...');
       await _initializeLocalNotifications();

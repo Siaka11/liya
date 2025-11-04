@@ -123,7 +123,8 @@ class _DeliveryNavigationPageState extends ConsumerState<DeliveryNavigationPage>
           .collection('orders')
           .doc(widget.order.id)
           .update({
-        'status': 'enRoute',
+        'status':
+            'assigned', // ✅ CORRIGÉ : statut 'assigned' au lieu de 'enRoute'
         'updated_at': FieldValue.serverTimestamp(),
       });
 

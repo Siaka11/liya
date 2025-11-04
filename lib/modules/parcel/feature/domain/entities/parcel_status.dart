@@ -1,5 +1,6 @@
 enum ParcelStatus {
   reception,
+  assigned,
   enRoute,
   nonLivre,
   livre,
@@ -9,6 +10,8 @@ String parcelStatusToString(ParcelStatus status) {
   switch (status) {
     case ParcelStatus.reception:
       return 'reception';
+    case ParcelStatus.assigned:
+      return 'assigned';
     case ParcelStatus.enRoute:
       return 'enRoute';
     case ParcelStatus.nonLivre:
@@ -22,6 +25,8 @@ ParcelStatus parcelStatusFromString(String status) {
   switch (status) {
     case 'reception':
       return ParcelStatus.reception;
+    case 'assigned':
+      return ParcelStatus.assigned;
     case 'enRoute':
       return ParcelStatus.enRoute;
     case 'nonLivre':

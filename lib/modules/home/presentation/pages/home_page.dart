@@ -2,22 +2,23 @@ import 'dart:convert';
 
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart'; // Pour defaultTargetPlatform
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:liya/modules/home/presentation/pages/widget/home_card_widget.dart';
+import 'package:liya/modules/home/presentation/pages/widget/profile_content_widget.dart';
 import 'package:liya/routes/app_router.gr.dart';
 import 'package:liya/modules/home/application/home_provider.dart';
 import 'package:liya/modules/home/presentation/pages/utils/top_menu.dart';
-import 'package:liya/core/ui/components/notification_button.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:liya/core/providers/guest_mode_provider.dart'; // Provider mode invité
 
-import '../../../../core/clean_test_data.dart';
-import '../../../../core/init_delivery_data.dart';
-import '../../../../core/init_restaurant_data.dart';
-import '../../../../core/test_beverages.dart';
-import '../../../../core/test_modern_system.dart';
-import '../../../../core/test_users_management.dart';
+import '../../../../core/services/phone_call_service.dart';
 import '../../domain/entities/home_option.dart';
+
+// Provider pour gérer l'affichage du profil
+final showProfileProvider = StateProvider<bool>((ref) => false);
 
 // Nouveau widget CustomPromoDialog fidèle au design Yango, largeur max, image bord à bord, bouton collé en bas
 class CustomPromoDialog extends StatelessWidget {
@@ -240,7 +241,7 @@ class _PromoPopupManagerState extends State<PromoPopupManager> {
       children: [
         widget.child,
         // Bouton flottant de debug pour reset le flag
-        Positioned(
+        /*Positioned(
           bottom: 24,
           right: 24,
           child: FloatingActionButton(
@@ -258,7 +259,7 @@ class _PromoPopupManagerState extends State<PromoPopupManager> {
             },
             tooltip: 'Réinitialiser le popup',
           ),
-        ),
+        ),*/
       ],
     );
   }
@@ -409,6 +410,17 @@ class HomePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final homeState = ref.watch(homeProvider);
+    final showProfile = ref.watch(showProfileProvider);
+    final guestMode = ref.watch(guestModeProvider);
+
+    // Filtrer les options en fonction du mode invité
+    final displayedOptions = guestMode.isGuestMode
+        ? homeState.options.where((option) {
+            // En mode invité, afficher uniquement Restaurant et Colis
+            return option.title == 'Je commande un plat' ||
+                option.title == "J'expédie un colis";
+          }).toList()
+        : homeState.options; // En mode connecté, afficher toutes les options
 
     // Map pour associer les titres aux routes
     final _routeMap = {
@@ -435,546 +447,240 @@ class HomePage extends ConsumerWidget {
     return PromoPopupManager(
       child: Scaffold(
         body: SafeArea(
-            child: Stack(
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // Logo
-                  Container(
-                    padding: const EdgeInsets.all(5),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Image.asset(
-                          'assets/logo.png',
-                          fit: BoxFit.cover,
-                          height: 120.0,
-                          width: 120.0,
-                        ),
-                      ],
-                    ),
-                  ),
-                  // Titre
-                  const Text(
-                    'Comment pouvons-nous vous aider ?',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  // Grille de cartes
-                  Expanded(
-                    child: homeState.isLoading
-                        ? const Center(child: CircularProgressIndicator())
-                        : homeState.error != null
-                            ? Center(child: Text('Erreur : ${homeState.error}'))
-                            : GridView.builder(
-                                gridDelegate:
-                                    const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 2,
-                                  crossAxisSpacing: 12,
-                                  mainAxisSpacing: 12,
-                                  childAspectRatio: 1,
-                                ),
-                                itemCount: homeState.options.length,
-                                itemBuilder: (context, index) {
-                                  final option = homeState.options[index];
-                                  return HomeOptionCard(
-                                    option: option,
-                                    onTap: () {
-                                      onOptionSelected(context, option);
-                                    },
-                                  );
-                                },
-                              ),
-                  ),
-                ],
+          child: Stack(
+            children: [
+              // Image de fond
+              Positioned.fill(
+                child: Image.asset(
+                  'assets/img/basilique.png',
+                  fit: BoxFit.cover,
+                ),
               ),
-            ),
-
-            // Message de bienvenue en haut à gauche
-            Positioned(
-              top: 10,
-              left: 10,
-              child: Padding(
-                padding: const EdgeInsets.all(12.0),
+              // Contenu principal de la HomePage
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
+                    // Logo
+                    Container(
+                      padding: const EdgeInsets.all(5),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Image.asset(
+                            'assets/logo.png',
+                            fit: BoxFit.cover,
+                            height: 120.0,
+                            width: 120.0,
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Titre
                     const Text(
-                      "Bonjour ",
+                      'Comment pouvons-nous vous aider ?',
                       style: TextStyle(
                         fontSize: 16,
                         color: Colors.grey,
                       ),
                     ),
-                    Text(
-                      homeState.user.name,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                        color: Colors.black,
-                      ),
+                    const SizedBox(height: 10),
+                    // Grille de cartes
+                    Expanded(
+                      child: homeState.isLoading
+                          ? const Center(child: CircularProgressIndicator())
+                          : homeState.error != null
+                              ? Center(
+                                  child: Text('Erreur : ${homeState.error}'))
+                              : GridView.builder(
+                                  gridDelegate:
+                                      const SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 2,
+                                    crossAxisSpacing: 12,
+                                    mainAxisSpacing: 12,
+                                    childAspectRatio: 1,
+                                  ),
+                                  itemCount: displayedOptions.length,
+                                  itemBuilder: (context, index) {
+                                    final option = displayedOptions[index];
+                                    return HomeOptionCard(
+                                      option: option,
+                                      onTap: () {
+                                        onOptionSelected(context, option);
+                                      },
+                                    );
+                                  },
+                                ),
                     ),
                   ],
                 ),
               ),
-            ),
 
-            // Bouton menu utilisateur en haut à droite
-            Positioned(
-              top: 10,
-              right: 10,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Icône de notifications
-                  NotificationButton(
-                    backgroundColor: Colors.transparent,
-                    iconColor: Colors.grey,
-                    size: 40.0,
-                    onPressed: () {
-                      // Navigation vers la page de notifications
-                      context.router.push(const NotificationsRoute());
-                    },
+              // Message de bienvenue en haut à gauche
+              Positioned(
+                top: 10,
+                left: 10,
+                child: Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        "Bonjour ",
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey,
+                        ),
+                      ),
+                      Text(
+                        guestMode.isGuestMode ? "Invité" : homeState.user.name,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ],
                   ),
-                  // Icône de profil
-                  IconButton(
-                    icon: const Icon(
-                      Icons.person,
-                      color: Colors.grey,
-                      size: 26.0,
-                    ),
-                    onPressed: () {
-                      showTopMenu(context, ref);
-                    },
-                  ),
-                ],
-              ),
-            ),
-
-            // Bouton paramètres en bas à gauche
-            Positioned(
-              bottom: 20,
-              left: 20,
-              child: FloatingActionButton(
-                onPressed: () {
-                  _showTestDrawer(context);
-                },
-                backgroundColor: Colors.grey[300],
-                child: const Icon(
-                  Icons.settings,
-                  color: Colors.black54,
                 ),
               ),
-            ),
-          ],
-        )),
-      ),
-    );
-  }
 
-  void _showTestDrawer(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.8,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        child: Column(
-          children: [
-            // Handle
-            Container(
-              margin: const EdgeInsets.only(top: 8),
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            // Titre
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Row(
-                children: [
-                  const Icon(Icons.science, color: Colors.blue),
-                  const SizedBox(width: 8),
-                  const Text(
-                    'Tests et Configuration',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            // Boutons de test
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
+              // Bouton menu utilisateur en haut à droite
+              Positioned(
+                top: 10,
+                right: 10,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Bouton pour tester les boissons
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const TestBeveragesPage(),
-                            ),
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(20),
+                        onTap: () => _callNumber(context, '+2250700846546'),
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          child: Image.asset('assets/img/cascall.png',
+                              width: 16.0,
+                              height: 16.0,
+                              color: Colors.grey[800]),
                         ),
-                        child: const Text(
-                          '🥤 Tester les Boissons',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(width: 2),
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(20),
+                        onTap: () {
+                          context.router.push(const NotificationsRoute());
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          child: Icon(
+                            Icons.notifications_outlined,
+                            color: Colors.grey[800],
+                            size: 20.0,
                           ),
                         ),
                       ),
                     ),
-
-                    const SizedBox(height: 12),
-
-                    // Bouton pour tester le système moderne
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const TestModernSystemPage(),
-                            ),
-                          );
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(20),
+                        onTap: () {
+                          showTopMenu(context, ref);
                         },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.indigo,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: const Text(
-                          '🎨 Tester le Système Moderne',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          child: Icon(
+                            Icons.person_outline,
+                            color: Colors.grey[800],
+                            size: 20.0,
                           ),
                         ),
                       ),
                     ),
-
-                    const SizedBox(height: 12),
-
-                    // Bouton pour tester la gestion des utilisateurs
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const TestUsersManagementPage(),
-                            ),
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.deepPurple,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: const Text(
-                          '👥 Tester la Gestion des Utilisateurs',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    // Bouton pour initialiser les données de livraison
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () async {
-                          await InitDeliveryData.initializeDeliverySystem();
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                    '✅ Données de livraison initialisées!'),
-                                backgroundColor: Colors.green,
-                              ),
-                            );
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.orange,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: const Text(
-                          '🚀 Initialiser les Données',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    // Bouton pour initialiser les restaurants
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () async {
-                          await InitRestaurantData.initializeRestaurantData();
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                    '✅ Données des restaurants initialisées!'),
-                                backgroundColor: Colors.green,
-                              ),
-                            );
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.teal,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: const Text(
-                          '🍽️ Initialiser les Restaurants',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    // Bouton pour tester les notifications
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          /*Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const TestNotificationsPage(),
-                            ),
-                          );*/
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.purple,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: const Text(
-                          '🔔 Tester les Notifications',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    // Bouton pour tester Google Maps
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => _TestMapsPage(),
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.map),
-                        label: const Text('🗺️ Test Google Maps'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    // Bouton pour nettoyer les données de test
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () async {
-                          try {
-                            await CleanTestData.cleanTestOrders();
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('✅ Données de test nettoyées!'),
-                                  backgroundColor: Colors.green,
-                                ),
-                              );
-                            }
-                          } catch (e) {
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('❌ Erreur: $e'),
-                                  backgroundColor: Colors.red,
-                                ),
-                              );
-                            }
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: const Text(
-                          '🧹 Nettoyer Données Test',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 20),
                   ],
                 ),
               ),
-            ),
-          ],
+
+              // Bouton paramètres en bas à gauche
+              /*Positioned(
+                bottom: 20,
+                left: 20,
+                child: FloatingActionButton(
+                  onPressed: () {
+                    _showTestDrawer(context);
+                  },
+                  backgroundColor: Colors.grey[300],
+                  child: const Icon(
+                    Icons.settings,
+                    color: Colors.black54,
+                  ),
+                ),
+              ),*/
+              // Overlay du profil
+              if (showProfile)
+                Container(
+                  color: Colors.black.withOpacity(0.5),
+                  child: Center(
+                    child: Container(
+                      margin: const EdgeInsets.all(20),
+                      height: MediaQuery.of(context).size.height * 0.8,
+                      child: ProfileContentWidget(
+                        onClose: () {
+                          ref.read(showProfileProvider.notifier).state = false;
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-// Page de test pour Google Maps
-class _TestMapsPage extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Test Google Maps'),
-        backgroundColor: Colors.green,
-        foregroundColor: Colors.white,
-      ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Colors.blue[50]!,
-              Colors.blue[100]!,
-            ],
-          ),
-        ),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.map,
-                size: 64,
-                color: Colors.blue[600],
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Test Google Maps',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.blue[600],
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Position: Yamoussoukro (6.8270, -5.2890)',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey[600],
-                ),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                icon: const Icon(Icons.arrow_back),
-                label: const Text('Retour'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  foregroundColor: Colors.white,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                ),
-              ),
-            ],
-          ),
-        ),
+Future<void> _callNumber(BuildContext context, String number) async {
+  try {
+    debugPrint('Tentative d\'appel vers: $number');
+
+    final success = await PhoneCallService.makeCall(number);
+
+    if (!success) {
+      _showCopySnackBar(context, number);
+    }
+  } catch (e) {
+    debugPrint('Erreur lors de l\'appel: $e');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Erreur lors de l\'appel : $e'),
+        backgroundColor: Colors.red,
       ),
     );
   }
+}
+
+void _showCopySnackBar(BuildContext context, String number) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(
+          'Impossible d\'ouvrir l\'application Téléphone.\nNuméro : $number'),
+      action: SnackBarAction(
+        label: 'Copier',
+        onPressed: () {
+          Clipboard.setData(ClipboardData(text: number));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text('Numéro copié dans le presse-papiers')),
+          );
+        },
+      ),
+    ),
+  );
 }

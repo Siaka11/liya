@@ -26,6 +26,11 @@ class DeliveryDetailPage extends ConsumerWidget {
         statusText = 'Nouvelle livraison';
         statusIcon = Icons.assignment;
         break;
+      case DeliveryStatus.assigned:
+        statusColor = Colors.purple;
+        statusText = 'Assigné à un livreur';
+        statusIcon = Icons.person;
+        break;
       case DeliveryStatus.enRoute:
         statusColor = Colors.blue;
         statusText = 'En cours de livraison';

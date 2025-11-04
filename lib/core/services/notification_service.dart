@@ -215,7 +215,8 @@ class NotificationService {
           'role': 'admin',
           'title': '📦 Nouveau colis reçu',
           'body':
-              'Colis #$parcelId de $senderName - ${total.toStringAsFixed(0)} FCFA',
+              /*'Colis #$parcelId de $senderName - ${total.toStringAsFixed(0)} FCFA',*/
+              'Colis #$parcelId de $senderName ',
           'data': {
             'type': 'new_parcel',
             'parcel_id': parcelId,

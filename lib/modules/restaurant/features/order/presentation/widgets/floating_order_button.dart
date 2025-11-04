@@ -99,13 +99,13 @@ class FloatingOrderButton extends ConsumerWidget {
                           ),
                         ),
                         const SizedBox(height: 2),
-                        Text(
+                        /*Text(
                           displayRestaurantName,
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.grey[600],
                           ),
-                        ),
+                        ),*/
                       ],
                     ),
                   ),
@@ -166,6 +166,8 @@ class FloatingOrderButton extends ConsumerWidget {
   }
 
   void _showOrderDetails(BuildContext context, WidgetRef ref) {
+    // Pour l'instant, gardons le modal bottom sheet pour les commandes en cours
+    // Les nouvelles pages sont pour les commandes terminées/historique
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,

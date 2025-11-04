@@ -18,6 +18,7 @@ import 'package:liya/modules/restaurant/features/order/presentation/providers/mo
 import 'package:liya/modules/restaurant/features/order/domain/entities/beverage.dart';
 import 'package:liya/modules/restaurant/features/like/presentation/widgets/like_button.dart';
 import 'package:liya/routes/app_router.gr.dart';
+import '../../../../../../core/services/dish_popularity_service.dart';
 
 @RoutePage(name: 'DishDetailRoute')
 class DishDetailPage extends ConsumerStatefulWidget {
@@ -65,6 +66,10 @@ class _DishDetailPageState extends ConsumerState<DishDetailPage>
   @override
   void initState() {
     super.initState();
+
+    // Tracker la vue du plat pour la popularité
+    _trackDishView();
+
     _fetchBeverages();
 
     // Initialisation des contrôleurs d'animation
@@ -148,6 +153,15 @@ class _DishDetailPageState extends ConsumerState<DishDetailPage>
       beverages =
           snapshot.docs.map((doc) => Beverage.fromJson(doc.data())).toList();
       isBeveragesLoading = false;
+    });
+  }
+
+  /// Tracker la vue du plat pour la popularité
+  void _trackDishView() {
+    // Appeler le service de popularité en mode fire-and-forget
+    DishPopularityService.incrementViewCount(widget.id).catchError((error) {
+      // Ignorer silencieusement les erreurs de tracking
+      print('Erreur tracking vue plat (DishDetailPageFixed): $error');
     });
   }
 
