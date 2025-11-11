@@ -14,6 +14,7 @@ import 'dart:convert';
 import 'parcel_search_page.dart';
 import 'package:liya/routes/app_router.gr.dart';
 import 'package:liya/core/providers/guest_mode_provider.dart'; // Provider mode invité
+import 'package:liya/core/helpers/auth_helper.dart';
 
 @RoutePage()
 class ParcelHomePage extends ConsumerWidget {
@@ -161,14 +162,34 @@ class ParcelHomePage extends ConsumerWidget {
                       ),
                       _ActionButton(
                         label: 'Je reçois un colis',
-                        onTap: () {
+                        onTap: () async {
+                          final canProceed = await AuthHelper.requireAuth(
+                            context,
+                            ref,
+                            actionName: 'recevoir un colis',
+                          );
+
+                          if (!canProceed) {
+                            return;
+                          }
+
                           _askPhoneNumber(context, true);
                         },
                       ),
                       const SizedBox(height: 8),
                       _ActionButton(
                         label: 'Je livre un colis',
-                        onTap: () {
+                        onTap: () async {
+                          final canProceed = await AuthHelper.requireAuth(
+                            context,
+                            ref,
+                            actionName: 'livrer un colis',
+                          );
+
+                          if (!canProceed) {
+                            return;
+                          }
+
                           _askPhoneNumber(context, false);
                         },
                       ),
@@ -361,7 +382,7 @@ class _StatusRow extends StatelessWidget {
 
 class _ActionButton extends StatelessWidget {
   final String label;
-  final VoidCallback onTap;
+  final Future<void> Function() onTap;
   const _ActionButton({required this.label, required this.onTap});
 
   @override
@@ -373,7 +394,9 @@ class _ActionButton extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
-          onTap: onTap,
+          onTap: () async {
+            await onTap();
+          },
           child: Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 12),

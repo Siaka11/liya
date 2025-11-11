@@ -90,6 +90,7 @@ class AppRouter extends $AppRouter implements AutoRouteGuard {
           DishDetailRoute.name, // Détails plat accessible
           ModernRestaurantDetailRoute.name, // Détails restaurant accessible
           ModernDishDetailRoute.name, // Détails plat moderne accessible
+          CheckoutRoute.name, // Checkout accessible en mode invité pour afficher l'invite à s'authentifier
         ];
 
         // Vérifier si on est sur iOS et en mode invité
@@ -132,6 +133,7 @@ class AppRouter extends $AppRouter implements AutoRouteGuard {
           DishDetailRoute.name,
           ModernRestaurantDetailRoute.name,
           ModernDishDetailRoute.name,
+          CheckoutRoute.name,
         ];
 
         if (isIOS && isGuestMode && guestModeRoutes.contains(resolver.route.name)) {

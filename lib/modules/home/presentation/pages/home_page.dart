@@ -414,13 +414,23 @@ class HomePage extends ConsumerWidget {
     final guestMode = ref.watch(guestModeProvider);
 
     // Filtrer les options en fonction du mode invité
-    final displayedOptions = guestMode.isGuestMode
-        ? homeState.options.where((option) {
-            // En mode invité, afficher uniquement Restaurant et Colis
-            return option.title == 'Je commande un plat' ||
-                option.title == "J'expédie un colis";
-          }).toList()
-        : homeState.options; // En mode connecté, afficher toutes les options
+    List<HomeOption> displayedOptions;
+    if (guestMode.isGuestMode) {
+      displayedOptions = homeState.options.where((option) {
+        return option.title == 'Je commande un plat' ||
+            option.title == "J'expédie un colis";
+      }).toList();
+
+      // Fallback : s'assurer que les cartes invités sont toujours visibles
+      if (displayedOptions.isEmpty) {
+        displayedOptions = const [
+          HomeOption(title: 'Je commande un plat', icon: 'fastfood'),
+          HomeOption(title: "J'expédie un colis", icon: 'local_shipping'),
+        ];
+      }
+    } else {
+      displayedOptions = homeState.options;
+    }
 
     // Map pour associer les titres aux routes
     final _routeMap = {

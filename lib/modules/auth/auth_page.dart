@@ -302,6 +302,9 @@ class _AuthPageState extends ConsumerState<AuthPage>
       // Activer le mode invité
       await ref.read(guestModeProvider.notifier).enableGuestMode();
 
+      // Rafraîchir les options du Home pour afficher les modules invités
+      await ref.read(homeProvider.notifier).fetchOptions();
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

@@ -5,6 +5,7 @@ import '../providers/modern_order_provider.dart';
 // Import pour la navigation AutoRoute
 import 'package:auto_route/auto_route.dart';
 import 'package:liya/routes/app_router.gr.dart';
+import 'package:liya/core/helpers/auth_helper.dart';
 
 class FloatingOrderButton extends ConsumerWidget {
   final VoidCallback? onTap;
@@ -29,11 +30,11 @@ class FloatingOrderButton extends ConsumerWidget {
     }
 
     // Utiliser le restaurantName de la commande si disponible, sinon utiliser celui passé en paramètre
-    final displayRestaurantName = restaurantName ??
+    /*final displayRestaurantName = restaurantName ??
         (orderState.restaurantId != null
             ? ref.watch(restaurantNameProvider(orderState.restaurantId!))
             : null) ??
-        'Restaurant';
+        'Restaurant';*/
 
     return Positioned(
       bottom: 16,
@@ -334,6 +335,17 @@ class OrderDetailsSheet extends ConsumerWidget {
           backgroundColor: Colors.red,
         ),
       );
+      return;
+    }
+
+    // Vérifier l'authentification avant de poursuivre
+    final canProceed = await AuthHelper.requireAuth(
+      context,
+      ref,
+      actionName: 'passer commande',
+    );
+
+    if (!canProceed) {
       return;
     }
 

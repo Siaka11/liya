@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:liya/modules/home/data/models/home_option_model.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/local_storage_factory.dart';
 import '../../../../core/singletons.dart';
@@ -12,6 +13,10 @@ abstract class HomeLocalDataSource {
 class HomeLocalDataSourceImpl implements HomeLocalDataSource {
   @override
   Future<List<HomeOptionModel>> getHomeOptions() async {
+    // Vérifier si on est en mode invité
+    final prefs = await SharedPreferences.getInstance();
+    final isGuestMode = prefs.getBool('is_guest_mode') ?? false;
+    
     // Lire les données utilisateur à chaque appel pour avoir les données à jour
     final userDetailsJson = singleton<LocalStorageFactory>().getUserDetails();
     Map<String, dynamic> userDetails;
@@ -27,7 +32,24 @@ class HomeLocalDataSourceImpl implements HomeLocalDataSource {
 
     final String? role = userDetails['role'];
     print('🔄 Role de l\'utilisateur (mis à jour): $role');
+    print('🔄 Mode invité: $isGuestMode');
 
+    // En mode invité, retourner uniquement Restaurant et Colis
+    if (isGuestMode) {
+      print('✅ Mode invité détecté - Retour des options Restaurant et Colis');
+      return [
+        const HomeOptionModel(
+          title: 'Je commande un plat',
+          icon: 'fastfood',
+        ),
+        const HomeOptionModel(
+          title: "J'expédie un colis",
+          icon: 'local_shipping',
+        ),
+      ];
+    }
+
+    // Sinon, retourner les options selon le rôle
     return [
       if (role == 'client' || role == 'admin' ) ...[
         const HomeOptionModel(

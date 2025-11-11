@@ -1,0 +1,2 @@
+/Users/macbookpro/Documents/liya28062_old_3010/android/app/.cxx/RelWithDebInfo/4j205t2x/x86/CMakeFiles/edit_cache.dir
+/Users/macbookpro/Documents/liya28062_old_3010/android/app/.cxx/RelWithDebInfo/4j205t2x/x86/CMakeFiles/rebuild_cache.dir
