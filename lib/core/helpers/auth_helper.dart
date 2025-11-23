@@ -120,7 +120,7 @@ class AuthHelper {
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          'Vous serez redirigé vers la page d\'authentification pour créer un compte.',
+                          'Vous serez redirigé vers la page d\'authentification..',
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.blue.shade700,
@@ -163,6 +163,7 @@ class AuthHelper {
                         onPressed: () async {
                           Navigator.of(bottomSheetContext).pop(false);
                           // Remplacer la navigation actuelle par la page d'authentification
+                          // L'utilisateur restera sur AuthRoute même s'il est en mode invité
                           Future.microtask(() {
                             AutoRouter.of(context)
                                 .replaceAll([const AuthRoute()]);
@@ -178,7 +179,7 @@ class AuthHelper {
                           elevation: 0,
                         ),
                         child: const Text(
-                          'S\'inscrire',
+                          'Se connecter',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,

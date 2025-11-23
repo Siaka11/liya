@@ -8,9 +8,17 @@ plugins {
 // START: FlutterFire Configuration
 apply plugin: 'com.google.gms.google-services'
 // END: FlutterFire Configuration
+
+// Charger la configuration de signature depuis key.properties si présent
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file("key.properties")
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
 android {
     namespace = "com.liya.ci"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 35
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -28,20 +36,143 @@ android {
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = 30
-        targetSdk = flutter.targetSdkVersion
+        targetSdk = 35
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        release {
+            if (keystorePropertiesFile.exists()) {
+                storeFile rootProject.file(keystoreProperties['storeFile'])
+                storePassword keystoreProperties['storePassword']
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+            } else {
+                // Fallback sur la signature debug si le keystore release n'est pas configuré
+                storeFile null
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.debug
+            signingConfig keystorePropertiesFile.exists() ? signingConfigs.release : signingConfigs.debug
+            minifyEnabled false
+            shrinkResources false
         }
     }
 }
 
 flutter {
     source = "../.."
+}
+
+// Fonction pour supprimer les permissions AD_ID d'un fichier manifeste
+def removeAdIdPermissions(File manifestFile) {
+    if (!manifestFile.exists()) return false
+    
+    def manifestContent = manifestFile.getText('UTF-8')
+    def originalContent = manifestContent
+    
+    // Supprimer les permissions AD_ID (avec différents formats possibles)
+    manifestContent = manifestContent.replaceAll(
+        /<uses-permission[^>]*android:name\s*=\s*"com\.google\.android\.gms\.permission\.AD_ID"[^>]*\/?>/, 
+        ''
+    )
+    manifestContent = manifestContent.replaceAll(
+        /<uses-permission[^>]*android:name\s*=\s*"android\.permission\.ACCESS_ADSERVICES_ATTRIBUTION"[^>]*\/?>/, 
+        ''
+    )
+    manifestContent = manifestContent.replaceAll(
+        /<uses-permission[^>]*android:name\s*=\s*"android\.permission\.ACCESS_ADSERVICES_AD_ID"[^>]*\/?>/, 
+        ''
+    )
+    
+    if (manifestContent != originalContent) {
+        manifestFile.write(manifestContent, 'UTF-8')
+        println("✓ Permissions AD_ID supprimées de: ${manifestFile}")
+        return true
+    }
+    return false
+}
+
+// Supprimer les permissions AD_ID du manifeste fusionné après la fusion
+tasks.whenTaskAdded { task ->
+    if (task.name.contains("Manifest") && (task.name.contains("Process") || task.name.contains("Merge"))) {
+        task.doLast {
+            // Chercher dans tous les emplacements possibles
+            def searchDirs = [
+                file("${buildDir}/intermediates/merged_manifests"),
+                file("${buildDir}/intermediates/packaged_manifests"),
+                file("${buildDir}/intermediates/manifest_merge_outputs"),
+                file("${buildDir}/intermediates/merged_manifests/release"),
+                file("${buildDir}/intermediates/merged_manifests/debug"),
+            ]
+            
+            searchDirs.each { searchDir ->
+                if (searchDir.exists()) {
+                    searchDir.eachFileRecurse { file ->
+                        if (file.name == "AndroidManifest.xml" && file.isFile()) {
+                            removeAdIdPermissions(file)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Supprimer aussi dans le bundle AAB final
+afterEvaluate {
+    android.applicationVariants.all { variant ->
+        if (variant.buildType.name == "release") {
+            def bundleTask = tasks.findByName("bundle${variant.name.capitalize()}")
+            if (bundleTask != null) {
+                bundleTask.doLast {
+                    def bundleFile = file("${buildDir}/outputs/bundle/${variant.name}/app-${variant.name}.aab")
+                    if (bundleFile.exists()) {
+                        println("Modification du manifeste dans le bundle AAB pour supprimer AD_ID...")
+                        try {
+                            // Décompresser le bundle AAB temporairement
+                            def tempDir = file("${buildDir}/temp_aab_extract")
+                            tempDir.deleteDir()
+                            tempDir.mkdirs()
+                            
+                            // Utiliser unzip pour extraire (un AAB est un fichier zip)
+                            def unzipCmd = "unzip -q -o '${bundleFile.absolutePath}' -d '${tempDir.absolutePath}'"
+                            def unzipProcess = unzipCmd.execute()
+                            unzipProcess.waitFor()
+                            
+                            // Modifier le manifeste dans base/manifest/AndroidManifest.xml
+                            def manifestInAab = file("${tempDir}/base/manifest/AndroidManifest.xml")
+                            if (manifestInAab.exists()) {
+                                if (removeAdIdPermissions(manifestInAab)) {
+                                    // Recompresser le bundle (supprimer l'ancien d'abord)
+                                    bundleFile.delete()
+                                    def zipCmd = "cd '${tempDir.absolutePath}' && zip -q -r '${bundleFile.absolutePath}' ."
+                                    def zipProcess = zipCmd.execute()
+                                    zipProcess.waitFor()
+                                    println("✓ Bundle AAB modifié avec succès")
+                                }
+                            }
+                            
+                            // Nettoyer
+                            tempDir.deleteDir()
+                        } catch (Exception e) {
+                            println("⚠ Impossible de modifier le bundle AAB directement: ${e.message}")
+                            println("Les permissions AD_ID devraient être supprimées du manifeste fusionné")
+                        }
+                    }
+                    
+                    // Vérifier une dernière fois tous les manifestes
+                    file("${buildDir}/intermediates").eachFileRecurse { file ->
+                        if (file.name == "AndroidManifest.xml" && file.isFile()) {
+                            removeAdIdPermissions(file)
+                        }
+                    }
+                }
+            }
+        }
+    }
 }

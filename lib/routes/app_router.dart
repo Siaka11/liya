@@ -98,6 +98,21 @@ class AppRouter extends $AppRouter implements AutoRouteGuard {
         final isGuestMode = prefs.getBool('is_guest_mode') ?? false;
         final isIOS = defaultTargetPlatform == TargetPlatform.iOS;
 
+        // Si on arrive sur AuthRoute
+        if (resolver.route.name == AuthRoute.name) {
+          if (isUserAuthenticated) {
+            // Utilisateur authentifié, rediriger vers HomeRoute
+            resolver.redirect(HomeRoute(), replace: true);
+            return;
+          } else {
+            // Utilisateur NON authentifié : TOUJOURS rester sur AuthRoute
+            // Peu importe le mode invité, si l'utilisateur arrive sur AuthRoute, il doit y rester
+            // Le mode invité permet seulement d'accéder directement à HomeRoute, pas via AuthRoute
+            resolver.next();
+            return;
+          }
+        }
+
         // Permettre l'accès si:
         // 1. L'utilisateur est authentifié
         // 2. La route est publique
@@ -147,8 +162,8 @@ class AppRouter extends $AppRouter implements AutoRouteGuard {
 
   @override
   List<AutoRoute> get routes => [
-        AutoRoute(page: HomeRoute.page, initial: true),
-        AutoRoute(page: AuthRoute.page),
+        AutoRoute(page: AuthRoute.page, initial: true),
+        AutoRoute(page: HomeRoute.page),
         AutoRoute(page: OtpRoute.page),
         AutoRoute(page: InfoUserRoute.page),
         AutoRoute(page: DeleteAccountRoute.page),
