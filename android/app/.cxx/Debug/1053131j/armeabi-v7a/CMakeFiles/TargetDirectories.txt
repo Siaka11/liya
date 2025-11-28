@@ -1,0 +1,2 @@
+/Users/macbookpro/Documents/liya28062_old_3010/android/app/.cxx/Debug/1053131j/armeabi-v7a/CMakeFiles/edit_cache.dir
+/Users/macbookpro/Documents/liya28062_old_3010/android/app/.cxx/Debug/1053131j/armeabi-v7a/CMakeFiles/rebuild_cache.dir

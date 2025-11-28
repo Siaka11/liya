@@ -95,8 +95,16 @@ class AppRouter extends $AppRouter implements AutoRouteGuard {
 
         // Vérifier si on est sur iOS et en mode invité
         final prefs = singleton<SharedPreferences>();
-        final isGuestMode = prefs.getBool('is_guest_mode') ?? false;
+        var isGuestMode = prefs.getBool('is_guest_mode') ?? false;
         final isIOS = defaultTargetPlatform == TargetPlatform.iOS;
+
+        // Si l'utilisateur est authentifié, désactiver automatiquement le mode invité
+        // (comme le fait guestModeProvider.isGuestMode)
+        if (isUserAuthenticated && isGuestMode) {
+          await prefs.setBool('is_guest_mode', false);
+          isGuestMode = false;
+          print('🔄 Mode invité désactivé automatiquement (utilisateur authentifié)');
+        }
 
         // Si on arrive sur AuthRoute
         if (resolver.route.name == AuthRoute.name) {

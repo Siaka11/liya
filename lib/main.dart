@@ -13,9 +13,11 @@ import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:liya/modules/auth/firebase_auth_service.dart';
 import 'package:liya/core/services/fcm_service.dart';
 import 'package:liya/core/services/recaptcha_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app.dart';
 import 'modules/home/presentation/pages/home_page.dart'; // Pour PromoPopupManager
+import 'config/app_information.dart';
 
 // Handler pour les notifications en arrière-plan
 @pragma('vm:entry-point')
@@ -86,6 +88,17 @@ void main() async {
 
   // Initialiser les singletons
   await initSingletons();
+
+  // Désactiver le mode invité au démarrage si l'utilisateur n'est pas authentifié
+  // Le mode invité est une session temporaire qui se termine quand l'app est fermée
+  final prefs = singleton<SharedPreferences>();
+  final isGuestMode = prefs.getBool('is_guest_mode') ?? false;
+  final isAuth = prefs.getBool(Config.ISAUTH) ?? false;
+  
+  if (!isAuth && isGuestMode) {
+    await prefs.setBool('is_guest_mode', false);
+    print('🔄 Mode invité désactivé au démarrage (utilisateur non authentifié)');
+  }
 
   // Initialiser le gestionnaire de connexion
   await ConnectionManager().initialize();
