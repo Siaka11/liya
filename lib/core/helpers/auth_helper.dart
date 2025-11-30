@@ -1,36 +1,72 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:liya/routes/app_router.gr.dart';
 import 'package:liya/modules/auth/auth_provider.dart';
-import 'package:liya/core/providers/guest_mode_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:liya/config/app_information.dart';
+import 'package:liya/core/singletons.dart';
 
 /// Helper pour gérer les vérifications d'authentification
 /// S'inspire de l'approche Glovo: accès libre en lecture, inscription pour actions
 class AuthHelper {
   /// Vérifie si l'utilisateur est authentifié avant une action critique
-  /// Si non authentifié, affiche une popup pour demander l'inscription
+  /// Utilise EXACTEMENT les mêmes conditions que _buildGuestModeBanner
+  /// Le dialog n'apparaît QUE si le banner serait visible
   /// Retourne true si l'utilisateur peut continuer, false sinon
   static Future<bool> requireAuth(
     BuildContext context,
     WidgetRef ref, {
     String? actionName,
   }) async {
-    final authState = ref.read(authProvider);
-    final guestMode = ref.read(guestModeProvider);
+    // PRIORITÉ ABSOLUE: Vérifier d'abord le mode invité AVANT toute autre vérification
+    // Utiliser EXACTEMENT les mêmes conditions que _buildGuestModeBanner
+    // Le banner vérifie : guestMode.isGuestMode && defaultTargetPlatform == TargetPlatform.iOS
+    // guestMode.isGuestMode vérifie : is_guest_mode == true ET isAuth == false
+    try {
+      final prefs = singleton<SharedPreferences>();
+      final isAuth = prefs.getBool(Config.ISAUTH) ?? false;
+      final isGuestModePref = prefs.getBool('is_guest_mode') ?? false;
+      final isIOS = defaultTargetPlatform == TargetPlatform.iOS;
 
-    // Si l'utilisateur est en mode invité, on demande l'inscription
-    if (guestMode.isGuestMode) {
-      return await _showAuthRequiredDialog(context, ref, actionName);
+      // EXACTEMENT les mêmes conditions que _buildGuestModeBanner :
+      // - is_guest_mode == true dans SharedPreferences
+      // - isAuth == false (l'utilisateur n'est pas authentifié)
+      // - defaultTargetPlatform == TargetPlatform.iOS
+      if (isGuestModePref && !isAuth && isIOS) {
+        // Mêmes conditions que le banner → afficher le dialog
+        // MÊME si l'utilisateur a des données utilisateur, on affiche le dialog en mode invité
+        return await _showAuthRequiredDialog(context, ref, actionName);
+      }
+    } catch (e) {
+      // Si erreur, continuer avec les autres vérifications
     }
 
-    // Si l'utilisateur est déjà authentifié, on continue
+    // PRIORITÉ 2: Si l'utilisateur est authentifié (après vérification du mode invité), on continue
+    final authState = ref.read(authProvider);
     if (authState.isAuthenticated) {
       return true;
     }
 
-    // Cas où l'utilisateur n'est ni authentifié ni en mode invité
-    return await _showAuthRequiredDialog(context, ref, actionName);
+    // PRIORITÉ 3: Si l'utilisateur a des données utilisateur (nom, localisation, etc.), il est considéré comme authentifié
+    // Cela résout le cas où l'utilisateur a ses infos visibles mais isAuthenticated est false
+    // MAIS seulement si on n'est PAS en mode invité (déjà vérifié ci-dessus)
+    if (authState.currentUser != null) {
+      final userInfo = authState.currentUser!;
+      // Vérifier que les données utilisateur sont valides (au moins un nom ou un numéro de téléphone)
+      if ((userInfo['name'] != null &&
+              userInfo['name'].toString().isNotEmpty) ||
+          (userInfo['phoneNumber'] != null &&
+              userInfo['phoneNumber'].toString().isNotEmpty)) {
+        // L'utilisateur a des données utilisateur valides, il est authentifié
+        return true;
+      }
+    }
+
+    // Si les conditions du banner ne sont pas remplies, bloquer l'action sans afficher de dialog
+    // (comme le banner n'est pas visible, le dialog ne devrait pas l'être non plus)
+    return false;
   }
 
   /// Affiche un bottom sheet demandant à l'utilisateur de s'inscrire
@@ -102,7 +138,7 @@ class AuthHelper {
                   ],
                 ),
                 const SizedBox(height: 24),
-                
+
                 // Message informatif
                 Container(
                   padding: const EdgeInsets.all(16),
@@ -132,13 +168,14 @@ class AuthHelper {
                   ),
                 ),
                 const SizedBox(height: 24),
-                
+
                 // Boutons d'action
                 Row(
                   children: [
                     Expanded(
                       child: OutlinedButton(
-                        onPressed: () => Navigator.of(bottomSheetContext).pop(false),
+                        onPressed: () =>
+                            Navigator.of(bottomSheetContext).pop(false),
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
@@ -189,7 +226,7 @@ class AuthHelper {
                     ),
                   ],
                 ),
-                
+
                 // Espace pour le safe area
                 SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
               ],
@@ -238,4 +275,3 @@ class AuthHelper {
     );
   }
 }
-

@@ -50,27 +50,44 @@ class _AuthPageState extends ConsumerState<AuthPage>
     // Récupérer le numéro sauvegardé
     _loadSavedPhoneNumber();
 
-    // Vérifier si l'utilisateur est déjà connecté
-    _checkIfUserAlreadyAuthenticated();
-
-    // Définir le contexte pour le gestionnaire de connexion
+    // TEMPORAIRE: Désactiver la vérification pour déboguer
+    // Le router gère déjà la redirection
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _connectionManager.setCurrentContext(context);
+      // _checkIfUserAlreadyAuthenticated(); // DÉSACTIVÉ TEMPORAIREMENT
     });
   }
 
-  /// Vérifier si l'utilisateur est déjà authentifié
+  /// Vérifier si l'utilisateur est déjà authentifié (non-bloquant)
   Future<void> _checkIfUserAlreadyAuthenticated() async {
     try {
-      final isAuthenticated =
-          await ref.read(authProvider.notifier).checkAuthStateAndSync();
-
-      if (isAuthenticated && mounted) {
-        print(
-            '✅ Utilisateur déjà authentifié, redirection vers share-location');
-        // Rediriger directement vers la page de localisation
-        context.router.pushNamed('/share-location');
+      // Vérifier rapidement sans appels réseau
+      final authState = ref.read(authProvider);
+      if (authState.isAuthenticated && mounted) {
+        print('✅ Utilisateur déjà authentifié, redirection vers home');
+        // Rediriger directement vers la page home
+        Future.microtask(() {
+          if (mounted) {
+            context.router.push(HomeRoute());
+          }
+        });
+        return;
       }
+      
+      // Si pas authentifié localement, vérifier en arrière-plan (non-bloquant)
+      // Ne pas attendre le résultat pour ne pas bloquer l'UI
+      ref.read(authProvider.notifier).checkAuthStateAndSync().then((isAuthenticated) {
+        if (isAuthenticated && mounted) {
+          print('✅ Utilisateur authentifié (vérification arrière-plan), redirection vers home');
+          Future.microtask(() {
+            if (mounted) {
+              context.router.push(HomeRoute());
+            }
+          });
+        }
+      }).catchError((e) {
+        print('❌ Erreur vérification authentification: $e');
+      });
     } catch (e) {
       print('❌ Erreur vérification authentification: $e');
     }

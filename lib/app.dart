@@ -27,9 +27,7 @@ class App extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final String appName = ref.read(appNameProvider);
-    final authProviderInstance = ref.watch(authProvider.notifier);
-    final appRouter = AppRouter(authProviderInstance);
-
+    
     // Initialiser le NavigationService avec le GlobalKey
     NavigationService().initialize(rootNavigatorKey);
 
@@ -43,9 +41,13 @@ class App extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
       builder: (context, widget) {
         EasyLoading.init();
+        final isLoading = ref.watch(loadingProvider);
+        if (isLoading) {
+          print('⚠️ LoadingProvider est actif, cela peut bloquer l\'interface');
+        }
         return Stack(children: [
           widget!,
-          if (ref.watch(loadingProvider))
+          if (isLoading)
             Container(
               color: Colors.white,
               child: const Center(

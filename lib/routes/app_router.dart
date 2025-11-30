@@ -1,57 +1,11 @@
 import 'package:auto_route/auto_route.dart';
-import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
-import 'package:flutter/foundation.dart'; // Pour defaultTargetPlatform
-import 'package:liya/modules/parcel/feature/presentation/pages/parcel_home_page.dart';
-import 'package:liya/modules/restaurant/features/order/presentation/pages/order_detail_page.dart';
-import 'package:liya/modules/restaurant/features/profile/presentation/pages/profile_page.dart';
-import 'package:liya/modules/restaurant/features/profile/presentation/pages/edit_profile_page.dart';
-import 'package:liya/modules/restaurant/features/profile/presentation/pages/edit_email_page.dart';
-import 'package:liya/modules/restaurant/features/profile/presentation/pages/edit_phone_page.dart';
-import 'package:liya/modules/restaurant/features/order/presentation/pages/order_details_full_page.dart';
-import 'package:liya/modules/parcel/feature/presentation/pages/parcel_details_full_page.dart';
-import 'package:liya/modules/delivery/presentation/pages/delivery_admin_dashboard_page.dart';
-import 'package:liya/modules/delivery/presentation/pages/delivery_navigation_page.dart';
-import 'package:liya/modules/admin/presentation/pages/restaurant_management_page.dart';
-import 'package:liya/modules/admin/presentation/pages/dish_management_page.dart';
-import 'package:liya/modules/admin/presentation/pages/delivery_user_management_page.dart';
-import 'package:liya/modules/admin/presentation/pages/image_management_page.dart';
-import 'package:liya/modules/admin/presentation/pages/assignment_management_page.dart';
-import 'package:liya/modules/admin/presentation/pages/role_permission_management_page.dart';
-import 'package:liya/modules/restaurant/features/notifications/presentation/pages/notifications_page.dart';
+import 'package:flutter/foundation.dart';
 import 'package:liya/routes/app_router.gr.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../config/app_information.dart';
 import '../core/singletons.dart';
-import '../core/providers/guest_mode_provider.dart'; // Provider mode invité
 import '../modules/auth/auth_provider.dart';
-import '../modules/auth/auth_page.dart';
-import '../modules/auth/otp_page.dart';
-import '../modules/auth/info_user_page.dart';
-import '../modules/auth/presentation/pages/delete_account_page.dart';
-import '../modules/share_location_page.dart';
-import '../modules/home/presentation/pages/home_page.dart';
-import '../modules/home/presentation/pages/user_profile_page.dart';
-import '../modules/admin/presentation/pages/admin_dashboard_page.dart';
-import '../modules/parcel/feature/presentation/pages/lieu_page.dart';
-import '../modules/parcel/feature/presentation/pages/parcel_status_list_page.dart';
-import '../modules/restaurant/features/home/presentation/pages/home_restaurant.dart';
-import '../modules/restaurant/features/home/presentation/pages/restaurant_detail_page.dart';
-import '../modules/restaurant/features/order/presentation/pages/order_list_page.dart';
-import '../modules/restaurant/features/checkout/presentation/pages/checkout_page.dart';
-import '../modules/restaurant/features/like/presentation/pages/liked_dishes_page.dart';
-import '../modules/restaurant/features/search/presentation/pages/search_page.dart';
-import '../modules/delivery/presentation/pages/delivery_dashboard_page.dart';
-import '../modules/delivery/presentation/pages/delivery_assignment_page.dart';
-import '../modules/admin/presentation/pages/order_management_page.dart';
-import '../modules/admin/presentation/pages/statistics_page.dart';
-import '../modules/admin/presentation/pages/add_dish_page.dart';
-import '../modules/admin/presentation/pages/edit_dish_page.dart';
-import '../modules/admin/presentation/pages/promotion_management_page.dart';
-import '../modules/admin/presentation/pages/user_management_page.dart';
-import '../modules/admin/presentation/pages/category_management_page.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter/material.dart';
 
 @AutoRouterConfig()
 class AppRouter extends $AppRouter implements AutoRouteGuard {
@@ -65,101 +19,59 @@ class AppRouter extends $AppRouter implements AutoRouteGuard {
 
   @override
   void onNavigation(NavigationResolver resolver, StackRouter router) {
-    // Utiliser un Future.microtask pour gérer l'asynchrone
+    // Pages accessibles sans authentification
+    final publicRoutes = [
+      AuthRoute.name,
+      OtpRoute.name,
+      InfoUserRoute.name,
+    ];
+
+    // Routes accessibles en mode invité sur iOS
+    final guestModeRoutes = [
+      HomeRoute.name,
+      HomeRestaurantRoute.name,
+      ParcelHomeRoute.name,
+      SearchRoute.name,
+      AllRestaurantsRoute.name,
+      AllDishesRoute.name,
+      DishDetailRoute.name,
+      ModernRestaurantDetailRoute.name,
+      ModernDishDetailRoute.name,
+      CheckoutRoute.name,
+    ];
+
+    // Si c'est une route publique, autoriser immédiatement
+    if (publicRoutes.contains(resolver.route.name)) {
+      resolver.next();
+      return;
+    }
+
+    // Pour les autres routes, vérifier l'authentification de manière non-bloquante
     Future.microtask(() async {
       try {
-        // Vérifier l'état d'authentification et synchroniser
-        final isUserAuthenticated = await authProvider.checkAuthStateAndSync();
-
-        // Pages accessibles sans authentification
-        final publicRoutes = [
-          AuthRoute.name,
-          OtpRoute.name,
-          InfoUserRoute.name,
-          HomeRoute.name, // Accessible en mode invité sur iOS
-        ];
-
-        // Pages accessibles en mode invité sur iOS
-        final guestModeRoutes = [
-          HomeRoute.name,
-          HomeRestaurantRoute.name, // Restaurant accessible en mode invité
-          ParcelHomeRoute.name, // Colis accessible en mode invité
-          SearchRoute.name, // Recherche accessible en mode invité
-          AllRestaurantsRoute.name, // Liste restaurants accessible
-          AllDishesRoute.name, // Liste plats accessible
-          DishDetailRoute.name, // Détails plat accessible
-          ModernRestaurantDetailRoute.name, // Détails restaurant accessible
-          ModernDishDetailRoute.name, // Détails plat moderne accessible
-          CheckoutRoute.name, // Checkout accessible en mode invité pour afficher l'invite à s'authentifier
-        ];
-
-        // Vérifier si on est sur iOS et en mode invité
         final prefs = singleton<SharedPreferences>();
-        var isGuestMode = prefs.getBool('is_guest_mode') ?? false;
+        final isAuthLocally = prefs.getBool(Config.ISAUTH) ?? false;
+        final isUserAuthenticated = isAuthLocally || authProvider.isAuthenticated;
         final isIOS = defaultTargetPlatform == TargetPlatform.iOS;
+        var isGuestMode = prefs.getBool('is_guest_mode') ?? false;
 
-        // Si l'utilisateur est authentifié, désactiver automatiquement le mode invité
-        // (comme le fait guestModeProvider.isGuestMode)
+        // Si l'utilisateur est authentifié, désactiver le mode invité
         if (isUserAuthenticated && isGuestMode) {
           await prefs.setBool('is_guest_mode', false);
           isGuestMode = false;
-          print('🔄 Mode invité désactivé automatiquement (utilisateur authentifié)');
         }
 
-        // Si on arrive sur AuthRoute
-        if (resolver.route.name == AuthRoute.name) {
-          if (isUserAuthenticated) {
-            // Utilisateur authentifié, rediriger vers HomeRoute
-            resolver.redirect(HomeRoute(), replace: true);
-            return;
-          } else {
-            // Utilisateur NON authentifié : TOUJOURS rester sur AuthRoute
-            // Peu importe le mode invité, si l'utilisateur arrive sur AuthRoute, il doit y rester
-            // Le mode invité permet seulement d'accéder directement à HomeRoute, pas via AuthRoute
-            resolver.next();
-            return;
-          }
-        }
-
-        // Permettre l'accès si:
-        // 1. L'utilisateur est authentifié
-        // 2. La route est publique
-        // 3. On est sur iOS en mode invité et on va vers une route autorisée pour les invités
+        // Autoriser l'accès si authentifié ou en mode invité iOS
         if (isUserAuthenticated ||
-            publicRoutes.contains(resolver.route.name) ||
             (isIOS && isGuestMode && guestModeRoutes.contains(resolver.route.name))) {
           resolver.next();
         } else {
-          // Sur Android, toujours rediriger vers l'authentification
-          if (!isIOS || !isGuestMode) {
-            resolver.redirect(const AuthRoute(), replace: true);
-          } else {
-            // Sur iOS en mode invité, rediriger vers le home
-            resolver.redirect(HomeRoute(), replace: true);
-          }
+          resolver.redirect(const AuthRoute(), replace: true);
         }
       } catch (e) {
         print('❌ Erreur dans onNavigation: $e');
-        // En cas d'erreur, rediriger vers l'auth sauf si iOS en mode invité
-        final prefs = singleton<SharedPreferences>();
-        final isGuestMode = prefs.getBool('is_guest_mode') ?? false;
-        final isIOS = defaultTargetPlatform == TargetPlatform.iOS;
-
-        // Pages autorisées en mode invité
-        final guestModeRoutes = [
-          HomeRoute.name,
-          HomeRestaurantRoute.name,
-          ParcelHomeRoute.name,
-          SearchRoute.name,
-          AllRestaurantsRoute.name,
-          AllDishesRoute.name,
-          DishDetailRoute.name,
-          ModernRestaurantDetailRoute.name,
-          ModernDishDetailRoute.name,
-          CheckoutRoute.name,
-        ];
-
-        if (isIOS && isGuestMode && guestModeRoutes.contains(resolver.route.name)) {
+        // En cas d'erreur, autoriser AuthRoute, sinon rediriger vers AuthRoute
+        if (resolver.route.name == AuthRoute.name) {
           resolver.next();
         } else {
           resolver.redirect(const AuthRoute(), replace: true);
